@@ -3,11 +3,11 @@
 
 const CURRENT_USER_KEY = 'localCurrentUserId';
 
-function isBrowser() {
+function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 }
 
-export function getStoredUserId(fallbackId = null) {
+export function getStoredUserId(fallbackId: string | null = null): string | null {
   if (!isBrowser()) return fallbackId;
   try {
     const id = window.localStorage.getItem(CURRENT_USER_KEY);
@@ -17,7 +17,7 @@ export function getStoredUserId(fallbackId = null) {
   }
 }
 
-export function setStoredUserId(userId) {
+export function setStoredUserId(userId: string): void {
   if (!isBrowser()) return;
   try {
     window.localStorage.setItem(CURRENT_USER_KEY, userId);
@@ -26,7 +26,7 @@ export function setStoredUserId(userId) {
   }
 }
 
-export function clearStoredUserId() {
+export function clearStoredUserId(): void {
   if (!isBrowser()) return;
   try {
     window.localStorage.removeItem(CURRENT_USER_KEY);
@@ -34,5 +34,3 @@ export function clearStoredUserId() {
     // silencio
   }
 }
-
-

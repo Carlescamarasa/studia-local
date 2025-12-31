@@ -1,5 +1,4 @@
 import { EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput } from '@/features/shared/types/domain';
-// @ts-ignore
 import { getEntity, createItem, updateItem, deleteItem } from './localStorageClient';
 
 const ENTITY_KEY = 'evaluacionesTecnicas';
@@ -9,7 +8,7 @@ export const EvaluacionesAPI = {
      * Obtener todas las evaluaciones técnicas
      */
     getEvaluacionesTecnicas(): EvaluacionTecnica[] {
-        return getEntity(ENTITY_KEY);
+        return getEntity(ENTITY_KEY) as EvaluacionTecnica[];
     },
 
     /**
@@ -24,14 +23,14 @@ export const EvaluacionesAPI = {
      * Crear una nueva evaluación técnica
      */
     createEvaluacionTecnica(data: CreateEvaluacionTecnicaInput): EvaluacionTecnica {
-        return createItem(ENTITY_KEY, data);
+        return createItem(ENTITY_KEY, data as any) as unknown as EvaluacionTecnica;
     },
 
     /**
      * Actualizar una evaluación existente
      */
     updateEvaluacionTecnica(id: string, updates: UpdateEvaluacionTecnicaInput): EvaluacionTecnica {
-        return updateItem(ENTITY_KEY, id, updates);
+        return updateItem(ENTITY_KEY, id, updates as any) as unknown as EvaluacionTecnica;
     },
 
     /**

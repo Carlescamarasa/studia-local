@@ -7,29 +7,35 @@ import { CalendarIcon, Check, X } from "lucide-react";
 import { format, startOfWeek, startOfMonth, subDays, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
-const formatDate = (date) => {
+const formatDate = (date: Date | undefined): string => {
   if (!date) return '';
   return format(new Date(date), "d MMM yyyy", { locale: es });
 };
 
-const formatDateShort = (date) => {
+const formatDateShort = (date: Date | undefined): string => {
   if (!date) return '';
   return format(new Date(date), "d MMM", { locale: es });
 };
 
-const dateToString = (date) => {
+const dateToString = (date: Date | undefined): string => {
   if (!date) return '';
   return format(new Date(date), "yyyy-MM-dd");
 };
 
-function normalizeRange(start, end) {
+function normalizeRange(start: Date | undefined, end: Date | undefined): { from: Date | undefined; to: Date | undefined } {
   if (!start || !end) return { from: start, to: end };
   if (start > end) return { from: end, to: start };
   return { from: start, to: end };
 }
 
-const DEFAULT_PRESETS = [
+interface Preset {
+  key: string;
+  label: string;
+}
+
+const DEFAULT_PRESETS: Preset[] = [
   { key: 'esta-semana', label: 'Semana' },
   { key: '4-semanas', label: '4 sem' },
   { key: 'este-mes', label: 'Mes' },
@@ -37,9 +43,10 @@ const DEFAULT_PRESETS = [
   { key: 'todo', label: 'Todo' },
 ];
 
-function getPresetDates(presetKey) {
+function getPresetDates(presetKey: string): { from: Date | undefined; to: Date | undefined } {
   const hoy = new Date();
-  let inicio, fin;
+  let inicio: Date;
+  let fin: Date;
 
   switch (presetKey) {
     case 'esta-semana':
@@ -67,6 +74,20 @@ function getPresetDates(presetKey) {
   return { from: inicio, to: fin };
 }
 
+interface DatePickerContentProps {
+  presets: Preset[];
+  activePreset: string | null;
+  onPresetClick: (key: string) => void;
+  dateRange: DateRange;
+  onSelect: (range: DateRange | undefined) => void;
+  onCancel: () => void;
+  onApply: () => void;
+  canApply: boolean;
+  statusText: string;
+  isDrawerMode: boolean;
+  isSingleMonth: boolean;
+}
+
 /**
  * Contenido compartido del picker (presets + calendario + footer)
  */
@@ -82,7 +103,7 @@ function DatePickerContent({
   statusText,
   isDrawerMode,
   isSingleMonth
-}) {
+}: DatePickerContentProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Presets - solo horizontal en modo Drawer (Mobile/Tablet) */}
@@ -206,6 +227,14 @@ function DatePickerContent({
   );
 }
 
+interface DateRangePickerProps {
+  startDate?: string;
+  endDate?: string;
+  onDateChange?: (startDate: string, endDate: string) => void;
+  presets?: Preset[];
+  className?: string;
+}
+
 /**
  * DateRangePicker - Popover en desktop, Drawer en mobile/tablet
  */
@@ -215,7 +244,7 @@ export default function DateRangePicker({
   onDateChange,
   presets = DEFAULT_PRESETS,
   className = ""
-}) {
+}: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
 
   // Responsive State: <1024 para Drawer, >=1024 Popover
@@ -238,18 +267,18 @@ export default function DateRangePicker({
   }, []);
 
   // MÁQUINA DE ESTADOS
-  const [phase, setPhase] = useState("start");
-  const phaseRef = useRef("start");
+  const [phase, setPhase] = useState<"start" | "end">("start");
+  const phaseRef = useRef<"start" | "end">("start");
 
   const start = startDate ? new Date(startDate + 'T00:00:00') : undefined;
   const end = endDate ? new Date(endDate + 'T00:00:00') : undefined;
 
-  const [dateRange, setDateRange] = useState({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: start,
     to: end,
   });
 
-  const [activePreset, setActivePreset] = useState(null);
+  const [activePreset, setActivePreset] = useState<string | null>(null);
 
   // Sincronizar con props
   useEffect(() => {
@@ -273,7 +302,7 @@ export default function DateRangePicker({
   // Keyboard
   useEffect(() => {
     if (!open) return;
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         handleCancel();
@@ -286,7 +315,7 @@ export default function DateRangePicker({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, dateRange]);
 
-  const handleSelect = useCallback((range) => {
+  const handleSelect = useCallback((range: DateRange | undefined) => {
     const clickedDate = range?.from !== dateRange.from ? range?.from : range?.to;
     if (!clickedDate) return;
 
@@ -319,7 +348,7 @@ export default function DateRangePicker({
     }
   }, [dateRange]);
 
-  const handlePresetClick = (presetKey) => {
+  const handlePresetClick = (presetKey: string) => {
     const { from, to } = getPresetDates(presetKey);
     setDateRange({ from, to });
     setActivePreset(presetKey);
@@ -352,7 +381,7 @@ export default function DateRangePicker({
     setOpen(false);
   };
 
-  const handleOpenChange = (isOpen) => {
+  const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
       const newStart = startDate ? new Date(startDate + 'T00:00:00') : undefined;
@@ -364,7 +393,7 @@ export default function DateRangePicker({
     }
   };
 
-  const displayText = () => {
+  const displayText = (): string => {
     if (startDate && endDate) {
       const s = new Date(startDate + 'T00:00:00');
       const e = new Date(endDate + 'T00:00:00');
@@ -376,7 +405,7 @@ export default function DateRangePicker({
     return "Seleccionar rango";
   };
 
-  const getStatusText = () => {
+  const getStatusText = (): string => {
     if (phase === "start" && !dateRange?.from) return "Selecciona inicio";
     if (phase === "end" || (dateRange?.from && !dateRange?.to)) return "Selecciona final";
     if (dateRange?.from && dateRange?.to) return "Rango seleccionado";
@@ -443,7 +472,7 @@ export default function DateRangePicker({
               onSelect={handleSelect}
               onCancel={handleCancel}
               onApply={handleApply}
-              canApply={canApply}
+              canApply={!!canApply}
               statusText={getStatusText()}
               isDrawerMode={true}
               isSingleMonth={isSingleMonth}
@@ -480,7 +509,7 @@ export default function DateRangePicker({
           onSelect={handleSelect}
           onCancel={handleCancel}
           onApply={handleApply}
-          canApply={canApply}
+          canApply={!!canApply}
           statusText={getStatusText()}
           isSingleMonth={false} // Desktop siempre 2 meses
           isDrawerMode={false} // Desktop usa popover

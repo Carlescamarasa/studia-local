@@ -16,6 +16,7 @@ export interface EventoCalendarioData {
     creadoPorId?: string;
     created_at?: string;
     updated_at?: string;
+    [key: string]: unknown;
 }
 
 export interface EventoCalendario extends EventoCalendarioData {
@@ -27,12 +28,12 @@ export const EventosCalendarioAPI = {
         return getEntity(ENTITY_KEY) as EventoCalendario[];
     },
     createEventoCalendario(data: EventoCalendarioData): EventoCalendario {
-        return createItem(ENTITY_KEY, data) as EventoCalendario;
+        return createItem(ENTITY_KEY, data as any) as unknown as EventoCalendario;
     },
     updateEventoCalendario(id: string, updates: Partial<EventoCalendarioData>): EventoCalendario {
-        return updateItem(ENTITY_KEY, id, updates) as EventoCalendario;
+        return updateItem(ENTITY_KEY, id, updates as any) as unknown as EventoCalendario;
     },
-    deleteEventoCalendario(id: string): void {
+    deleteEventoCalendario(id: string): { success: boolean } {
         return deleteItem(ENTITY_KEY, id);
     },
 };

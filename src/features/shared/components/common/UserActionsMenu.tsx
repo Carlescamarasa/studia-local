@@ -144,10 +144,18 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
     });
 
     // Build actions list based on permissions
-    const actions = [];
+    interface Action {
+        id: string;
+        label: string;
+        icon: React.ReactElement;
+        onClick: () => void;
+        disabled?: boolean;
+    }
+    const actions: Action[] = [];
 
     // Editar perfil - ADMIN and PROF
     if (isAdmin || isProf) {
+
         actions.push({
             id: 'edit',
             label: 'Editar perfil',

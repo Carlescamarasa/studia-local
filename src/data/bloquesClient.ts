@@ -1,20 +1,19 @@
 import { getEntity, createItem, updateItem, deleteItem } from './localStorageClient';
+import { Bloque } from '@/features/shared/types/domain';
 
 const ENTITY_KEY = 'bloques';
 
 export const BloquesAPI = {
-  getAllBloques() {
+  getAllBloques(): unknown[] {
     return getEntity(ENTITY_KEY);
   },
-  createBloque(data) {
+  createBloque(data: Partial<Bloque>) {
     return createItem(ENTITY_KEY, data);
   },
-  updateBloque(id, updates) {
+  updateBloque(id: string, updates: Partial<Bloque>) {
     return updateItem(ENTITY_KEY, id, updates);
   },
-  deleteBloque(id) {
+  deleteBloque(id: string) {
     return deleteItem(ENTITY_KEY, id);
   },
 };
-
-

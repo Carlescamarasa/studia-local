@@ -8,7 +8,21 @@
 const STORAGE_KEY = 'studia_data';
 const STORAGE_VERSION = 1;
 
-const DEFAULT_DATA = {
+interface StorageData {
+  version: number;
+  asignaciones: unknown[];
+  bloques: unknown[];
+  feedbacksSemanal: unknown[];
+  piezas: unknown[];
+  planes: unknown[];
+  registrosBloque: unknown[];
+  registrosSesion: unknown[];
+  usuarios: unknown[];
+  evaluacionesTecnicas: unknown[];
+  [key: string]: unknown;
+}
+
+const DEFAULT_DATA: StorageData = {
   version: STORAGE_VERSION,
   asignaciones: [],
   bloques: [],
@@ -21,11 +35,11 @@ const DEFAULT_DATA = {
   evaluacionesTecnicas: [],
 };
 
-function isBrowser() {
+function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 }
 
-function normalizeData(raw) {
+function normalizeData(raw: Record<string, unknown> | null): StorageData {
   const base = { ...DEFAULT_DATA };
   if (!raw || typeof raw !== 'object') return base;
 
@@ -45,7 +59,7 @@ function normalizeData(raw) {
   };
 }
 
-export function loadFromStorage() {
+export function loadFromStorage(): StorageData | null {
   if (!isBrowser()) return null;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -58,7 +72,7 @@ export function loadFromStorage() {
   }
 }
 
-export function saveToStorage(partialData) {
+export function saveToStorage(partialData: Partial<StorageData>): StorageData | null {
   if (!isBrowser()) return null;
   try {
     const existing = loadFromStorage() || DEFAULT_DATA;
@@ -75,13 +89,14 @@ export function saveToStorage(partialData) {
   }
 }
 
-export function getEntity(name) {
+export function getEntity(name: string): unknown[] {
   const data = loadFromStorage();
   if (!data) return [];
-  return Array.isArray(data[name]) ? data[name] : [];
+  const entity = data[name];
+  return Array.isArray(entity) ? entity : [];
 }
 
-export function setEntity(name, items) {
+export function setEntity(name: string, items: unknown[]): StorageData | null {
   const current = loadFromStorage() || DEFAULT_DATA;
   const next = {
     ...current,
@@ -90,14 +105,20 @@ export function setEntity(name, items) {
   return saveToStorage(next);
 }
 
-export function generateId(entityName) {
+export function generateId(entityName: string): string {
   const prefix = (entityName || 'item').toString().toLowerCase();
   return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export function createItem(name, item) {
-  const current = getEntity(name);
-  const newItem = {
+interface EntityItem {
+  id?: string;
+  created_at?: string;
+  [key: string]: unknown;
+}
+
+export function createItem(name: string, item: EntityItem): EntityItem {
+  const current = getEntity(name) as EntityItem[];
+  const newItem: EntityItem = {
     ...item,
     id: item?.id || generateId(name),
     created_at: item?.created_at || new Date().toISOString(),
@@ -107,8 +128,8 @@ export function createItem(name, item) {
   return newItem;
 }
 
-export function updateItem(name, id, updates) {
-  const current = getEntity(name);
+export function updateItem(name: string, id: string, updates: Partial<EntityItem>): EntityItem {
+  const current = getEntity(name) as EntityItem[];
   const index = current.findIndex((item) => item.id === id);
   if (index === -1) {
     throw new Error(`[localStorageClient] ${name} con id ${id} no encontrado`);
@@ -120,8 +141,8 @@ export function updateItem(name, id, updates) {
   return updated;
 }
 
-export function deleteItem(name, id) {
-  const current = getEntity(name);
+export function deleteItem(name: string, id: string): { success: boolean } {
+  const current = getEntity(name) as EntityItem[];
   const exists = current.some((item) => item.id === id);
   if (!exists) {
     throw new Error(`[localStorageClient] ${name} con id ${id} no encontrado`);
@@ -132,11 +153,9 @@ export function deleteItem(name, id) {
 }
 
 // Helper para inicializar desde un snapshot externo (por ejemplo, rebuildLocalData)
-export function bootstrapFromSnapshot(snapshot) {
+export function bootstrapFromSnapshot(snapshot: Record<string, unknown>): StorageData | null {
   if (!isBrowser()) return null;
   const normalized = normalizeData(snapshot);
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
   return normalized;
 }
-
-

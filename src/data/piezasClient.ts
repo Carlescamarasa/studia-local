@@ -1,20 +1,19 @@
 import { getEntity, createItem, updateItem, deleteItem } from './localStorageClient';
+import { Pieza } from '@/features/shared/types/domain';
 
 const ENTITY_KEY = 'piezas';
 
 export const PiezasAPI = {
-  getAllPiezas() {
+  getAllPiezas(): unknown[] {
     return getEntity(ENTITY_KEY);
   },
-  createPieza(data) {
+  createPieza(data: Partial<Pieza>) {
     return createItem(ENTITY_KEY, data);
   },
-  updatePieza(id, updates) {
+  updatePieza(id: string, updates: Partial<Pieza>) {
     return updateItem(ENTITY_KEY, id, updates);
   },
-  deletePieza(id) {
+  deletePieza(id: string) {
     return deleteItem(ENTITY_KEY, id);
   },
 };
-
-

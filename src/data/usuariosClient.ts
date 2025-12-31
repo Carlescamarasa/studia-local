@@ -1,23 +1,22 @@
 import { getEntity, setEntity, createItem, updateItem, deleteItem } from './localStorageClient';
+import { Usuario } from '@/types/data.types';
 
 const ENTITY_KEY = 'usuarios';
 
 export const UsuariosAPI = {
-  getAllUsuarios() {
+  getAllUsuarios(): unknown[] {
     return getEntity(ENTITY_KEY);
   },
-  setAllUsuarios(items) {
+  setAllUsuarios(items: Usuario[]) {
     return setEntity(ENTITY_KEY, items);
   },
-  createUsuario(data) {
+  createUsuario(data: Partial<Usuario>) {
     return createItem(ENTITY_KEY, data);
   },
-  updateUsuario(id, updates) {
+  updateUsuario(id: string, updates: Partial<Usuario>) {
     return updateItem(ENTITY_KEY, id, updates);
   },
-  deleteUsuario(id) {
+  deleteUsuario(id: string) {
     return deleteItem(ENTITY_KEY, id);
   },
 };
-
-

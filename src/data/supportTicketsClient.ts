@@ -265,7 +265,7 @@ function mapTicketFromDB(db: any): SupportTicket {
     updated_at: db.updated_at,
     cerradoAt: db.cerrado_at,
     ultimaRespuestaDe: db.ultima_respuesta_de,
-    // Información adicional de perfiles (no en el tipo base pero útil para la UI)
+    // @ts-ignore - Extended properties for UI (not in base type)
     _alumnoNombre: alumnoNombre,
     _profesorNombre: profesorNombre,
   };
@@ -314,7 +314,7 @@ function mapMensajeFromDB(db: any): SupportMensaje {
     texto: db.texto,
     mediaLinks,
     created_at: db.created_at,
-    // Información adicional del autor (no en el tipo base pero útil para la UI)
+    // @ts-ignore - Extended property for UI (not in base type)
     _autorNombre: autorNombre,
   };
 }
@@ -361,7 +361,7 @@ function mapMensajeToDB(mensaje: CreateSupportMensajeInput): any {
       mediaLinks = mensaje.mediaLinks
         .map(link => {
           if (typeof link === 'string') return link;
-          if (link && typeof link === 'object' && 'url' in link) return String(link.url);
+          if (link && typeof link === 'object' && 'url' in link) return String((link as { url: string }).url);
           return null;
         })
         .filter((link): link is string => link !== null && link.length > 0);

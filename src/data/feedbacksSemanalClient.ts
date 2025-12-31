@@ -1,31 +1,41 @@
 import { getEntity, createItem, updateItem, deleteItem } from './localStorageClient';
+import { FeedbackSemanal } from '@/types/data.types';
 
 const ENTITY_KEY = 'feedbacksSemanal';
 
+interface FeedbackEntity {
+  id?: string;
+  alumnoId?: string;
+  semanaInicioISO?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
 export const FeedbacksSemanalAPI = {
-  getAllFeedbacksSemanal() {
+  getAllFeedbacksSemanal(): unknown[] {
     return getEntity(ENTITY_KEY);
   },
-  createFeedbackSemanal(data) {
+  createFeedbackSemanal(data: Partial<FeedbackSemanal>) {
     return createItem(ENTITY_KEY, data);
   },
-  updateFeedbackSemanal(id, updates) {
+  updateFeedbackSemanal(id: string, updates: Partial<FeedbackSemanal>) {
     return updateItem(ENTITY_KEY, id, updates);
   },
-  deleteFeedbackSemanal(id) {
+  deleteFeedbackSemanal(id: string) {
     return deleteItem(ENTITY_KEY, id);
   },
   /**
    * Upsert feedback semanal: crea si no existe, actualiza si existe.
    * Usa alumnoId + semanaInicioISO como clave única.
    */
-  upsertFeedbackSemanal(data) {
-    const all = getEntity(ENTITY_KEY);
+  upsertFeedbackSemanal(data: Partial<FeedbackSemanal>) {
+    const all = getEntity(ENTITY_KEY) as FeedbackEntity[];
     const existing = all.find(f =>
       f.alumnoId === data.alumnoId &&
       f.semanaInicioISO === data.semanaInicioISO
     );
-    if (existing) {
+    if (existing && existing.id) {
       return updateItem(ENTITY_KEY, existing.id, {
         ...data,
         updated_at: new Date().toISOString()
@@ -38,6 +48,3 @@ export const FeedbacksSemanalAPI = {
     });
   },
 };
-
-
-
