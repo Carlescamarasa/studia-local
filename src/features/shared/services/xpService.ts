@@ -34,51 +34,71 @@ export type XPSource = 'BLOCK' | 'PROF';
  * @param windowDays - Number of days to look back (default: 30)
  * @returns Object with XP per skill (uncapped)
  */
-export async function computePracticeXP(
+/**
+ * computePracticeXP returns SCORED values (0-100).
+ * This function returns the RAW values (earned / max) for aggregation.
+ */
+export async function computePracticeXPDetails(
     studentId: string,
     windowDays: number = 30
-): Promise<RecentXPResult> {
+): Promise<BlockXPBreakdown> {
     try {
-        // Get all completed blocks for the student (RegistroBloque) - Filtered to avoid N+1/Full scan
         const allBlocks = await localDataClient.entities.RegistroBloque.filter({ alumnoId: studentId });
-        console.log(`[XPService] computePracticeXP(${studentId}) Found blocks:`, allBlocks.length);
-
-        // Filter blocks completed in the last N days for this student
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - windowDays);
         const cutoffISO = cutoffDate.toISOString();
 
         const recentBlocks = allBlocks.filter((block: any) => {
-            const blockDate = block.created_at || block.createdAt || block.inicioISO; // Fallback
+            const blockDate = block.created_at || block.createdAt || block.inicioISO;
             if (!blockDate) return false;
             return blockDate >= cutoffISO;
         });
 
-        console.log(`[XPService] Recent blocks (${windowDays}d):`, recentBlocks.length);
-
-        // Accumulate XP per skill
-        const result: RecentXPResult = {
-            motricidad: 0,
-            articulacion: 0,
-            flexibilidad: 0
+        const acc = {
+            motricidad: { earned: 0, max: 0 },
+            articulacion: { earned: 0, max: 0 },
+            flexibilidad: { earned: 0, max: 0 }
         };
 
         recentBlocks.forEach((block: any) => {
-            // Calculate XP based on BPM achieved vs target
-            const earnedXP = calculateXPFromBlock(block);
+            const breakdown = calculateXPFromBlock(block);
+            acc.motricidad.earned += breakdown.motricidad.earned;
+            acc.motricidad.max += breakdown.motricidad.max;
 
-            // Distribute XP to relevant skills based on block type
-            // For now, distribute evenly - this can be refined later
-            result.motricidad += earnedXP / 3;
-            result.articulacion += earnedXP / 3;
-            result.flexibilidad += earnedXP / 3;
+            acc.articulacion.earned += breakdown.articulacion.earned;
+            acc.articulacion.max += breakdown.articulacion.max;
+
+            acc.flexibilidad.earned += breakdown.flexibilidad.earned;
+            acc.flexibilidad.max += breakdown.flexibilidad.max;
         });
 
-        return result;
+        return acc;
     } catch (error) {
-        console.error('Error computing practice XP:', error);
-        return { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+        console.error('Error computing practice XP details:', error);
+        return {
+            motricidad: { earned: 0, max: 0 },
+            articulacion: { earned: 0, max: 0 },
+            flexibilidad: { earned: 0, max: 0 }
+        };
     }
+}
+
+export async function computePracticeXP(
+    studentId: string,
+    windowDays: number = 30
+): Promise<RecentXPResult> {
+    const details = await computePracticeXPDetails(studentId, windowDays);
+
+    const calculateScore = (earned: number, max: number) => {
+        if (max === 0) return 0;
+        return (earned / max) * 100;
+    };
+
+    return {
+        motricidad: calculateScore(details.motricidad.earned, details.motricidad.max),
+        articulacion: calculateScore(details.articulacion.earned, details.articulacion.max),
+        flexibilidad: calculateScore(details.flexibilidad.earned, details.flexibilidad.max)
+    };
 }
 
 /**
@@ -121,32 +141,77 @@ export async function computeLifetimePracticeXP(
 }
 
 /**
- * Calculate XP earned from a single block based on performance
- * 
- * @param block - RegistroBloque object
- * @returns XP amount (base 0-100)
+ * Breakdown of XP earned per skill
  */
-export function calculateXPFromBlock(block: any): number {
-    // Requirements: Completed status AND Performance data
-    if (block.estado !== 'completado') return 0;
+export interface BlockXPBreakdown {
+    motricidad: { earned: number; max: number };
+    articulacion: { earned: number; max: number };
+    flexibilidad: { earned: number; max: number };
+}
 
-    // Debug
-    if (Math.random() < 0.005) console.log('[XPService] Checking Block XP props:', { id: block.id, ppmObjetivo: block.ppmObjetivo, ppmAlcanzado: block.ppmAlcanzado });
+/**
+ * Calculate XP earned from a single block based on performance
+ * Returns breakdown of earned vs max points per skill
+ */
+export function calculateXPFromBlock(block: any): BlockXPBreakdown {
+    const result: BlockXPBreakdown = {
+        motricidad: { earned: 0, max: 0 },
+        articulacion: { earned: 0, max: 0 },
+        flexibilidad: { earned: 0, max: 0 }
+    };
 
-    // Handle various data shapes for targets
-    const target = typeof block.ppmObjetivo === 'object' ? (block.ppmObjetivo?.bpm || 0) : Number(block.ppmObjetivo);
-    const reached = typeof block.ppmAlcanzado === 'object' ? (block.ppmAlcanzado?.bpm || 0) : Number(block.ppmAlcanzado);
+    if (block.estado !== 'completado') return result;
 
-    if (!target || !reached) return 0;
+    // 1. Calculate Raw Ratio (0.0 - 1.0)
+    // Support both snake_case (from DB) and camelCase (from code)
+    const targetRaw = block.ppm_objetivo ?? block.ppmObjetivo;
+    const reachedRaw = block.ppm_alcanzado ?? block.ppmAlcanzado;
 
-    // Calculate ratio
-    const ratio = reached / target;
+    const target = typeof targetRaw === 'object' ? (targetRaw?.bpm || 0) : Number(targetRaw);
+    const reached = typeof reachedRaw === 'object' ? (reachedRaw?.bpm || 0) : Number(reachedRaw);
 
-    // XP scales with performance
-    if (ratio >= 1.0) return 100; // Met or exceeded target
-    if (ratio >= 0.8) return 80;  // Close
-    if (ratio >= 0.5) return 50;  // Halfway
-    return 25;                    // Attempted
+    if (!target || target === 0) return result; // Avoid division by zero
+
+    let ratio = reached / target;
+    // Cap at 1.0 (100%)
+    if (ratio > 1) ratio = 1;
+
+    // 2. Identify Skills involved (support both snake_case and camelCase)
+    const skills = (block.skills || block.skill_tags || block.skillTags || []) as string[];
+
+    // Normalize skills to our 3 main categories
+    const relevantSkills: ('motricidad' | 'articulacion' | 'flexibilidad')[] = [];
+
+    skills.forEach(tag => {
+        const t = tag.toLowerCase();
+        if (t.includes('motricidad')) relevantSkills.push('motricidad');
+        if (t.includes('articulaci')) relevantSkills.push('articulacion'); // Matches Articulación, Articulacion
+        if (t.includes('flexibilidad')) relevantSkills.push('flexibilidad');
+    });
+
+    // If no relevant skills found, do not award stats (or maybe fallback? User said others don't count)
+    if (relevantSkills.length === 0) return result;
+
+    // 3. Distribute Weight
+    // If multiple skills, split the "Max Point" (1.0) among them?
+    // OR does each skill get the full ratio?
+    // User said: "50% motricidad, 50% articulacion". This implies the TOTAL value of the block is shared.
+    // Let's assume the block represents "1 unit of work". 
+    // If it's pure Motricidad, then Motricidad Max = 1, Earned = ratio.
+    // If it's 50/50, then Motricidad Max = 0.5, Earned = 0.5 * ratio.
+
+    const weightPerSkill = 1.0 / relevantSkills.length; // Normalized to 1.0 total per block
+
+    // However, for "Rango" (Volume), usually you want the SUM of work. 
+    // If I practice 10 mins of Mot+Art, did I do 5 mins Mot and 5 mins Art? Yes, logically.
+    // So splitting the weight makes sense for Volume aggregation.
+
+    relevantSkills.forEach(skill => {
+        result[skill].max += weightPerSkill;
+        result[skill].earned += ratio * weightPerSkill;
+    });
+
+    return result;
 }
 
 /**
@@ -423,18 +488,12 @@ export async function syncXPWithBloques(studentId?: string): Promise<void> {
             };
 
             completedBlocks.forEach((block: any) => {
-                const earnedXP = calculateXPFromBlock(block);
+                const breakdown = calculateXPFromBlock(block);
 
-                if (block.tipo === 'tecnica') {
-                    xp.motricidad += earnedXP * 0.6;
-                    xp.articulacion += earnedXP * 0.4;
-                } else if (block.tipo === 'flexibilidad') {
-                    xp.flexibilidad += earnedXP;
-                } else {
-                    xp.motricidad += earnedXP / 3;
-                    xp.articulacion += earnedXP / 3;
-                    xp.flexibilidad += earnedXP / 3;
-                }
+                // For lifetime XP, we simply sum the earned component
+                xp.motricidad += breakdown.motricidad.earned;
+                xp.articulacion += breakdown.articulacion.earned;
+                xp.flexibilidad += breakdown.flexibilidad.earned;
             });
 
             // Update totals in database

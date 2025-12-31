@@ -342,6 +342,12 @@ export interface RegistroBloque {
     bpm: number;
     unidad: 'negra' | 'blanca' | 'blancaConPuntillo' | 'corchea';
   };
+
+  /**
+   * Habilidades trabajadas en este bloque (copia snapshot del Bloque).
+   * Ej: ["Articulación T", "Motricidad"]
+   */
+  skills?: string[];
 }
 
 export type CreateRegistroBloqueInput = Omit<RegistroBloque, 'id' | 'created_at'> & { id?: string };

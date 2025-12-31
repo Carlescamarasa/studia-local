@@ -26,32 +26,26 @@ export function useRecentXP(studentId: string, windowDays: number = 30) {
     });
 }
 
-/**
- * Hook to fetch recent XP for multiple students (Average)
- */
+// Import the new function (make sure to update imports at top too if not auto-imported)
+import { computePracticeXPDetails } from '@/features/shared/services/xpService';
+
 export function useRecentXPMultiple(studentIds: string[], windowDays: number = 30) {
     return useQuery<RecentXPResult>({
         queryKey: ['recent-xp-multiple', studentIds, windowDays],
         queryFn: async () => {
             if (studentIds.length === 0) return { motricidad: 0, articulacion: 0, flexibilidad: 0 };
 
-            // Run in parallel
+            // Fetch individual scores (percentages) for each student
             const promises = studentIds.map(id => computePracticeXP(id, windowDays));
             const results = await Promise.all(promises);
 
-            // Average results
-            const sum = results.reduce((acc, curr) => ({
+            // SUM the individual percentages (not weighted average)
+            // e.g., Ana G: 82/100, Ana M: 84/100 → Combined: 166/200
+            return results.reduce((acc, curr) => ({
                 motricidad: acc.motricidad + curr.motricidad,
                 articulacion: acc.articulacion + curr.articulacion,
                 flexibilidad: acc.flexibilidad + curr.flexibilidad
             }), { motricidad: 0, articulacion: 0, flexibilidad: 0 });
-
-            // Return average
-            return {
-                motricidad: Math.min(100, sum.motricidad / studentIds.length),
-                articulacion: Math.min(100, sum.articulacion / studentIds.length),
-                flexibilidad: Math.min(100, sum.flexibilidad / studentIds.length)
-            };
         },
         enabled: studentIds.length > 0,
         staleTime: 1000 * 60 * 5,

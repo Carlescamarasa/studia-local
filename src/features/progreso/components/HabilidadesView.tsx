@@ -16,6 +16,7 @@ import {
     useRecentXPMultiple, // [NEW] Multi-student support
     useRecentManualXPMultiple // [NEW] Multi-student support
 } from '../hooks/useXP';
+import { calculateXPFromBlock } from '@/features/shared/services/xpService';
 import { Activity, Target, Star, Layers, Info, TrendingUp, BookOpen, PieChart, CheckCircle2, Circle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/features/shared/components/ui/tooltip';
 import LevelBadge from '@/features/shared/components/common/LevelBadge';
@@ -187,69 +188,46 @@ export default function HabilidadesView({
     const rangeTotalXP = useMemo(() => {
         if (!xpData) return { motricidad: 0, articulacion: 0, flexibilidad: 0, sonido: 0, cognicion: 0 };
 
-        // A. Practice XP (Computed from selected sessions)
-        const practiceResult = { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+        // Accumulate { earned, max }
+        const acc = {
+            motricidad: { earned: 0, max: 0 },
+            articulacion: { earned: 0, max: 0 },
+            flexibilidad: { earned: 0, max: 0 }
+        };
 
         console.log('[HabilidadesView] Rango Debug: xpData length', xpData.length);
-
-        // Helper to calc XP
-        const calcBlockXP = (block: any) => {
-            const target = typeof block.ppmObjetivo === 'object' ? (block.ppmObjetivo?.bpm || 0) : Number(block.ppmObjetivo);
-            const reached = typeof block.ppmAlcanzado === 'object' ? (block.ppmAlcanzado?.bpm || 0) : Number(block.ppmAlcanzado);
-
-            if (!target || !reached) return 0;
-            const ratio = reached / target;
-
-            // XP scales with performance
-            if (ratio >= 1.0) return 100;
-            if (ratio >= 0.8) return 80;
-            if (ratio >= 0.5) return 50;
-            return 25;
-        };
 
         xpData.forEach((session: any) => {
             if (session.registrosBloque) {
                 session.registrosBloque.forEach((block: any) => {
-                    // Log first block to see structure
-                    if (Math.random() < 0.01) console.log('[HabilidadesView] Block Sample:', block);
+                    const breakdown = calculateXPFromBlock(block);
 
-                    if (block.estado === 'completado' && block.ppmObjetivo && block.ppmAlcanzado) {
-                        const earned = calcBlockXP(block);
-                        // Distribute evenly and normalize? 
-                        // Wait, Range View should probably show ACCUMULATED volume or NORMALIZED score?
-                        // "Forma" = 0-100 Score. "Rango" usually implies Volume/Effort over time.
-                        // BUT, the Radar Chart is 0-100 fixed axis.
-                        // So "Rango" on Radar must also be 0-100 Score representing performance *during that range*.
-                        // We will Average the performance of blocks in range.
+                    acc.motricidad.earned += breakdown.motricidad.earned;
+                    acc.motricidad.max += breakdown.motricidad.max;
 
-                        // Simplified Strategy for now: Sum then Cap at 100 (Volume based) or keep consistent with Service?
-                        // Service logic: `xp.motricidad += earnedXP / 3`. This is volume.
-                        // Then `capXPForDisplay` caps at 100.
-                        // So yes, Sum then Cap.
+                    acc.articulacion.earned += breakdown.articulacion.earned;
+                    acc.articulacion.max += breakdown.articulacion.max;
 
-                        practiceResult.motricidad += earned / 3;
-                        practiceResult.articulacion += earned / 3;
-                        practiceResult.flexibilidad += earned / 3;
-                    }
+                    acc.flexibilidad.earned += breakdown.flexibilidad.earned;
+                    acc.flexibilidad.max += breakdown.flexibilidad.max;
                 });
             }
         });
 
-        // For Rango mode counters, we want ACTUAL VOLUME, so we do NOT cap here.
-        // The Radar normalization happens later or in the Chart data prep.
-        // practiceResult.motricidad = Math.min(practiceResult.motricidad, 100);
-        // practiceResult.articulacion = Math.min(practiceResult.articulacion, 100);
-        // practiceResult.flexibilidad = Math.min(practiceResult.flexibilidad, 100);
+        const calculateScore = (earned: number, max: number) => {
+            if (max === 0) return 0;
+            return (earned / max) * 100;
+        };
 
+        const practiceResult = {
+            motricidad: calculateScore(acc.motricidad.earned, acc.motricidad.max),
+            articulacion: calculateScore(acc.articulacion.earned, acc.articulacion.max),
+            flexibilidad: calculateScore(acc.flexibilidad.earned, acc.flexibilidad.max)
+        };
 
         // B. Evaluation XP - Use the centralized hook logic via radarStatsRaw
-        // This ensures the Radar logic (Forma vs Rango) and the Counters logic are consistent.
-        // We defer to the hook's calculation for Sonido/Cognicion.
         const maxSonido = radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Sonido')?.original || 0;
         const maxCognicion = radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Cognición')?.original || 0;
-
-        // C. Manual XP (Not easily available in range without fetching history, assuming 0 or minimal for range view unless we fetch history)
-        // For now, assume 0 manual XP impact for arbitrary ranges to be safe, or just stick to practice.
 
         return {
             ...practiceResult,

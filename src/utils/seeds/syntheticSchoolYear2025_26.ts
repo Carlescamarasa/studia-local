@@ -801,6 +801,46 @@ async function createSessions(
                 if (isOmitted) bloquesOmitidosCount++;
                 else bloquesCompletadosCount++;
 
+                // Generate PPM data for completed blocks (only for TC types which are technical exercises)
+                let ppmObjetivo = null;
+                let ppmAlcanzado = null;
+                let skills: string[] = [];
+
+                // Only technical exercises (TC, TM) get PPM targets
+                if (!isOmitted && ['TC', 'TM'].includes(bloque.tipo)) {
+                    // Generate a realistic PPM target (60-120 BPM)
+                    const targetBpm = rng.int(60, 120);
+                    ppmObjetivo = targetBpm;
+
+                    // Performance varies: 60% to 105% of target
+                    const performanceRatio = 0.6 + rng.next() * 0.45; // 0.6 - 1.05
+                    const achievedBpm = Math.round(targetBpm * performanceRatio);
+                    ppmAlcanzado = { bpm: achievedBpm, unidad: 'negra' };
+
+                    // Assign skills based on block type and random variation
+                    const skillOptions = [
+                        ['Motricidad'],
+                        ['Articulación (T)'],
+                        ['Articulación (TK)'],
+                        ['Articulación (TTK)'],
+                        ['Flexibilidad'],
+                        ['Motricidad', 'Articulación (T)'],
+                        ['Articulación (T)', 'Articulación (TK)'],
+                        ['Motricidad', 'Flexibilidad'],
+                        ['Motricidad', 'Articulación (T)', 'Registro']
+                    ];
+                    skills = rng.pick(skillOptions);
+                } else if (!isOmitted && bloque.tipo === 'FM') {
+                    // FM (musical fragments) can also have PPM but less often
+                    if (rng.chance(0.5)) {
+                        const targetBpm = rng.int(80, 140);
+                        ppmObjetivo = targetBpm;
+                        const performanceRatio = 0.7 + rng.next() * 0.35;
+                        ppmAlcanzado = { bpm: Math.round(targetBpm * performanceRatio), unidad: 'negra' };
+                        skills = ['Flexibilidad'];
+                    }
+                }
+
                 registroBloquesTemp.push({
                     id: generateId('reg_bloque', rng),
                     registro_sesion_id: sesion.id,
@@ -817,7 +857,10 @@ async function createSessions(
                     estado: estado,
                     inicios_pausa: isOmitted ? 0 : rng.int(0, 2),
                     inicio_iso: formatDateTime(slot.date),
-                    fin_iso: formatDateTime(slot.date)
+                    fin_iso: formatDateTime(slot.date),
+                    ppm_objetivo: ppmObjetivo,
+                    ppm_alcanzado: ppmAlcanzado,
+                    skills: skills
                 });
             });
 

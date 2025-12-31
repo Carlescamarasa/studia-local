@@ -510,6 +510,7 @@ function StudiaPageContent() {
             backpack_key: bloque.backpack_key || null,
             variation_key: bloque.variation_key || null,
             ppm_objetivo: bloque.targetPPMs?.[0] || null,
+            skills: bloque.skillTags || bloque.skills || [],
         };
 
         bloquesPendientesRef.current.push(dataBloque);
