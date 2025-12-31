@@ -10,7 +10,8 @@ const Checkbox = React.forwardRef<
 >(({ className, ...props }, ref) => {
     // Filter out 'indeterminate' prop to prevent React warning when passed to the underlying button element
     // @ts-expect-error
-    const { indeterminate, ...rest } = props;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { indeterminate: _indeterminate, ...rest } = props;
 
     return (
         <CheckboxPrimitive.Root

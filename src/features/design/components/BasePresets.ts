@@ -5,6 +5,8 @@
  * Solo pueden variar: neutrales, tipografía, radius, sombras, densidad.
  */
 
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { DesignTokens, DEFAULT_DESIGN } from './designConfig';
 
 /**

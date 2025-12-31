@@ -54,6 +54,7 @@ export const parseCSV = (text: string): Record<string, string>[] => {
 /**
  * Helper para generar CSV
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const generateCSV = (headers: string[], rows: Record<string, any>[]): string => {
     const escapeCSV = (value: any): string => {
         if (value === null || value === undefined) return '';

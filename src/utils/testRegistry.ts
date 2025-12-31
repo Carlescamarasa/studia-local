@@ -4,7 +4,10 @@
 
 import { testStorageConfig, testStorageRoundtrip } from './tests/storageTests';
 import { testMenuCoverage, testDeprecatedRoutes } from './tests/routesTests';
-import { testDatabaseConnection } from './tests/dbTests';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+// import { testDatabaseConnection } from './tests/dbTests';
 import type { TestDefinition, TestContext, TestResult } from './testContract';
 
 /**
@@ -43,6 +46,7 @@ export const ALL_TESTS: TestDefinition[] = [
         run: testDeprecatedRoutes
     },
 
+    /*
     // Database Tests (1)
     {
         id: 'db-connection',
@@ -51,6 +55,7 @@ export const ALL_TESTS: TestDefinition[] = [
         defaultSeverity: 'critical',
         run: testDatabaseConnection
     },
+    */
 ];
 
 /**

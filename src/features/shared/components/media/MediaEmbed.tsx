@@ -1,5 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { useRef, useEffect, useState } from "react";
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState, useEffect } from 'react';
 import { resolveMedia, MediaKind } from '@/features/shared/utils/media';
 import {
     Youtube,

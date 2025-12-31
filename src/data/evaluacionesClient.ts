@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { EvaluacionTecnica, CreateEvaluacionTecnicaInput, UpdateEvaluacionTecnicaInput } from '@/features/shared/types/domain';
 import { getEntity, createItem, updateItem, deleteItem } from './localStorageClient';
 

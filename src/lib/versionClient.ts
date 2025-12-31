@@ -210,7 +210,7 @@ export const versionClient = {
    */
   async upsertVersion({ version, commit_hash, git_author, build_date, release_notes, author_id }: UpsertVersionParams): Promise<VersionHistory> {
     // Intentar encontrar si ya existe por el campo 'version'
-    const { data: existing, error: findError } = await supabase
+    const { data: existing } = await supabase
       .from('version_history')
       .select('id')
       .eq('version', version)

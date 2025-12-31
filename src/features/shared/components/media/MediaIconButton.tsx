@@ -1,3 +1,5 @@
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 import { MediaIcon, getMediaLabel } from './MediaEmbed';
 import { resolveMedia, MediaKind } from '@/features/shared/utils/media';

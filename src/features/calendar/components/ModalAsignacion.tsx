@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import {
     Dialog,
@@ -10,7 +11,6 @@ import { Button } from "@/features/shared/components/ds/Button";
 import { Badge } from "@/features/shared/components/ds";
 import { getNombreVisible } from "@/features/shared/utils/helpers";
 import { formatearFechaEvento, obtenerLabelEstadoAsignacion } from "./utils";
-import { componentStyles } from "@/design/componentStyles";
 import { Target, User, Calendar, Edit, Trash2, PlayCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -77,11 +77,11 @@ export default function ModalAsignacion({
     };
 
     const handleEdit = () => {
-        navigate(`/asignacion-detalle?id=${asignacion.id}`);
+        navigate(`/ asignacion - detalle ? id = ${asignacion.id} `);
     };
 
     const handlePractice = () => {
-        navigate(`${createPageUrl('hoy')}?asignacionId=${asignacion.id}`);
+        navigate(`${createPageUrl('hoy')}?asignacionId = ${asignacion.id} `);
     };
 
     const handleDelete = () => {

@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Music, BookOpen, Layers } from "lucide-react";

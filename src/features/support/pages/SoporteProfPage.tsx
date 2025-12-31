@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
@@ -10,7 +11,6 @@ import {
   MessageSquare,
   Send,
   Loader2,
-  Search,
   CheckCircle,
   Clock,
   User,

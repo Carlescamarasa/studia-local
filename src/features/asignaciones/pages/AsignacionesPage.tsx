@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
@@ -379,7 +381,7 @@ function AsignacionesPageContent() {
     }
 
     return resultado;
-  }, [asignacionesFiltradas, estadoFilter, profesoresFilter, searchTerm, usuarios, semanaSeleccionadaISO]);
+  }, [asignacionesFiltradas, estadoFilter, profesoresFilter, searchTerm, semanaSeleccionadaISO]);
 
   const estadoLabels: Record<string, string> = {
     borrador: 'Borrador',

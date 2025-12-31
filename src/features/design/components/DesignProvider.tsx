@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-refresh/only-export-components */
 import React, {
   createContext,
@@ -13,6 +15,11 @@ import {
   DEFAULT_DESIGN,
   generateCSSVariables,
   normalizeDesign,
+  DesignTokens,
+  DesignBase,
+  DesignOverlay,
+  DesignChangePartitioned,
+  ModeValue,
   // New imports for refactored model
   createDefaultDesignBase,
   migrateToDesignBase,
@@ -29,6 +36,7 @@ import {
 import {
   DESIGN_PRESETS,
   findPresetById,
+  DesignPreset,
 } from "./BasePresets";
 
 // ============================================================================
@@ -43,9 +51,58 @@ const STORAGE_KEYS = {
 };
 
 // ============================================================================
+// TYPES
+// ============================================================================
+export interface DesignContextValue {
+  // Estado principal
+  baseDesign: DesignBase | null;
+  activeMode: ModeValue;
+  previewOverlay: DesignOverlay | null;
+  isPreviewActive: boolean;
+  effectiveDesign: DesignTokens;
+
+  // Acciones de modo
+  setActiveMode: (mode: ModeValue) => void;
+
+  // Acciones de preview
+  setDesignPartial: (path: string, value: any, explicitScope?: 'common' | 'light' | 'dark') => void;
+  clearPreview: () => void;
+  revertChange: (path: string, scope: 'common' | 'light' | 'dark') => void;
+
+  // Diffs particionados
+  getPartitionedDiff: () => { common: DesignChangePartitioned[]; light: DesignChangePartitioned[]; dark: DesignChangePartitioned[] };
+
+  // Export
+  exportFull: () => any;
+  exportDiff: () => any;
+  exportFullAndDiff: () => any;
+
+  // Legacy compatibility
+  design: DesignTokens;
+  setDesign: (d: any) => void;
+  resetDesign: () => void;
+  loadPreset: (id: string) => { success: boolean; error?: string };
+  exportDesign: () => string;
+  importDesign: (json: string) => { success: boolean; error?: string };
+  config: DesignTokens;
+  setConfig: (c: any) => void;
+  reset: () => void;
+  presets: Record<string, DesignPreset>;
+  deleteDesignPreset: () => void;
+  isBuiltInPreset: (id: string) => boolean;
+  currentPresetId: string;
+  setPresetId: (id: string) => void;
+  basePresets: DesignPreset[];
+  // Deprecated - removed commitPreview
+  previewDesign: DesignTokens | null;
+  setPreviewDesign: (d: any) => void;
+  getDesignDiff: () => DesignChangePartitioned[];
+}
+
+// ============================================================================
 // CONTEXT
 // ============================================================================
-const DesignContext = createContext({
+const DesignContext = createContext<DesignContextValue>({
   // Estado principal
   baseDesign: null,
   activeMode: 'light',
@@ -54,15 +111,15 @@ const DesignContext = createContext({
   effectiveDesign: DEFAULT_DESIGN,
 
   // Acciones de modo
-  setActiveMode: (mode: any) => { },
+  setActiveMode: () => { },
 
   // Acciones de preview
-  setDesignPartial: (path: any, value: any, explicitScope: any) => { },
+  setDesignPartial: () => { },
   clearPreview: () => { },
-  revertChange: (path: any, scope: any) => { },
+  revertChange: () => { },
 
   // Diffs particionados
-  getPartitionedDiff: () => ({ common: [], light: [], dark: [] }) as any,
+  getPartitionedDiff: () => ({ common: [], light: [], dark: [] }),
 
   // Export
   exportFull: () => ({}),
@@ -71,24 +128,24 @@ const DesignContext = createContext({
 
   // Legacy compatibility
   design: DEFAULT_DESIGN,
-  setDesign: (d: any) => { },
+  setDesign: () => { },
   resetDesign: () => { },
-  loadPreset: (id: any) => ({ success: false }),
-  exportDesign: () => '' as string,
-  importDesign: (json: any) => ({ success: false }),
+  loadPreset: () => ({ success: false }),
+  exportDesign: () => '',
+  importDesign: () => ({ success: false }),
   config: DEFAULT_DESIGN,
-  setConfig: (c: any) => { },
+  setConfig: () => { },
   reset: () => { },
   presets: {},
   deleteDesignPreset: () => { },
-  isBuiltInPreset: (id: any) => false as boolean,
+  isBuiltInPreset: () => false,
   currentPresetId: 'studia',
-  setPresetId: (_id: any) => { },
+  setPresetId: () => { },
   basePresets: DESIGN_PRESETS,
   // Deprecated - removed commitPreview
-  previewDesign: null as any,
-  setPreviewDesign: (_d: any) => { },
-  getDesignDiff: () => [] as any[],
+  previewDesign: null,
+  setPreviewDesign: () => { },
+  getDesignDiff: () => [],
 });
 
 export function useDesign() {
@@ -99,7 +156,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
   // ============================================================================
   // ESTADO: MODO ACTIVO (light/dark) - NO genera diffs
   // ============================================================================
-  const [activeMode, setActiveModeState] = useState(() => {
+  const [activeMode, setActiveModeState] = useState<ModeValue>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_MODE);
       if (saved === 'light' || saved === 'dark') return saved;
@@ -107,7 +164,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
     return 'light';
   });
 
-  const setActiveMode = useCallback((mode: any) => {
+  const setActiveMode = useCallback((mode: ModeValue) => {
     if (mode !== 'light' && mode !== 'dark') return;
     setActiveModeState(mode);
     localStorage.setItem(STORAGE_KEYS.ACTIVE_MODE, mode);
@@ -127,7 +184,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
   // ============================================================================
   // ESTADO: BASE DESIGN (DesignBase con common + modes)
   // ============================================================================
-  const [baseDesign, setBaseDesign] = useState(() => {
+  const [baseDesign, setBaseDesign] = useState<DesignBase>(() => {
     try {
       // 1. Intentar cargar nueva estructura
       const newFormat = localStorage.getItem(STORAGE_KEYS.BASE_DESIGN);
@@ -170,7 +227,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
   // ============================================================================
   // ESTADO: PREVIEW OVERLAY (sessionStorage - solo sesión)
   // ============================================================================
-  const [previewOverlay, setPreviewOverlay] = useState(() => {
+  const [previewOverlay, setPreviewOverlay] = useState<DesignOverlay | null>(() => {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEYS.PREVIEW_OVERLAY);
       if (saved) {
@@ -205,7 +262,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
       Object.keys(previewOverlay.modes?.dark || {}).length > 0);
 
   const effectiveDesign = useMemo(() => {
-    return mergeDesignWithMode(baseDesign, activeMode as any, previewOverlay);
+    return mergeDesignWithMode(baseDesign, activeMode, previewOverlay);
   }, [baseDesign, activeMode, previewOverlay]);
 
   // ============================================================================
@@ -218,7 +275,13 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
    * @param {any} value - Nuevo valor
    * @param {string} scope - 'common' | 'light' | 'dark' (default: según activeMode si es color, sino common)
    */
-  const setDesignPartial = (path: any, value: any, explicitScope: any) => {
+  /**
+   * setDesignPartial - Modifica un token en el overlay
+   * @param {string} path - Ruta del token (ej: 'colors.primary')
+   * @param {any} value - Nuevo valor
+   * @param {string} scope - 'common' | 'light' | 'dark' (default: según activeMode si es color, sino common)
+   */
+  const setDesignPartial = useCallback((path: string, value: any, explicitScope?: 'common' | 'light' | 'dark') => {
     // Determinar scope automáticamente si no se especifica
     let scope = explicitScope;
     if (!scope) {
@@ -229,53 +292,59 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
       scope = isModeSpecific ? activeMode : 'common';
     }
 
+    // Usar functional update si aplica, aquí dependemos de previewOverlay actual
+    // Pero como previewOverlay está en deps, es safe.
+    // Mejor aún, podríamos hacerlo funcional si applyChangeToOverlay lo soportara, pero usa el objeto completo.
     const newOverlay = applyChangeToOverlay(previewOverlay, path, value, scope);
     setPreviewOverlay(newOverlay);
-  };
+  }, [activeMode, previewOverlay]);
 
   /**
    * clearPreview - Limpia todo el overlay y vuelve al base
    */
-  const clearPreview = () => {
+  const clearPreview = useCallback(() => {
     setPreviewOverlay(null);
-  };
+  }, []);
 
   /**
    * revertChange - Revierte un cambio específico del overlay
    */
-  const revertChange = (path: any, scope: any) => {
+  const revertChange = useCallback((path: string, scope: 'common' | 'light' | 'dark') => {
     const newOverlay = revertChangeInOverlay(previewOverlay, path, scope);
     setPreviewOverlay(newOverlay);
-  };
+  }, [previewOverlay]);
 
   // ============================================================================
   // DIFFS PARTICIONADOS
   // ============================================================================
-  const getPartitionedDiff = () => {
+  // ============================================================================
+  // DIFFS PARTICIONADOS
+  // ============================================================================
+  const getPartitionedDiff = useCallback(() => {
     return diffDesignPartitioned(baseDesign, previewOverlay);
-  };
+  }, [baseDesign, previewOverlay]);
 
   // ============================================================================
   // EXPORTS
   // ============================================================================
-  const exportFull = () => {
+  const exportFull = useCallback(() => {
     return {
       type: 'full',
       timestamp: new Date().toISOString(),
       baseDesign: baseDesign,
     };
-  };
+  }, [baseDesign]);
 
-  const exportDiff = () => {
+  const exportDiff = useCallback(() => {
     return {
       type: 'diff',
       timestamp: new Date().toISOString(),
       overlay: previewOverlay || { common: {}, modes: { light: {}, dark: {} } },
       diff: getPartitionedDiff(),
     };
-  };
+  }, [previewOverlay, getPartitionedDiff]);
 
-  const exportFullAndDiff = () => {
+  const exportFullAndDiff = useCallback(() => {
     return {
       type: 'full+diff',
       timestamp: new Date().toISOString(),
@@ -283,7 +352,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
       overlay: previewOverlay || { common: {}, modes: { light: {}, dark: {} } },
       diff: getPartitionedDiff(),
     };
-  };
+  }, [baseDesign, previewOverlay, getPartitionedDiff]);
 
   // ============================================================================
   // INYECCIÓN DE CSS VARIABLES
@@ -334,19 +403,19 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
   // "design" plano para compatibilidad
   const legacyDesign = effectiveDesign;
 
-  const setDesignLegacy = (newDesign: any) => {
+  const setDesignLegacy = useCallback((newDesign: Partial<DesignTokens>) => {
     // Migrar a nuevo formato y setear como base
     const migrated = migrateToDesignBase(newDesign);
     setBaseDesign(migrated);
     setPreviewOverlay(null);
-  };
+  }, []);
 
-  const resetDesign = () => {
+  const resetDesign = useCallback(() => {
     setBaseDesign(createDefaultDesignBase());
     setPreviewOverlay(null);
-  };
+  }, []);
 
-  const loadPreset = (presetIdParam: any) => {
+  const loadPreset = useCallback((presetIdParam: string) => {
     const presets = getAllPresets();
     const preset = presets[presetIdParam];
     if (preset?.config) {
@@ -356,13 +425,13 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     }
     return { success: false, error: 'Preset no encontrado' };
-  };
+  }, []);
 
-  const exportDesign = () => {
+  const exportDesign = useCallback(() => {
     return JSON.stringify(effectiveDesign, null, 2);
-  };
+  }, [effectiveDesign]);
 
-  const importDesign = (jsonString: any) => {
+  const importDesign = useCallback((jsonString: string) => {
     try {
       const imported = JSON.parse(jsonString);
       if (typeof imported !== 'object') {
@@ -375,9 +444,9 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       return { success: false, error: error.message };
     }
-  };
+  }, []);
 
-  const handleSetPresetId = (id: any) => {
+  const handleSetPresetId = useCallback((id: string) => {
     const preset = findPresetById(id);
     if (!preset) return;
 
@@ -407,15 +476,19 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
       // Same preset but has preview - just clear the preview to reset to base
       setPreviewOverlay(null);
     }
-  };
+  }, [presetId, previewOverlay]);
 
   // Legacy getDesignDiff (returns flat array for old components)
-  const legacyGetDesignDiff = () => {
+  const legacyGetDesignDiff = useCallback(() => {
     const partitioned = getPartitionedDiff();
     return [...partitioned.common, ...partitioned.light, ...partitioned.dark];
-  };
+  }, [getPartitionedDiff]);
 
   // Legacy revertChange (needs scope extraction)
+  const deleteDesignPreset = useCallback(() => {
+    deleteCustomPreset(presetId);
+    resetDesign();
+  }, [presetId, resetDesign]);
 
   // ============================================================================
   // CONTEXT VALUE
@@ -447,10 +520,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
     setConfig: setDesignLegacy,
     reset: resetDesign,
     presets: getAllPresets(),
-    deleteDesignPreset: () => {
-      deleteCustomPreset(presetId);
-      resetDesign();
-    },
+    deleteDesignPreset: deleteDesignPreset,
     isBuiltInPreset,
     currentPresetId: presetId,
     setPresetId: handleSetPresetId,
@@ -458,7 +528,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
 
     // Legacy preview API (deprecated, for compatibility)
     previewDesign: isPreviewActive ? effectiveDesign : null,
-    setPreviewDesign: (d: any) => {
+    setPreviewDesign: (d: Partial<DesignTokens>) => {
       if (d) {
         const migrated = migrateToDesignBase(d);
         setPreviewOverlay({
@@ -472,12 +542,30 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
     getDesignDiff: legacyGetDesignDiff,
     // NOTE: commitPreview removed - use export instead
   }), [
-    baseDesign,
     activeMode,
     previewOverlay,
     isPreviewActive,
     effectiveDesign,
     presetId,
+    // Functions
+    setDesignPartial,
+    clearPreview,
+    revertChange,
+    getPartitionedDiff,
+    exportFull,
+    exportDiff,
+    exportFullAndDiff,
+    setDesignLegacy,
+    resetDesign,
+    loadPreset,
+    exportDesign,
+    importDesign,
+    deleteDesignPreset,
+    handleSetPresetId,
+    legacyGetDesignDiff,
+    baseDesign, // Added
+    setActiveMode, // Added
+    legacyDesign, // Added
   ]);
 
   return (

@@ -67,7 +67,7 @@ export default function MultiSelect({ label, items, value = [], onChange, icon: 
                     <CommandItem
                       key={item.value}
                       value={itemValue}
-                      onSelect={(selectedValue) => {
+                      onSelect={(_) => {
                         // selectedValue viene como string de cmdk, pero necesitamos el valor original
                         toggleItem(item.value);
                       }}

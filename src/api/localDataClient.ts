@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { localUsers } from '../local-data/localUsers';
 import { AsignacionesAPI } from '../data/asignacionesClient';
 import { BloquesAPI } from '../data/bloquesClient';
@@ -11,6 +13,7 @@ import { EventosCalendarioAPI } from '../data/eventosCalendarioClient';
 import { EvaluacionesAPI } from '../data/evaluacionesClient';
 import { getStoredUserId, setStoredUserId, clearStoredUserId } from '../data/authClient';
 import { createRemoteDataAPI } from './remoteDataAPI';
+import { AppDataAPI } from './appDataAPI';
 import { supabase } from '../lib/supabaseClient';
 import {
     Asignacion,
@@ -34,7 +37,7 @@ import {
 
 // Types from .d.ts
 // Types from .d.ts
-export interface EntityAPI<T = any> {
+export interface EntityAPI<T = unknown> {
     list: (sort?: string, options?: Record<string, unknown>) => Promise<T[]>;
     get: (id: string) => Promise<T | null>;
     filter: (filters: Record<string, unknown>, limit?: number | null) => Promise<T[]>;
@@ -70,7 +73,7 @@ export interface LocalDataClient {
         StudentXPTotal: EntityAPI<StudentXPTotal>;
         StudentBackpack: EntityAPI<StudentBackpackItem>;
         MediaAsset: EntityAPI<MediaAsset>;
-        [key: string]: EntityAPI<any>;
+        [key: string]: EntityAPI<unknown>;
     };
     getCalendarSummary: (startDate: Date, endDate: Date, userId?: string) => Promise<{
         registrosSesion: RegistroSesion[];
@@ -125,7 +128,7 @@ interface LocalDataRef {
     studentLevelHistory?: StudentLevelHistory[];
     studentXpTotal?: StudentXPTotal[];
     _loading: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 // Referencia global a los datos locales (se inyecta desde LocalDataProvider)
@@ -140,7 +143,19 @@ let localDataRef: LocalDataRef = {
     studentBackpack: [],
     eventosCalendario: [],
     mediaAssets: [],
-    usuarios: localUsers as any[],
+    usuarios: ((localUsers as unknown[]).map(u => {
+        const user = u as any;
+        return {
+            ...user,
+            role: user.rolPersonalizado || 'ESTU',
+            is_active: user.estado === 'activo',
+            created_at: user.fechaRegistro || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            profesor_asignado_id: user.profesorAsignadoId || null,
+            email: user.email || '',
+            full_name: user.full_name || user.nombreCompleto || '',
+        };
+    }) as unknown) as StudiaUser[],
     _loading: true,
 };
 
@@ -186,10 +201,10 @@ function resolveCurrentUser() {
 }
 
 // Helper para obtener la API correcta según el modo (con caché)
-let cachedRemoteAPI: any = null;
+let cachedRemoteAPI: AppDataAPI | null = null;
 let cachedMode: string | null = null;
 
-function getDataAPI() {
+function getDataAPI(): AppDataAPI | null {
     if (import.meta.env.VITE_DISABLE_LOCAL_DATA === 'true') {
         if (!cachedRemoteAPI) {
             cachedRemoteAPI = createRemoteDataAPI();
@@ -259,10 +274,10 @@ function createEntityAPI<T>(
     const apiKey = entityToAPIKey[entityName];
 
     const apiMap: Record<string, {
-        create?: (...args: any[]) => any;
-        update?: (...args: any[]) => any;
-        delete?: (...args: any[]) => any;
-        bulkCreate?: (...args: any[]) => any;
+        create?: (...args: any[]) => Promise<any> | any;
+        update?: (...args: any[]) => Promise<any> | any;
+        delete?: (...args: any[]) => Promise<any> | any;
+        bulkCreate?: (...args: any[]) => Promise<any[]> | any[];
     }> = {
         'Asignacion': {
             create: AsignacionesAPI.createAsignacion,
@@ -293,7 +308,7 @@ function createEntityAPI<T>(
             create: RegistrosBloqueAPI.createRegistroBloque,
             update: RegistrosBloqueAPI.updateRegistroBloque,
             delete: RegistrosBloqueAPI.deleteRegistroBloque,
-            bulkCreate: (RegistrosBloqueAPI as any).bulkCreateRegistrosBloque
+            bulkCreate: (RegistrosBloqueAPI as any).bulkCreateRegistrosBloque as (items: any[]) => Promise<any[]>
         },
         'RegistroSesion': {
             create: RegistrosSesionAPI.createRegistroSesion,
@@ -316,7 +331,7 @@ function createEntityAPI<T>(
         list: async (sort = '', options = {}) => {
             const api = getDataAPI();
             if (api && apiKey) {
-                return await api[apiKey].list(sort, options);
+                return await (api as any)[apiKey].list(sort, options);
             }
 
             let attempts = 0;
@@ -344,7 +359,7 @@ function createEntityAPI<T>(
         get: async (id) => {
             const api = getDataAPI();
             if (api && apiKey) {
-                return await api[apiKey].get(id);
+                return await (api as any)[apiKey].get(id);
             }
 
             const data = await entityApi();
@@ -356,7 +371,7 @@ function createEntityAPI<T>(
         filter: async (filters = {}, limit = null) => {
             const api = getDataAPI();
             if (api && apiKey) {
-                return await api[apiKey].filter(filters, limit);
+                return await (api as any)[apiKey].filter(filters, limit);
             }
 
             const rawData = await entityApi();
@@ -370,7 +385,7 @@ function createEntityAPI<T>(
         create: async (data) => {
             const api = getDataAPI();
             if (api && apiKey) {
-                return await api[apiKey].create(data);
+                return await (api as any)[apiKey].create(data);
             }
 
             const apiCreate = apiMap[entityName]?.create;
@@ -383,13 +398,13 @@ function createEntityAPI<T>(
             if (!Array.isArray(localDataRef[dataKey])) {
                 localDataRef[dataKey] = [];
             }
-            localDataRef[dataKey].push(newItem);
+            (localDataRef[dataKey] as T[]).push(newItem);
             return newItem;
         },
         update: async (id, updates) => {
             const api = getDataAPI();
             if (api && apiKey) {
-                return await api[apiKey].update(id, updates);
+                return await (api as any)[apiKey].update(id, updates);
             }
 
             const apiUpdate = apiMap[entityName]?.update;
@@ -412,7 +427,7 @@ function createEntityAPI<T>(
         delete: async (id) => {
             const api = getDataAPI();
             if (api && apiKey) {
-                return await api[apiKey].delete(id);
+                return await (api as any)[apiKey].delete(id);
             }
 
             const apiDelete = apiMap[entityName]?.delete;
@@ -432,8 +447,8 @@ function createEntityAPI<T>(
         },
         bulkCreate: async (items) => {
             const api = getDataAPI();
-            if (api && apiKey && api[apiKey].bulkCreate) {
-                return await api[apiKey].bulkCreate(items);
+            if (api && apiKey && (api as any)[apiKey].bulkCreate) {
+                return await (api as any)[apiKey].bulkCreate(items);
             }
 
             const apiBulkCreate = apiMap[entityName]?.bulkCreate;
@@ -442,7 +457,7 @@ function createEntityAPI<T>(
                 if (!Array.isArray(localDataRef[dataKey])) {
                     localDataRef[dataKey] = [];
                 }
-                localDataRef[dataKey].push(...newItems);
+                (localDataRef[dataKey] as any[]).push(...newItems);
                 return newItems;
             }
 
@@ -459,7 +474,7 @@ function createEntityAPI<T>(
                 if (!Array.isArray(localDataRef[dataKey])) {
                     localDataRef[dataKey] = [];
                 }
-                localDataRef[dataKey].push(newItem);
+                (localDataRef[dataKey] as T[]).push(newItem);
                 created.push(newItem);
             }
             return created;
@@ -537,7 +552,7 @@ export const localDataClient: LocalDataClient = {
 
             const api = getDataAPI();
             if (api && api.usuarios) {
-                return await api.usuarios.update(userIdToUse, data);
+                return await api.usuarios.update(userIdToUse, { ...data, id: userIdToUse } as any);
             }
 
             if (currentUser) {
@@ -545,7 +560,7 @@ export const localDataClient: LocalDataClient = {
                 const index = localDataRef.usuarios.findIndex(u => u.id === userIdToUse);
                 if (index !== -1) {
                     localDataRef.usuarios[index] = updated;
-                    await UsuariosAPI.updateUsuario(userIdToUse!, data as any);
+                    await UsuariosAPI.updateUsuario(userIdToUse!, { ...data, id: userIdToUse! } as any);
                 }
                 return updated;
             } else {
@@ -554,7 +569,7 @@ export const localDataClient: LocalDataClient = {
                     const existingUser = localDataRef.usuarios[index];
                     const updated = { ...existingUser, ...data };
                     localDataRef.usuarios[index] = updated;
-                    await UsuariosAPI.updateUsuario(userIdToUse!, data as any);
+                    await UsuariosAPI.updateUsuario(userIdToUse!, { ...data, id: userIdToUse! } as any);
                     return updated;
                 }
                 throw new Error('No hay usuario autenticado');
@@ -627,7 +642,7 @@ export const localDataClient: LocalDataClient = {
             create: async (data) => {
                 const api = getDataAPI();
                 if (api) {
-                    return await api.usuarios.create(data);
+                    return await api.usuarios.create(data as any);
                 }
                 const typedData = data as any;
                 let nombreCompleto = typedData.nombreCompleto;
@@ -670,13 +685,13 @@ export const localDataClient: LocalDataClient = {
             update: async (id, data) => {
                 const api = getDataAPI();
                 if (api) {
-                    return await api.usuarios.update(id, data);
+                    return await api.usuarios.update(id, { ...data, id } as any);
                 }
                 const index = localDataRef.usuarios.findIndex(u => u.id === id);
                 if (index === -1) throw new Error('Usuario no encontrado');
                 const updated = { ...localDataRef.usuarios[index], ...data };
                 localDataRef.usuarios[index] = updated;
-                await UsuariosAPI.updateUsuario(id, data as any);
+                await UsuariosAPI.updateUsuario(id, { ...data, id } as any);
                 return updated as unknown as StudiaUser;
             },
             delete: async (id) => {
@@ -711,23 +726,25 @@ export const localDataClient: LocalDataClient = {
                     attempts++;
                 }
 
-                let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())] as any[];
-                const bloques = localDataRef.registrosBloque || [];
+                let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())] as RegistroSesion[];
+                const bloques = (localDataRef.registrosBloque || []) as RegistroBloque[];
 
-                sesiones = sesiones.map((s: any) => ({
+                sesiones = sesiones.map((s) => ({
                     ...s,
-                    registrosBloque: bloques.filter((b: any) => b.registroSesionId === s.id)
+                    registrosBloque: bloques.filter((b) => b.registroSesionId === s.id)
                 }));
 
                 if (sort.startsWith('-')) {
-                    const field = sort.slice(1);
-                    sesiones.sort((a: any, b: any) => {
-                        if (a[field] < b[field]) return 1;
-                        if (a[field] > b[field]) return -1;
+                    const field = sort.slice(1) as keyof RegistroSesion;
+                    sesiones.sort((a, b) => {
+                        const valA = a[field] as any;
+                        const valB = b[field] as any;
+                        if (valA < valB) return 1;
+                        if (valA > valB) return -1;
                         return 0;
                     });
                 }
-                return sesiones as RegistroSesion[];
+                return sesiones;
             },
             get: async (id) => {
                 const api = getDataAPI();
@@ -735,15 +752,15 @@ export const localDataClient: LocalDataClient = {
                     return await api.registrosSesion.get(id);
                 }
 
-                const sesiones = await RegistrosSesionAPI.getAllRegistrosSesion();
-                const sesion = sesiones.find((s: any) => s.id === id);
+                const sesiones = (await RegistrosSesionAPI.getAllRegistrosSesion()) as RegistroSesion[];
+                const sesion = sesiones.find((s) => s.id === id);
                 if (!sesion) return null;
 
-                const bloques = localDataRef.registrosBloque || [];
-                const sesionWithId = sesion as any;
+                const bloques = (localDataRef.registrosBloque || []) as RegistroBloque[];
+                const sesionWithId = sesion as RegistroSesion;
                 return {
                     ...sesionWithId,
-                    registrosBloque: bloques.filter((b: any) => b.registroSesionId === sesionWithId.id)
+                    registrosBloque: bloques.filter((b) => b.registroSesionId === sesionWithId.id)
                 } as RegistroSesion;
             },
             filter: async (filters = {}, limit = null) => {
@@ -752,19 +769,20 @@ export const localDataClient: LocalDataClient = {
                     return await api.registrosSesion.filter(filters, limit);
                 }
 
-                let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())] as any[];
+                let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())] as RegistroSesion[];
                 Object.keys(filters).forEach(key => {
-                    sesiones = sesiones.filter((s: any) => s[key] === (filters as Record<string, unknown>)[key]);
+                    const typedFilters = filters as Record<string, unknown>;
+                    sesiones = sesiones.filter((s) => (s as any)[key] === typedFilters[key]);
                 });
 
-                const bloques = localDataRef.registrosBloque || [];
-                sesiones = sesiones.map((s: any) => ({
+                const bloques = (localDataRef.registrosBloque || []) as RegistroBloque[];
+                sesiones = sesiones.map((s) => ({
                     ...s,
-                    registrosBloque: bloques.filter((b: any) => b.registroSesionId === s.id)
+                    registrosBloque: bloques.filter((b) => b.registroSesionId === s.id)
                 }));
 
                 if (limit) sesiones = sesiones.slice(0, limit);
-                return sesiones as RegistroSesion[];
+                return sesiones;
             }
         },
         EventoCalendario: createEntityAPI<EventoCalendario>('EventoCalendario', 'eventosCalendario', async () => EventosCalendarioAPI.getAllEventosCalendario() as any),

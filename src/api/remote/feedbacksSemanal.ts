@@ -1,3 +1,5 @@
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { supabase, withAuthErrorHandling } from './client';
 import { snakeToCamel, camelToSnake } from './utils';
 import type { FeedbackSemanal } from '@/features/shared/types/domain';
@@ -75,12 +77,10 @@ export async function fetchFeedbackSemanal(id: string): Promise<FeedbackSemanal 
 /**
  * Filtra feedbacks
  */
-export async function fetchFeedbacksSemanalByFilter(filters: Record<string, any>, limit?: number | null): Promise<FeedbackSemanal[]> {
+export async function fetchFeedbacksSemanalByFilter(filters: Record<string, unknown>, limit?: number | null): Promise<FeedbackSemanal[]> {
     let query = supabase.from('feedbacks_semanal').select('*');
 
     for (const [key, value] of Object.entries(filters)) {
-        // El caller (api.ts) debería pasar ya las keys en snake_case si lo hace bien, 
-        // o nosotros lo hacemos aquí. En api.ts para 'bloques' lo hace inline.
         // Haremos algo genérico: si el filtro llega hasta aquí, asumimos que keys corresponden a columnas.
         query = query.eq(key, value);
     }
@@ -114,7 +114,9 @@ export async function createFeedbackSemanal(payload: Partial<FeedbackSemanal>): 
         throw error;
     }
 
-    return snakeToCamel<FeedbackSemanal>(data as unknown as DbFeedbackSemanal);
+    if (!data) throw new Error('Failed to create feedback');
+
+    return snakeToCamel<FeedbackSemanal>(data as DbFeedbackSemanal);
 }
 
 /**
@@ -134,13 +136,15 @@ export async function updateFeedbackSemanal(id: string, payload: Partial<Feedbac
         throw error;
     }
 
-    return snakeToCamel<FeedbackSemanal>(data as unknown as DbFeedbackSemanal);
+    if (!data) throw new Error('Failed to update feedback');
+
+    return snakeToCamel<FeedbackSemanal>(data as DbFeedbackSemanal);
 }
 
 /**
  * Elimina un feedback
  */
-export async function deleteFeedbackSemanal(id: string): Promise<void> {
+export async function deleteFeedbackSemanal(id: string): Promise<{ success: boolean }> {
     const { error } = await withAuthErrorHandling(
         supabase
             .from('feedbacks_semanal')
@@ -151,4 +155,5 @@ export async function deleteFeedbackSemanal(id: string): Promise<void> {
     if (error) {
         throw error;
     }
+    return { success: true };
 }

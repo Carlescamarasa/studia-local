@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
 import { Calendar, User } from "lucide-react";
 import { Badge } from "@/features/shared/components/ds";

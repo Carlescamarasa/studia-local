@@ -1,4 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useHabilidadesStats, useHabilidadesStatsMultiple } from '../hooks/useHabilidadesStats';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -172,7 +174,7 @@ export default function HabilidadesView({
             sonido: unifiedSonido,
             cognicion: unifiedCognicion
         };
-    }, [recentPracticeXP, recentManualXP, radarStatsRaw]);
+    }, [recentPracticeXP, recentManualXP, radarStatsRaw, isMultiple]);
 
 
 
@@ -384,7 +386,10 @@ export default function HabilidadesView({
     // RADAR: Changes based on Forma/Rango filter (uses radarData which is 0-100 normalized)
     const total = lifetimeTotalObj;
     // practiceXPSingle/Multiple are already RecentXPResult objects { motricidad, articulacion, flexibilidad }
-    const practice = (isMultiple ? practiceXPMultiple : practiceXPSingle) || { motricidad: 0, articulacion: 0, flexibilidad: 0 };
+    const practice = useMemo(() =>
+        (isMultiple ? practiceXPMultiple : practiceXPSingle) || { motricidad: 0, articulacion: 0, flexibilidad: 0 },
+        [isMultiple, practiceXPMultiple, practiceXPSingle]
+    );
 
     // We pass `radarData` (normalized 0-100) to the Radar component
     // But we need to ensure the existing `practice` and `total` usages are aligned.
@@ -418,7 +423,7 @@ export default function HabilidadesView({
     // HELPER FUNCTIONS (same as Resumen)
     // =========================================================================
 
-    const getRequiredXP = (skill: 'motricidad' | 'articulacion' | 'flexibilidad') => {
+    const getRequiredXP = useCallback((skill: 'motricidad' | 'articulacion' | 'flexibilidad') => {
         if (isMultiple) {
             return aggregatedGoals[skill] || 100;
         }
@@ -429,9 +434,9 @@ export default function HabilidadesView({
             case 'flexibilidad': return currentLevelConfig.minXpFlex || 100;
             default: return 100;
         }
-    };
+    }, [isMultiple, aggregatedGoals, currentLevelConfig]);
 
-    const getXPValues = (skill: 'motricidad' | 'articulacion' | 'flexibilidad') => {
+    const getXPValues = useCallback((skill: 'motricidad' | 'articulacion' | 'flexibilidad') => {
         // [FIX] Use `radarData` (Forma/Rango filtered) if we are in Habilidades tab (hideViewModeToggle=false)
         // If we are in Resumen tab (hideViewModeToggle=true), keep using Lifetime `total` and `practice`.
         const sourceData = hideViewModeToggle ? total : radarData;
@@ -449,15 +454,15 @@ export default function HabilidadesView({
 
         const maxXP = getRequiredXP(skill);
         return { practiceVal, evaluationVal, totalVal, maxXP };
-    };
+    }, [hideViewModeToggle, total, radarData, practice, getRequiredXP]);
 
-    const getSonidoValue = () => {
+    const getSonidoValue = useCallback(() => {
         return radarStatsRaw?.combinedData?.find((d: { subject: string }) => d.subject === 'Sonido')?.original ?? 0;
-    };
+    }, [radarStatsRaw]);
 
-    const getCognicionValue = () => {
+    const getCognicionValue = useCallback(() => {
         return radarStatsRaw?.combinedData?.find((d: { subject: string }) => d.subject === 'Cognición')?.original ?? 0;
-    };
+    }, [radarStatsRaw]);
 
     // =========================================================================
     // RADAR DATA (same logic as Resumen)
@@ -527,7 +532,7 @@ export default function HabilidadesView({
                 fullMark: 10
             },
         ];
-    }, [total, practice, aggregatedGoals, currentLevelConfig, isMultiple, radarStatsRaw]);
+    }, [getXPValues, getSonidoValue, getCognicionValue]);
 
     // Displayed qualitative values (respect toggle)
     const getDisplayedSonido = () => sourceFilter === 'experiencia' ? 0 : getSonidoValue();

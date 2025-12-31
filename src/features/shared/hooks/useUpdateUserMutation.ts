@@ -4,6 +4,7 @@
  * Extracts common mutation logic from PerfilPage and PerfilModal.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";

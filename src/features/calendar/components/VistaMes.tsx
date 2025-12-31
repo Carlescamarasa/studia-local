@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useMemo, useState, useEffect } from "react";
 import { Card, CardContent } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ds/Button";

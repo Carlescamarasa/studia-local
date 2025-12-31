@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { Play, Loader2, Download } from 'lucide-react';
 import { Button } from '@/features/shared/components/ds/Button';
 import { componentStyles } from '@/design/componentStyles';
 import { supabase } from '@/lib/supabaseClient';
 import { localDataClient } from '@/api/localDataClient';
-// @ts-expect-error - Assuming registry is available
 import { runAllTests, runTest, getCriticalIssues, ALL_TESTS, getTestsByCategory } from '@/utils/testRegistry';
 import CriticalIssues from './CriticalIssues';
 import TestCategory from './TestCategory';

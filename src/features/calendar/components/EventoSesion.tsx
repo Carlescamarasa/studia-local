@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo } from "react";
 import { BookOpen, Clock, Star } from "lucide-react";
 import { getNombreVisible } from "@/features/shared/utils/helpers";

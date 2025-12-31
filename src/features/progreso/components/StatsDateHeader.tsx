@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import DateRangePicker from "@/features/shared/components/ui/DateRangePicker";
 import { cn } from "@/lib/utils";

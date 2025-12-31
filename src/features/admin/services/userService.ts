@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabaseClient';
 import { setProfileActive } from "@/api/remoteDataAPI";
-import { inviteUserByEmail, sendPasswordResetAdmin } from "@/api/userAdmin";
+import { sendPasswordResetAdmin } from "@/api/userAdmin";
 
 export type UserRole = 'ADMIN' | 'PROF' | 'ESTU';
 

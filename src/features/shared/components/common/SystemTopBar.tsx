@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Bug, Search, X } from 'lucide-react';
-import { Button } from '@/features/shared/components/ui/button';
+
 
 interface SystemTopBarProps {
     isImpersonating: boolean;
@@ -16,7 +16,7 @@ export default function SystemTopBar({
     effectiveUser,
     effectiveRole,
     stopImpersonation,
-    isMobile
+    isMobile: _isMobile
 }: SystemTopBarProps) {
     const location = useLocation();
     const isStudiaMode = location.pathname.startsWith('/studia');

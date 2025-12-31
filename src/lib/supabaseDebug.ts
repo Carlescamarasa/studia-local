@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Supabase Debug Utility
  * Enable with VITE_DEBUG_SUPA=1

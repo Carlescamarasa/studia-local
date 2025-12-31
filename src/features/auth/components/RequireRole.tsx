@@ -1,5 +1,5 @@
 import React from "react";
-import { useAuth } from "@/auth/AuthProvider";
+
 import { Card, CardContent } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ui/button";
 import { Shield, ArrowLeft } from "lucide-react";

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 /**
  * Debug utility to detect horizontal overflow culprits
  * Usage: import and call debugHorizontalOverflow() in your component

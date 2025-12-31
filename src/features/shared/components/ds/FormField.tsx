@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { componentStyles } from "@/design/componentStyles";
@@ -48,7 +50,7 @@ export function FormField({
 
   // Generar ID único si no existe
   const fieldId = useMemo(() => {
-    return (children as React.ReactElement<any>)?.props?.id || `field-${Math.random().toString(36).substr(2, 9)}`;
+    return (children as React.ReactElement<any>)?.props?.id || `field - ${Math.random().toString(36).substr(2, 9)} `;
   }, [children]);
 
   // Función recursiva para encontrar y mejorar el Input
@@ -83,7 +85,7 @@ export function FormField({
         id: fieldId,
         className: inputClassName,
         "aria-invalid": error ? "true" : undefined,
-        "aria-describedby": error || success || helpMessage ? `${fieldId}-message` : undefined,
+        "aria-describedby": error || success || helpMessage ? `${fieldId} -message` : undefined,
       });
     }
 
@@ -115,7 +117,7 @@ export function FormField({
       {enhancedChildren}
       {(error || success || helpMessage) && (
         <div
-          id={`${fieldId}-message`}
+          id={`${fieldId} -message`}
           className={
             error
               ? componentStyles.forms.errorMessage

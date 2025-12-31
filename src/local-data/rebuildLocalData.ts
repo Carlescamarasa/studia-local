@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Sistema de regeneración de datos locales coherentes
  * Genera datos realistas para desarrollo y testing offline

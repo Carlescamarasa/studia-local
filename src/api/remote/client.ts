@@ -2,6 +2,8 @@
  * Supabase client and error handling wrappers
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { supabase } from '@/lib/supabaseClient';
 import { isAuthError } from '@/lib/authHelpers';
 

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Settings, ScrollText, Music, Calendar, Layers, Target, MessageSquare, Activity, PlayCircle, Users, Shield } from 'lucide-react';

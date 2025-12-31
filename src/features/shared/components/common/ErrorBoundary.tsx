@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/features/shared/components/ds';
 import { Button } from '@/features/shared/components/ui/button';
 import { AlertCircle, RefreshCw, Bug, Copy, Check, ArrowLeft, DownloadCloud } from 'lucide-react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { componentStyles } from '@/design/componentStyles';
 import { log } from '@/utils/log';
 

@@ -1,44 +1,34 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ROUTES, toConfiguracion, toProgreso } from "@/lib/routes";
 import {
   Users,
-  Music,
   Calendar,
-  Target,
   Activity,
   Notebook,
   Settings,
   PlayCircle,
   Menu as MenuIcon,
-  X,
-  ChevronRight,
   LogOut,
   Edit3,
-  PanelLeft,
-  FileDown,
-  FileVideo,
-  Beaker,
-  Layers,
-  Palette,
   Bug,
-  Search,
   MessageSquare,
-  HelpCircle,
-  Tag,
-  Star,
   Sun,
   Moon,
-  Backpack,
+  ChevronRight,
   MoreVertical,
-  ChevronDown,
+  Search,
+  HelpCircle,
+  PanelLeft,
+  ChevronDown
 } from "lucide-react";
 import { Button } from "@/features/shared/components/ui/button";
 import { LoadingSpinner } from "@/features/shared/components/ds";
 import { SkipLink } from "@/features/shared/components/ds/SkipLink";
-import { setCurrentUser, localDataClient } from "@/api/localDataClient";
-import { useLocalData } from "@/local-data/LocalDataProvider";
+import { localDataClient } from "@/api/localDataClient";
 import logoLTS from "@/assets/Logo_LTS.svg";
 import RoleBootstrap from "@/features/auth/components/RoleBootstrap";
 import { useAuth } from "@/auth/AuthProvider";

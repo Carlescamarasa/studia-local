@@ -1,3 +1,5 @@
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Settings, Info, Layout, Activity, Package, PlayCircle, ShieldCheck } from 'lucide-react';

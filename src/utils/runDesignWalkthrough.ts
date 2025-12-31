@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Design System Walkthrough Validation
  * 
@@ -7,7 +8,7 @@
  * Usage: 
  *   const { runDesignWalkthrough } = await import('/src/utils/runDesignWalkthrough.js');
  *   const results = await runDesignWalkthrough();
- *   console.table(results);
+ * console.table(results);
  */
 
 // Extend Window interface for global exposure

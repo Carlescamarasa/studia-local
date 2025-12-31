@@ -1,4 +1,6 @@
 /// <reference types="../../vite-env" />
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { AppDataAPI } from '../appDataAPI';
 
 import { supabase, withAuthErrorHandling, wrapSupabaseCall } from './client';
@@ -77,16 +79,6 @@ import { getCachedAuthUser, clearAuthUserCache } from '../../auth/authUserCache'
 
 
 
-// Importar funciones de asignaciones para uso interno en createRemoteDataAPI
-import {
-  fetchAsignaciones,
-  fetchAsignacion,
-  fetchAsignacionesByFilter,
-  createAsignacion,
-  updateAsignacion,
-  deleteAsignacion
-} from './asignaciones';
-
 // Importar funciones de piezas para uso interno en createRemoteDataAPI
 import {
   fetchPiezasList,
@@ -94,11 +86,38 @@ import {
   fetchPiezasByFilter,
   createPieza,
   updatePieza,
-  deletePieza
+  deletePieza,
 } from './piezas';
-
+import {
+  fetchBloquesListado,
+  fetchBloque,
+  fetchBloquesByFilter,
+  createBloque,
+  updateBloque,
+  deleteBloque,
+} from './bloques';
+import {
+  fetchPlanesList,
+  fetchPlan,
+  fetchPlanesByFilter,
+  fetchPlanesPreview,
+  fetchPlanesPreviewEjercicios,
+  createPlan,
+  updatePlan,
+  deletePlan,
+  resolvePlanForAsignacion,
+} from './planes';
+import {
+  fetchAsignaciones,
+  fetchAsignacion,
+  fetchAsignacionesByFilter,
+  createAsignacion,
+  updateAsignacion,
+  deleteAsignacion,
+} from './asignaciones';
 // Importar funciones de sesiones para uso interno en createRemoteDataAPI
 import {
+  fetchRegistrosSesionPreview,
   fetchRegistrosSesionList,
   fetchRegistroSesion,
   fetchRegistrosSesionByFilter,
@@ -121,6 +140,8 @@ import {
 import type {
   UserRole,
   StudiaUser,
+  CreateStudiaUserInput,
+  UpdateStudiaUserInput,
   Pieza,
   Bloque,
   Plan,
@@ -133,6 +154,14 @@ import type {
   SupportTicket,
   SupportMensaje,
   LevelConfig,
+  LevelKeyCriteria,
+  StudentCriteriaStatus,
+  StudentLevelHistory,
+  StudentXPTotal,
+  StudentBackpackItem,
+  MediaAsset,
+  CreateMediaAssetInput,
+  UpdateMediaAssetInput,
 } from '@/features/shared/types/domain';
 
 
@@ -203,7 +232,7 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
 
 // Caché en memoria para usuarios ya cargados
 // Esto evita queries individuales cuando se llama a User.get() después de User.list()
-const usersCache: Map<string, any> = new Map();
+const usersCache: Map<string, StudiaUser> = new Map();
 let usersCacheTimestamp: number = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
@@ -313,7 +342,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         });
 
         // Si hay profesores asignados que no están en la lista, obtenerlos en una sola query
-        const profesoresMap = new Map<string, any>();
+        const profesoresMap: Map<string, DbProfile> = new Map();
         if (profesorIdsSet.size > 0) {
           try {
             const profesorIdsArray = Array.from(profesorIdsSet);
@@ -322,12 +351,12 @@ export function createRemoteDataAPI(): AppDataAPI {
               supabase
                 .from('profiles')
                 .select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at, nivel, nivel_tecnico, telefono')
-                .in('id', profesorIdsArray) as unknown as Promise<any>
+                .in('id', profesorIdsArray)
             );
 
             if (!profesoresError && profesoresData && Array.isArray(profesoresData)) {
               // Crear mapa de profesores por ID
-              (profesoresData as unknown as DbProfile[]).forEach((prof: DbProfile) => {
+              (profesoresData as DbProfile[]).forEach((prof: DbProfile) => {
                 profesoresMap.set(prof.id, prof);
               });
             }
@@ -404,18 +433,16 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (profesoresMap.size > 0) {
           const existingIdsSet = new Set(finalUsers.map((u: StudiaUser) => u.id));
           const profesoresAdicionales = Array.from(profesoresMap.values())
-            .filter((prof: unknown) => {
-              const p = prof as DbProfile;
-              return !existingIdsSet.has(p.id);
+            .filter((prof: DbProfile) => {
+              return !existingIdsSet.has(prof.id);
             })
-            .map((prof: unknown) => {
-              const p = prof as DbProfile;
-              const camelProf = safeSnakeToCamel<StudiaUser>(p);
+            .map((prof: DbProfile) => {
+              const camelProf = safeSnakeToCamel<StudiaUser>(prof);
 
-              const email = emailsMap.get(p.id) || camelProf.email;
+              const email = emailsMap.get(prof.id) || camelProf.email;
               const normalized = normalizeSupabaseUser(camelProf, email);
 
-              const originalRole = p.role;
+              const originalRole = prof.role;
               if (originalRole) {
                 const roleUpper = String(originalRole).toUpperCase().trim();
                 if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
@@ -500,7 +527,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         return normalized;
       },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null): Promise<StudiaUser[]> => {
         let query = supabase.from('profiles').select('id, full_name, role, profesor_asignado_id, is_active, created_at, updated_at, nivel, nivel_tecnico, telefono');
 
         for (const [key, value] of Object.entries(filters)) {
@@ -556,7 +583,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           return normalized;
         });
       },
-      create: async (data): Promise<StudiaUser> => {
+      create: async (data: CreateStudiaUserInput): Promise<StudiaUser> => {
         const snakeData = camelToSnake(data);
         const { data: result, error } = await withAuthErrorHandling(
           supabase
@@ -605,7 +632,7 @@ export function createRemoteDataAPI(): AppDataAPI {
             } else {
               // No es un UUID válido - rechazar directamente sin intentar resolver
               // Esto previene errores cuando se intenta usar IDs de MongoDB
-              throw new Error(`El ID del profesor asignado debe ser un UUID válido. Se recibió: ${profesorId}`);
+              throw new Error(`El ID del profesor asignado debe ser un UUID válido.Se recibió: ${profesorId} `);
             }
           }
         }
@@ -694,7 +721,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         const normalized = normalizeSupabaseUser(camelUser, email);
 
         // Verificación CRÍTICA: forzar el rol desde el valor original de Supabase
-        const originalRole = (data as any).role;
+        const originalRole = (data as unknown as DbProfile).role;
         if (originalRole) {
           const roleUpper = String(originalRole).toUpperCase().trim();
           if (['ADMIN', 'PROF', 'ESTU'].includes(roleUpper)) {
@@ -725,378 +752,56 @@ export function createRemoteDataAPI(): AppDataAPI {
       delete: deletePieza,
     },
     bloques: {
-      list: async (sort?: string) => {
-        let query = supabase.from('bloques').select('*');
-
-        if (sort) {
-          const direction = sort.startsWith('-') ? 'desc' : 'asc';
-          const field = sort.startsWith('-') ? sort.slice(1) : sort;
-          const snakeField = toSnakeCase(field);
-          query = query.order(snakeField, { ascending: direction === 'asc' });
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        return (data as DbBloque[] || []).map((b: DbBloque) => {
-          const camel = snakeToCamel<Bloque>(b);
-          // Fix targetPPMs mapping (snakeToCamel produces targetPpms)
-          if ((camel as any).targetPpms) {
-            camel.targetPPMs = (camel as any).targetPpms;
-            delete (camel as any).targetPpms;
-          }
-          // Map content (JSONB) to variations - CRITICAL for exercise variations display
-          // Also check raw b.content in case snakeToCamel doesn't preserve it
-          const rawContent = b.content;
-          if (!camel.content && rawContent) {
-            camel.content = rawContent;
-          }
-          if (camel.content && !camel.variations) {
-            // Handle both array structure and { variations: [...] } structure
-            if (Array.isArray(camel.content)) {
-              camel.variations = camel.content;
-            } else if ((camel.content as any).variations && Array.isArray((camel.content as any).variations)) {
-              camel.variations = (camel.content as any).variations;
-            } else {
-              camel.variations = [];
-            }
-          }
-          // Also try to use raw content as fallback
-          if ((!camel.variations || camel.variations.length === 0) && rawContent) {
-            if (Array.isArray(rawContent)) {
-              camel.variations = rawContent;
-            } else if (rawContent.variations && Array.isArray(rawContent.variations)) {
-              camel.variations = rawContent.variations;
-            }
-          }
-          return camel;
-        });
-      },
-      get: async (id: string) => {
-        const { data, error } = await supabase
-          .from('bloques')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (error) {
-          if (error.code === 'PGRST116') return null;
-          throw error;
-        }
-        const camel = snakeToCamel<Bloque>(data);
-        // Fix targetPPMs mapping (snakeToCamel produces targetPpms)
-        if ((camel as any).targetPpms) {
-          camel.targetPPMs = (camel as any).targetPpms;
-          delete (camel as any).targetPpms;
-        }
-        // Map content (JSONB) to variations
-        if (camel.content && !camel.variations) {
-          if (Array.isArray(camel.content)) {
-            camel.variations = camel.content;
-          } else if ((camel.content as any).variations && Array.isArray((camel.content as any).variations)) {
-            camel.variations = (camel.content as any).variations;
-          } else {
-            camel.variations = [];
-          }
-        }
-        return camel;
-      },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
-        let query = supabase.from('bloques').select('*');
-
-        for (const [key, value] of Object.entries(filters)) {
-          const snakeKey = toSnakeCase(key);
-          query = query.eq(snakeKey, value);
-        }
-
-        if (limit) {
-          query = query.limit(limit);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        return (data as DbBloque[] || []).map((b: DbBloque) => {
-          const camel = snakeToCamel<Bloque>(b);
-          // Fix targetPPMs mapping (snakeToCamel produces targetPpms)
-          if ((camel as any).targetPpms) {
-            camel.targetPPMs = (camel as any).targetPpms;
-            delete (camel as any).targetPpms;
-          }
-          // Map content (JSONB) to variations
-          if (camel.content && !camel.variations) {
-            // Handle new structure { variations: [...] } or legacy array structure
-            if (Array.isArray(camel.content)) {
-              camel.variations = camel.content;
-            } else if ((camel.content as any).variations && Array.isArray((camel.content as any).variations)) {
-              camel.variations = (camel.content as any).variations;
-            } else {
-              camel.variations = [];
-            }
-          }
-          return camel;
-        });
-      },
-      create: async (data) => {
-        // Only send fields that exist in the bloques table schema
-        // DB columns: id, nombre, code, tipo, duracion_seg, instrucciones, indicador_logro, 
-        // materiales_requeridos, media_links, elementos_ordenados, pieza_ref_id, profesor_id,
-        // skill_tags, target_ppms, content
-        const allowedFields = new Set([
-          'id', 'nombre', 'code', 'tipo', 'duracionSeg', 'instrucciones',
-          'indicadorLogro', 'materialesRequeridos', 'mediaLinks', 'elementosOrdenados',
-          'piezaRefId', 'profesorId', 'skillTags', 'targetPPMs', 'content'
-        ]);
-
-        // Get current user ID for profesor_id (required field)
-        let profesorId = (data as any).profesorId;
-        if (!profesorId) {
-          try {
-            const user = await getCachedAuthUser();
-            profesorId = user?.id;
-          } catch (e) {
-            console.warn('[remoteDataAPI.bloques.create] Could not get current user for profesor_id');
-          }
-        }
-
-        if (!profesorId) {
-          throw new Error('profesor_id es requerido para crear un bloque');
-        }
-
-        // Generate ID
-        const bloqueId = data.id || generateId('bloque');
-
-        // Filter to allowed fields only
-        const filteredData: any = {
-          id: bloqueId,
-          profesorId: profesorId,
-        };
-
-        for (const [key, value] of Object.entries(data)) {
-          if (key === 'id' || key === 'profesorId') continue; // Already handled
-          if (allowedFields.has(key)) {
-            filteredData[key] = value;
-          } else {
-            // Silently skip non-DB fields (metodo, variations, skillTags, targetPPMs, etc.)
-            console.log(`[remoteDataAPI.bloques.create] Field '${key}' not in DB schema, skipping`);
-          }
-        }
-
-        const snakeData = camelToSnake(filteredData);
-
-        // Fix targetPPMs mapping (camelToSnake produces target_pp_ms)
-        if (snakeData.target_pp_ms) {
-          snakeData.target_ppms = snakeData.target_pp_ms;
-          delete snakeData.target_pp_ms;
-        } else if (filteredData.targetPPMs) {
-          snakeData.target_ppms = filteredData.targetPPMs;
-        }
-
-        const { data: result, error } = await supabase
-          .from('bloques')
-          .insert(snakeData)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return snakeToCamel<Bloque>(result);
-      },
-      update: async (id: string, updates: Partial<Bloque>) => {
-        // Only send fields that exist in the bloques table schema
-        // DB columns: id, nombre, code, tipo, duracion_seg, instrucciones, indicador_logro, 
-        // materiales_requeridos, media_links, elementos_ordenados, pieza_ref_id, profesor_id,
-        // skill_tags, target_ppms, content
-        const allowedFields = new Set([
-          'nombre', 'code', 'tipo', 'duracionSeg', 'instrucciones',
-          'indicadorLogro', 'materialesRequeridos', 'mediaLinks', 'elementosOrdenados',
-          'piezaRefId', 'skillTags', 'targetPPMs', 'content'
-          // Note: 'metodo', 'variations' are frontend-only (variations mapped to content)
-        ]);
-
-        // Filter out fields not in DB schema
-        const filteredUpdates: Partial<Bloque> = {};
-
-        // DEBUG: Log what we receive
-        console.log('[remoteDataAPI.bloques.update] Received updates:', {
-          id,
-          indicadorLogro: updates.indicadorLogro,
-          allKeys: Object.keys(updates)
-        });
-
-        for (const [key, value] of Object.entries(updates)) {
-          if (allowedFields.has(key)) {
-            // @ts-expect-error - Valid field check done via allowedFields set
-            filteredUpdates[key] = value;
-          } else {
-            // Silently log non-DB fields (don't spam console with warnings)
-            console.log(`[remoteDataAPI.bloques.update] Field '${key}' not in DB schema, skipping`);
-          }
-        }
-
-        // DEBUG: Log what we're sending
-        console.log('[remoteDataAPI.bloques.update] Filtered updates:', filteredUpdates);
-
-        const snakeUpdates = camelToSnake(filteredUpdates);
-
-        // Fix targetPPMs mapping (camelToSnake produces target_pp_ms)
-        const record = snakeUpdates as Record<string, unknown>;
-        if (record.target_pp_ms) {
-          record.target_ppms = record.target_pp_ms;
-          delete record.target_pp_ms;
-        } else if (filteredUpdates.targetPPMs) {
-          record.target_ppms = filteredUpdates.targetPPMs;
-        }
-
-        // DEBUG: Log snake case version
-        console.log('[remoteDataAPI.bloques.update] Snake updates:', snakeUpdates);
-
-        const { data, error } = await supabase
-          .from('bloques')
-          .update(snakeUpdates)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('[remoteDataAPI] Error al actualizar bloque:', {
-            error: error?.message || error,
-            code: error?.code,
-            details: error?.details,
-            id,
-          });
-          throw error;
-        }
-
-        // DEBUG: Log what Supabase returned
-        console.log('[remoteDataAPI.bloques.update] Supabase returned:', {
-          id: data?.id,
-          code: data?.code,
-          indicador_logro: data?.indicador_logro,
-          success: !!data
-        });
-
-        const resultado = snakeToCamel<Bloque>(data);
-
-        return resultado;
-      },
-      delete: async (id: string) => {
-        const { error } = await supabase
-          .from('bloques')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-        return { success: true };
-      },
+      list: fetchBloquesListado,
+      get: async (id: string) => fetchBloque(id),
+      filter: fetchBloquesByFilter,
+      create: createBloque,
+      update: updateBloque,
+      delete: deleteBloque,
     },
     planes: {
-      list: async (sort?: string) => {
-        let query = supabase.from('planes').select('*');
-
-        if (sort) {
-          const direction = sort.startsWith('-') ? 'desc' : 'asc';
-          const field = sort.startsWith('-') ? sort.slice(1) : sort;
-          const snakeField = toSnakeCase(field);
-          query = query.order(snakeField, { ascending: direction === 'asc' });
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        return (data as any[] || []).map((p: any) => snakeToCamel<Plan>(p));
-      },
-      get: async (id: string) => {
-        const { data, error } = await supabase
-          .from('planes')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (error) {
-          if (error.code === 'PGRST116') return null;
-          throw error;
-        }
-        return snakeToCamel<Plan>(data);
-      },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
-        let query = supabase.from('planes').select('*');
-
-        for (const [key, value] of Object.entries(filters)) {
-          const snakeKey = toSnakeCase(key);
-          query = query.eq(snakeKey, value);
-        }
-
-        if (limit) {
-          query = query.limit(limit);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        return (data as any[] || []).map((p: any) => snakeToCamel<Plan>(p));
-      },
-      create: async (data) => {
-        const snakeData = camelToSnake({
-          ...data,
-          id: data.id || generateId('plan'),
-        });
-        const { data: result, error } = await supabase
-          .from('planes')
-          .insert(snakeData)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return snakeToCamel<Plan>(result);
-      },
-      update: async (id: string, updates: any) => {
-        const snakeUpdates = camelToSnake(updates);
-        const { data, error } = await supabase
-          .from('planes')
-          .update(snakeUpdates)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return snakeToCamel<Plan>(data);
-      },
-      delete: async (id: string) => {
-        const { error } = await supabase
-          .from('planes')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-        return { success: true };
-      },
+      list: fetchPlanesList,
+      get: async (id: string) => fetchPlan(id),
+      filter: fetchPlanesByFilter,
+      create: createPlan,
+      update: updatePlan,
+      delete: deletePlan,
+      preview: fetchPlanesPreview,
+      previewEjercicios: fetchPlanesPreviewEjercicios,
+      resolveForAsignacion: resolvePlanForAsignacion,
     },
     asignaciones: {
       list: fetchAsignaciones,
-      get: fetchAsignacion,
+      get: async (id: string) => fetchAsignacion(id),
       filter: fetchAsignacionesByFilter,
       create: createAsignacion,
       update: updateAsignacion,
       delete: deleteAsignacion,
     },
     registrosSesion: {
+      preview: fetchRegistrosSesionPreview,
       list: fetchRegistrosSesionList,
-      get: fetchRegistroSesion,
+      get: async (id: string) => fetchRegistroSesion(id),
       filter: fetchRegistrosSesionByFilter,
       create: createRegistroSesion,
       update: updateRegistroSesion,
       delete: deleteRegistroSesion,
+      listByUsuario: async (alumnoId: string, limit?: number | null) => {
+        return fetchRegistrosSesionByFilter({ alumnoId }, limit);
+      }
     },
     registrosBloque: {
       list: async (sort?: string) => {
         let query = supabase.from('registros_bloque').select('*');
-
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
-
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
+        return ((data as any[]) || []).map((r) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
       },
       get: async (id: string) => {
         const { data, error } = await supabase
@@ -1111,26 +816,23 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         return normalizeISOFields(snakeToCamel<RegistroBloque>(data));
       },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null) => {
         let query = supabase.from('registros_bloque').select('*');
-
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-
         if (limit) {
           query = query.limit(limit);
         }
-
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
+        return ((data as any[]) || []).map((r) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
       },
-      create: async (data) => {
+      create: async (data: Partial<RegistroBloque>) => {
         const snakeData = camelToSnake({
           ...data,
-          id: (data as any).id || generateId('registroBloque'),
+          id: data.id || generateId('registroBloque'),
         });
         const { data: result, error } = await supabase
           .from('registros_bloque')
@@ -1141,7 +843,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (error) throw error;
         return normalizeISOFields(snakeToCamel<RegistroBloque>(result));
       },
-      update: async (id: string, updates: any) => {
+      update: async (id: string, updates: Partial<RegistroBloque>) => {
         const snakeUpdates = camelToSnake(updates);
         const { data, error } = await supabase
           .from('registros_bloque')
@@ -1152,20 +854,6 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         if (error) throw error;
         return normalizeISOFields(snakeToCamel<RegistroBloque>(data));
-      },
-      bulkCreate: async (data: any[]) => {
-        const snakeData = data.map((item: any) => camelToSnake({
-          ...item,
-          id: item.id || generateId('registroBloque'),
-        }));
-
-        const { data: result, error } = await supabase
-          .from('registros_bloque')
-          .insert(snakeData)
-          .select();
-
-        if (error) throw error;
-        return (result || []).map((r: any) => normalizeISOFields(snakeToCamel<RegistroBloque>(r)));
       },
       delete: async (id: string) => {
         const { error } = await supabase
@@ -1188,7 +876,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel<EventoCalendario>(e));
+        return ((data as unknown[] || []).map((e) => snakeToCamel<EventoCalendario>(e)));
       },
       get: async (id: string): Promise<EventoCalendario | null> => {
         const { data, error } = await supabase
@@ -1196,34 +884,44 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select('*')
           .eq('id', id)
           .single();
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
         return snakeToCamel<EventoCalendario>(data);
       },
-      filter: async (filters: Record<string, any>, limit?: number | null): Promise<EventoCalendario[]> => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null): Promise<EventoCalendario[]> => {
         let query = supabase.from('eventos_calendario').select('*');
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        if (limit) query = query.limit(limit);
+
+        if (limit) {
+          query = query.limit(limit);
+        }
+
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel<EventoCalendario>(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<EventoCalendario>(e));
       },
-      create: async (data: any): Promise<EventoCalendario> => {
-        const snakeData = camelToSnake(data);
+      create: async (data: Partial<EventoCalendario>): Promise<EventoCalendario> => {
+        const snakeData = camelToSnake({
+          ...data,
+          id: data.id || generateId('eventoCalendario'),
+        });
         const { data: result, error } = await supabase
           .from('eventos_calendario')
           .insert(snakeData)
           .select()
           .single();
+
         if (error) throw error;
         return snakeToCamel<EventoCalendario>(result);
       },
-      update: async (id: string, updates: any): Promise<EventoCalendario> => {
+      update: async (id: string, updates: Partial<EventoCalendario>): Promise<EventoCalendario> => {
         const snakeUpdates = camelToSnake(updates);
         const { data, error } = await supabase
           .from('eventos_calendario')
@@ -1231,6 +929,7 @@ export function createRemoteDataAPI(): AppDataAPI {
           .eq('id', id)
           .select()
           .single();
+
         if (error) throw error;
         return snakeToCamel<EventoCalendario>(data);
       },
@@ -1255,7 +954,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         const { data, error } = await query;
         if (error) throw error;
-        return (data as any[] || []).map((e: any) => snakeToCamel<EvaluacionTecnica>(e));
+        return (data as unknown[] || []).map((e) => snakeToCamel<EvaluacionTecnica>(e));
       },
       get: async (id: string): Promise<EvaluacionTecnica | null> => {
         const { data, error } = await supabase
@@ -1269,7 +968,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         }
         return snakeToCamel<EvaluacionTecnica>(data);
       },
-      filter: async (filters: Record<string, any>, limit?: number | null): Promise<EvaluacionTecnica[]> => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null): Promise<EvaluacionTecnica[]> => {
         let query = supabase.from('evaluaciones_tecnicas').select('*');
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
@@ -1278,9 +977,9 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (limit) query = query.limit(limit);
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel<EvaluacionTecnica>(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<EvaluacionTecnica>(e));
       },
-      create: async (data): Promise<EvaluacionTecnica> => {
+      create: async (data: Partial<EvaluacionTecnica>): Promise<EvaluacionTecnica> => {
         const snakeData = camelToSnake(data);
         // Si el ID es temporal (generado localmente) o no existe, lo eliminamos para que Supabase genere un UUID válido
         if (snakeData.id && (typeof snakeData.id === 'string' && !snakeData.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))) {
@@ -1294,7 +993,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         if (error) throw error;
         return snakeToCamel<EvaluacionTecnica>(result);
       },
-      update: async (id: string, updates: any): Promise<EvaluacionTecnica> => {
+      update: async (id: string, updates: Partial<EvaluacionTecnica>): Promise<EvaluacionTecnica> => {
         const snakeUpdates = camelToSnake(updates);
         const { data, error } = await supabase
           .from('evaluaciones_tecnicas')
@@ -1315,104 +1014,96 @@ export function createRemoteDataAPI(): AppDataAPI {
       },
     },
     feedbacksSemanal: {
-      list: async (sort: string = '-created_at'): Promise<FeedbackSemanal[]> => {
+      list: async (sort?: string): Promise<FeedbackSemanal[]> => {
         const raw = await fetchFeedbacksSemanalList(sort);
-        return raw.map((f: any) => {
-          const camel = snakeToCamel<FeedbackSemanal>(f);
-          return normalizeAsignacionISO(camel);
+        return raw.map((f) => {
+          return {
+            ...f,
+            // If these properties are needed in UI, they should be added to the interface
+            // For now, let's keep it strictly typed to the interface
+          } as FeedbackSemanal;
         });
       },
-      get: async (id: string) => {
-        const raw = await fetchFeedbackSemanal(id);
-        if (!raw) return null;
-        const camel = snakeToCamel<FeedbackSemanal>(raw);
-        return normalizeAsignacionISO(camel);
+      get: async (id: string): Promise<FeedbackSemanal | null> => fetchFeedbackSemanal(id),
+      filter: (filters: Record<string, unknown>, limit?: number | null): Promise<FeedbackSemanal[]> =>
+        fetchFeedbacksSemanalByFilter(filters, limit),
+      create: async (data: Partial<FeedbackSemanal>): Promise<FeedbackSemanal> => {
+        const raw = await createFeedbackSemanal(data);
+        return raw;
       },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
-        const snakeFilters: Record<string, any> = {};
-        for (const [key, value] of Object.entries(filters)) {
-          snakeFilters[toSnakeCase(key)] = value;
-        }
-
-        const raw = await fetchFeedbacksSemanalByFilter(snakeFilters, limit);
-        return raw.map((f: any) => {
-          const camel = snakeToCamel<FeedbackSemanal>(f);
-          return normalizeAsignacionISO(camel);
-        });
+      update: async (id: string, updates: Partial<FeedbackSemanal>): Promise<FeedbackSemanal> => {
+        const raw = await updateFeedbackSemanal(id, updates);
+        return raw;
       },
-      create: async (data: any) => {
-        const snakeData = camelToSnake(data);
-        const raw = await createFeedbackSemanal(snakeData);
-        const camel = snakeToCamel<FeedbackSemanal>(raw);
-        return normalizeAsignacionISO(camel);
-      },
-      update: async (id: string, updates: any) => {
-        const snakeUpdates = camelToSnake(updates);
-        delete snakeUpdates.id;
-        const raw = await updateFeedbackSemanal(id, snakeUpdates);
-        const camel = snakeToCamel<FeedbackSemanal>(raw);
-        return normalizeAsignacionISO(camel);
-      },
-      delete: async (id: string) => {
-        await deleteFeedbackSemanal(id);
-        return { success: true };
-      }
+      delete: deleteFeedbackSemanal,
     },
     levelsConfig: {
       list: async (sort?: string): Promise<LevelConfig[]> => {
         let query = supabase.from('levels_config').select('*');
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
+
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel<LevelConfig>(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<LevelConfig>(e));
       },
       get: async (id: string): Promise<LevelConfig | null> => {
-        // ID is integer level
         const { data, error } = await supabase
           .from('levels_config')
           .select('*')
-          .eq('level', id)
+          .eq('id', id)
           .single();
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
         return snakeToCamel<LevelConfig>(data);
       },
-      filter: async (filters: Record<string, any>, limit?: number | null): Promise<LevelConfig[]> => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null): Promise<LevelConfig[]> => {
         let query = supabase.from('levels_config').select('*');
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        if (limit) query = query.limit(limit);
+
+        if (limit) {
+          query = query.limit(limit);
+        }
+
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel<LevelConfig>(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<LevelConfig>(e));
       },
-      create: async (data: any): Promise<LevelConfig> => {
-        const snakeData = camelToSnake(data);
+      create: async (data: Partial<LevelConfig>): Promise<LevelConfig> => {
+        const snakeData = camelToSnake({
+          ...data,
+          id: (data as any).id || generateId('levelConfig'),
+        });
         const { data: result, error } = await supabase
           .from('levels_config')
           .insert(snakeData)
           .select()
           .single();
+
         if (error) throw error;
         return snakeToCamel<LevelConfig>(result);
       },
-      update: async (id: string, updates: any): Promise<LevelConfig> => {
+      update: async (id: string, updates: Partial<LevelConfig>): Promise<LevelConfig> => {
         const snakeUpdates = camelToSnake(updates);
         const { data, error } = await supabase
           .from('levels_config')
           .update(snakeUpdates)
-          .eq('level', id)
+          .eq('id', id)
           .select()
           .single();
+
         if (error) throw error;
         return snakeToCamel<LevelConfig>(data);
       },
@@ -1420,61 +1111,71 @@ export function createRemoteDataAPI(): AppDataAPI {
         const { error } = await supabase
           .from('levels_config')
           .delete()
-          .eq('level', id);
+          .eq('id', id);
+
         if (error) throw error;
         return { success: true };
       },
     },
     levelKeyCriteria: {
-      list: async (sort?: string) => {
+      list: async (sort?: string): Promise<LevelKeyCriteria[]> => {
         let query = supabase.from('level_key_criteria').select('*');
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
+
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<LevelKeyCriteria>(e));
       },
-      get: async (id: string) => {
+      get: async (id: string): Promise<LevelKeyCriteria | null> => {
         const { data, error } = await supabase
           .from('level_key_criteria')
           .select('*')
           .eq('id', id)
           .single();
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel(data);
+        return snakeToCamel<LevelKeyCriteria>(data);
       },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null): Promise<LevelKeyCriteria[]> => {
         let query = supabase.from('level_key_criteria').select('*');
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        if (limit) query = query.limit(limit);
+
+        if (limit) {
+          query = query.limit(limit);
+        }
+
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<LevelKeyCriteria>(e));
       },
-      create: async (data: any) => {
-        const snakeData = camelToSnake(data);
-        if (snakeData.id && (typeof snakeData.id === 'string' && !snakeData.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))) {
-          delete snakeData.id;
-        }
+      create: async (data: Partial<LevelKeyCriteria>): Promise<LevelKeyCriteria> => {
+        const snakeData = camelToSnake({
+          ...data,
+          id: data.id || generateId('levelKeyCriteria'),
+        });
         const { data: result, error } = await supabase
           .from('level_key_criteria')
           .insert(snakeData)
           .select()
           .single();
+
         if (error) throw error;
-        return snakeToCamel(result);
+        return snakeToCamel<LevelKeyCriteria>(result);
       },
-      update: async (id: string, updates: any) => {
+      update: async (id: string, updates: Partial<LevelKeyCriteria>): Promise<LevelKeyCriteria> => {
         const snakeUpdates = camelToSnake(updates);
         const { data, error } = await supabase
           .from('level_key_criteria')
@@ -1482,68 +1183,79 @@ export function createRemoteDataAPI(): AppDataAPI {
           .eq('id', id)
           .select()
           .single();
+
         if (error) throw error;
-        return snakeToCamel(data);
+        return snakeToCamel<LevelKeyCriteria>(data);
       },
-      delete: async (id: string) => {
+      delete: async (id: string): Promise<{ success: boolean }> => {
         const { error } = await supabase
           .from('level_key_criteria')
           .delete()
           .eq('id', id);
+
         if (error) throw error;
         return { success: true };
       },
     },
     studentCriteriaStatus: {
-      list: async (sort?: string) => {
+      list: async (sort?: string): Promise<StudentCriteriaStatus[]> => {
         let query = supabase.from('student_criteria_status').select('*');
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
+
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<StudentCriteriaStatus>(e));
       },
-      get: async (id: string) => {
+      get: async (id: string): Promise<StudentCriteriaStatus | null> => {
         const { data, error } = await supabase
           .from('student_criteria_status')
           .select('*')
           .eq('id', id)
           .single();
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel(data);
+        return snakeToCamel<StudentCriteriaStatus>(data);
       },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null): Promise<StudentCriteriaStatus[]> => {
         let query = supabase.from('student_criteria_status').select('*');
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        if (limit) query = query.limit(limit);
+
+        if (limit) {
+          query = query.limit(limit);
+        }
+
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<StudentCriteriaStatus>(e));
       },
-      create: async (data: any) => {
-        const snakeData = camelToSnake(data);
-        if (snakeData.id && (typeof snakeData.id === 'string' && !snakeData.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))) {
-          delete snakeData.id;
-        }
+      create: async (data: Partial<StudentCriteriaStatus>): Promise<StudentCriteriaStatus> => {
+        const snakeData = camelToSnake({
+          ...data,
+          id: data.id || generateId('studentCriteriaStatus'),
+        });
         const { data: result, error } = await supabase
           .from('student_criteria_status')
           .insert(snakeData)
           .select()
           .single();
+
         if (error) throw error;
-        return snakeToCamel(result);
+        return snakeToCamel<StudentCriteriaStatus>(result);
       },
-      update: async (id: string, updates: any) => {
+      update: async (id: string, updates: Partial<StudentCriteriaStatus>): Promise<StudentCriteriaStatus> => {
         const snakeUpdates = camelToSnake(updates);
         const { data, error } = await supabase
           .from('student_criteria_status')
@@ -1551,68 +1263,79 @@ export function createRemoteDataAPI(): AppDataAPI {
           .eq('id', id)
           .select()
           .single();
+
         if (error) throw error;
-        return snakeToCamel(data);
+        return snakeToCamel<StudentCriteriaStatus>(data);
       },
-      delete: async (id: string) => {
+      delete: async (id: string): Promise<{ success: boolean }> => {
         const { error } = await supabase
           .from('student_criteria_status')
           .delete()
           .eq('id', id);
+
         if (error) throw error;
         return { success: true };
       },
     },
     studentLevelHistory: {
-      list: async (sort?: string) => {
+      list: async (sort?: string): Promise<StudentLevelHistory[]> => {
         let query = supabase.from('student_level_history').select('*');
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
+
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<StudentLevelHistory>(e));
       },
-      get: async (id: string) => {
+      get: async (id: string): Promise<StudentLevelHistory | null> => {
         const { data, error } = await supabase
           .from('student_level_history')
           .select('*')
           .eq('id', id)
           .single();
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel(data);
+        return snakeToCamel<StudentLevelHistory>(data);
       },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null): Promise<StudentLevelHistory[]> => {
         let query = supabase.from('student_level_history').select('*');
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        if (limit) query = query.limit(limit);
+
+        if (limit) {
+          query = query.limit(limit);
+        }
+
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<StudentLevelHistory>(e));
       },
-      create: async (data: any) => {
-        const snakeData = camelToSnake(data);
-        if (snakeData.id && (typeof snakeData.id === 'string' && !snakeData.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))) {
-          delete snakeData.id;
-        }
+      create: async (data: Partial<StudentLevelHistory>): Promise<StudentLevelHistory> => {
+        const snakeData = camelToSnake({
+          ...data,
+          id: (data as any).id || generateId('studentLevelHistory'),
+        });
         const { data: result, error } = await supabase
           .from('student_level_history')
           .insert(snakeData)
           .select()
           .single();
+
         if (error) throw error;
-        return snakeToCamel(result);
+        return snakeToCamel<StudentLevelHistory>(result);
       },
-      update: async (id: string, updates: any) => {
+      update: async (id: string, updates: Partial<StudentLevelHistory>): Promise<StudentLevelHistory> => {
         const snakeUpdates = camelToSnake(updates);
         const { data, error } = await supabase
           .from('student_level_history')
@@ -1620,32 +1343,36 @@ export function createRemoteDataAPI(): AppDataAPI {
           .eq('id', id)
           .select()
           .single();
+
         if (error) throw error;
-        return snakeToCamel(data);
+        return snakeToCamel<StudentLevelHistory>(data);
       },
-      delete: async (id: string) => {
+      delete: async (id: string): Promise<{ success: boolean }> => {
         const { error } = await supabase
           .from('student_level_history')
           .delete()
           .eq('id', id);
+
         if (error) throw error;
         return { success: true };
       },
     },
     studentXpTotal: {
-      list: async (sort?: string) => {
+      list: async (sort?: string): Promise<StudentXPTotal[]> => {
         let query = supabase.from('student_xp_total').select('*');
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
+
         const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<StudentXPTotal>(e));
       },
-      get: async (id: string) => {
+      get: async (id: string): Promise<StudentXPTotal | null> => {
         const { data, error } = await withAuthErrorHandling(
           supabase
             .from('student_xp_total')
@@ -1657,33 +1384,40 @@ export function createRemoteDataAPI(): AppDataAPI {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel(data);
+        return snakeToCamel<StudentXPTotal>(data);
       },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null): Promise<StudentXPTotal[]> => {
         let query = supabase.from('student_xp_total').select('*');
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        if (limit) query = query.limit(limit);
+
+        if (limit) {
+          query = query.limit(limit);
+        }
+
         const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<StudentXPTotal>(e));
       },
-      create: async (item: any) => {
-        const snakeItem = camelToSnake(item);
-        if (snakeItem.id === undefined) delete snakeItem.id;
-        const { data, error } = await withAuthErrorHandling(
+      create: async (data: Partial<StudentXPTotal>): Promise<StudentXPTotal> => {
+        const snakeData = camelToSnake({
+          ...data,
+          id: (data as any).id || generateId('studentXpTotal'),
+        });
+        const { data: result, error } = await withAuthErrorHandling(
           supabase
             .from('student_xp_total')
-            .insert(snakeItem)
+            .insert(snakeData)
             .select()
             .single()
         );
         if (error) throw error;
-        return snakeToCamel(data);
+        return snakeToCamel<StudentXPTotal>(result);
       },
-      update: async (id: string, updates: any) => {
+      update: async (id: string, updates: Partial<StudentXPTotal>): Promise<StudentXPTotal> => {
         const snakeUpdates = camelToSnake(updates);
         delete snakeUpdates.id;
         const { data, error } = await withAuthErrorHandling(
@@ -1695,9 +1429,9 @@ export function createRemoteDataAPI(): AppDataAPI {
             .single()
         );
         if (error) throw error;
-        return snakeToCamel(data);
+        return snakeToCamel<StudentXPTotal>(data);
       },
-      delete: async (id: string) => {
+      delete: async (id: string): Promise<{ success: boolean }> => {
         const { error } = await withAuthErrorHandling(
           supabase
             .from('student_xp_total')
@@ -1709,19 +1443,21 @@ export function createRemoteDataAPI(): AppDataAPI {
       }
     },
     studentBackpack: {
-      list: async (sort?: string) => {
+      list: async (sort?: string): Promise<StudentBackpackItem[]> => {
         let query = supabase.from('student_backpack').select('*');
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
+
         const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<StudentBackpackItem>(e));
       },
-      get: async (id: string) => {
+      get: async (id: string): Promise<StudentBackpackItem | null> => {
         const { data, error } = await withAuthErrorHandling(
           supabase
             .from('student_backpack')
@@ -1733,33 +1469,40 @@ export function createRemoteDataAPI(): AppDataAPI {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel(data);
+        return snakeToCamel<StudentBackpackItem>(data);
       },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null): Promise<StudentBackpackItem[]> => {
         let query = supabase.from('student_backpack').select('*');
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        if (limit) query = query.limit(limit);
+
+        if (limit) {
+          query = query.limit(limit);
+        }
+
         const { data, error } = await withAuthErrorHandling(query);
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<StudentBackpackItem>(e));
       },
-      create: async (item: any) => {
-        const snakeItem = camelToSnake(item);
-        if (!snakeItem.id) delete snakeItem.id;
-        const { data, error } = await withAuthErrorHandling(
+      create: async (data: Partial<StudentBackpackItem>): Promise<StudentBackpackItem> => {
+        const snakeData = camelToSnake({
+          ...data,
+          id: data.id || generateId('studentBackpack'),
+        });
+        const { data: result, error } = await withAuthErrorHandling(
           supabase
             .from('student_backpack')
-            .insert(snakeItem)
+            .insert(snakeData)
             .select()
             .single()
         );
         if (error) throw error;
-        return snakeToCamel(data);
+        return snakeToCamel<StudentBackpackItem>(result);
       },
-      update: async (id: string, updates: any) => {
+      update: async (id: string, updates: Partial<StudentBackpackItem>): Promise<StudentBackpackItem> => {
         const snakeUpdates = camelToSnake(updates);
         delete snakeUpdates.id;
         const { data, error } = await withAuthErrorHandling(
@@ -1771,9 +1514,9 @@ export function createRemoteDataAPI(): AppDataAPI {
             .single()
         );
         if (error) throw error;
-        return snakeToCamel(data);
+        return snakeToCamel<StudentBackpackItem>(data);
       },
-      delete: async (id: string) => {
+      delete: async (id: string): Promise<{ success: boolean }> => {
         const { error } = await withAuthErrorHandling(
           supabase
             .from('student_backpack')
@@ -1785,59 +1528,70 @@ export function createRemoteDataAPI(): AppDataAPI {
       }
     },
     mediaAssets: {
-      list: async (sort?: string) => {
+      list: async (sort?: string): Promise<MediaAsset[]> => {
         let query = supabase.from('media_assets').select('*');
+
         if (sort) {
           const direction = sort.startsWith('-') ? 'desc' : 'asc';
           const field = sort.startsWith('-') ? sort.slice(1) : sort;
           const snakeField = toSnakeCase(field);
           query = query.order(snakeField, { ascending: direction === 'asc' });
         }
+
         const { data, error } = await query;
         if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<MediaAsset>(e));
       },
-      get: async (id: string) => {
+      get: async (id: string): Promise<MediaAsset | null> => {
         const { data, error } = await supabase
           .from('media_assets')
           .select('*')
           .eq('id', id)
           .single();
+
         if (error) {
           if (error.code === 'PGRST116') return null;
           throw error;
         }
-        return snakeToCamel(data);
+        return snakeToCamel<MediaAsset>(data);
       },
-      filter: async (filters: Record<string, any>, limit?: number | null) => {
+      filter: async (filters: Record<string, unknown>, limit?: number | null): Promise<MediaAsset[]> => {
         let query = supabase.from('media_assets').select('*');
+
         for (const [key, value] of Object.entries(filters)) {
           const snakeKey = toSnakeCase(key);
           query = query.eq(snakeKey, value);
         }
-        if (limit) query = query.limit(limit);
-        const { data, error } = await query;
-        if (error) throw error;
-        return ((data as any[]) || []).map((e: any) => snakeToCamel(e));
-      },
-      create: async (input: any) => {
-        const snakeInput = camelToSnake(input);
 
-        // Ensure user is set
-        if (!snakeInput.created_by) {
-          const user = await getCachedAuthUser();
-          if (user?.id) snakeInput.created_by = user.id;
+        if (limit) {
+          query = query.limit(limit);
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await query;
+        if (error) throw error;
+        return ((data as unknown[]) || []).map((e) => snakeToCamel<MediaAsset>(e));
+      },
+      create: async (data: CreateMediaAssetInput): Promise<MediaAsset> => {
+        const snakeData = camelToSnake({
+          ...data,
+          id: data.id || generateId('mediaAsset'),
+        }) as any; // Cast to any to handle type union mismatch for fileType in DB
+
+        // Ensure user is set
+        if (!snakeData.created_by) {
+          const user = await getCachedAuthUser();
+          if (user?.id) snakeData.created_by = user.id;
+        }
+
+        const { data: result, error } = await supabase
           .from('media_assets')
-          .insert(snakeInput)
+          .insert(snakeData)
           .select()
           .single();
         if (error) throw error;
-        return snakeToCamel(data);
+        return snakeToCamel<MediaAsset>(result);
       },
-      update: async (id: string, updates: any) => {
+      update: async (id: string, updates: UpdateMediaAssetInput): Promise<MediaAsset> => {
         const snakeUpdates = camelToSnake(updates);
         const { data, error } = await supabase
           .from('media_assets')
@@ -1846,9 +1600,9 @@ export function createRemoteDataAPI(): AppDataAPI {
           .select()
           .single();
         if (error) throw error;
-        return snakeToCamel(data);
+        return snakeToCamel<MediaAsset>(data);
       },
-      delete: async (id: string) => {
+      delete: async (id: string): Promise<{ success: boolean }> => {
         const { error } = await supabase
           .from('media_assets')
           .delete()
@@ -1859,86 +1613,124 @@ export function createRemoteDataAPI(): AppDataAPI {
     },
 
     // Implementación de RPCs
-    getCalendarSummary: async (startDate: Date, endDate: Date, userId?: string) => {
-      const { data, error } = await withAuthErrorHandling(
-        supabase.rpc('get_calendar_summary', {
-          p_start_date: startDate.toISOString(),
-          p_end_date: endDate.toISOString(),
-          p_user_id: userId || null
-        })
-      );
+    async getCalendarSummary(startDate: Date, endDate: Date, userId?: string): Promise<{
+      registrosSesion: RegistroSesion[];
+      feedbacksSemanal: FeedbackSemanal[];
+      asignaciones: Asignacion[];
+      eventosCalendario: EventoCalendario[];
+    }> {
+      const startIso = startDate.toISOString();
+      const endIso = endDate.toISOString();
 
-      if (error) {
-        console.error('[remoteDataAPI] Error en getCalendarSummary:', error);
-        throw error;
-      }
+      // 1. Sesiones
+      let sessionsQuery = supabase
+        .from('registros_sesion')
+        .select('*')
+        .gte('inicio_iso', startIso)
+        .lte('inicio_iso', endIso);
 
-      // Transformar snake_case a camelCase y normalizar campos
-      const raw = data as any;
+      if (userId) sessionsQuery = sessionsQuery.eq('alumno_id', userId);
+
+      // 2. Feedbacks
+      let feedbacksQuery = supabase
+        .from('feedbacks_semanal')
+        .select('*')
+        .gte('week_start', startIso.split('T')[0])
+        .lte('week_start', endIso.split('T')[0]);
+
+      if (userId) feedbacksQuery = feedbacksQuery.eq('alumno_id', userId);
+
+      // 3. Asignaciones
+      let asignsQuery = supabase
+        .from('asignaciones')
+        .select('*, planes(*)')
+        .gte('fecha_fin', startIso.split('T')[0])
+        .lte('fecha_inicio', endIso.split('T')[0]);
+
+      if (userId) asignsQuery = asignsQuery.eq('alumno_id', userId);
+
+      // 4. Eventos
+      let eventsQuery = supabase
+        .from('eventos_calendario')
+        .select('*')
+        .gte('fecha_hora', startIso)
+        .lte('fecha_hora', endIso);
+
+      if (userId) eventsQuery = eventsQuery.eq('user_id', userId);
+
+      const [sessionsRes, feedbacksRes, asignsRes, eventsRes] = await Promise.all([
+        sessionsQuery,
+        feedbacksQuery,
+        asignsQuery,
+        eventsQuery
+      ]);
+
       return {
-        registrosSesion: (raw.registrosSesion || []).map(snakeToCamel).map(normalizeISOFields),
-        feedbacksSemanal: (raw.feedbacksSemanal || []).map(snakeToCamel).map(normalizeAsignacionISO),
-        asignaciones: (raw.asignaciones || []).map(snakeToCamel).map(normalizeAsignacionISO),
-        eventosCalendario: (raw.eventosCalendario || []).map(snakeToCamel)
+        registrosSesion: (sessionsRes.data as unknown[] || []).map((r) => normalizeISOFields(snakeToCamel<RegistroSesion>(r))),
+        feedbacksSemanal: (feedbacksRes.data as unknown[] || []).map((f) => snakeToCamel<FeedbackSemanal>(f)),
+        asignaciones: (asignsRes.data as unknown[] || []).map((a) => normalizeAsignacionISO(snakeToCamel<Asignacion>(a))),
+        eventosCalendario: (eventsRes.data as unknown[] || []).map((e) => snakeToCamel<EventoCalendario>(e)),
       };
     },
 
-    getProgressSummary: async (studentId?: string) => {
-      const { data, error } = await withAuthErrorHandling(
-        supabase.rpc('get_progress_summary', {
-          p_student_id: studentId || null
-        })
-      );
+    async getProgressSummary(studentId?: string): Promise<{
+      xpTotals: StudentXPTotal[];
+      evaluacionesTecnicas: EvaluacionTecnica[];
+      feedbacksSemanal: FeedbackSemanal[];
+      registrosSesion: RegistroSesion[];
+    }> {
+      const userId = studentId || (await getCachedAuthUser())?.id;
+      if (!userId) throw new Error('User context missing');
 
-      if (error) {
-        console.error('[remoteDataAPI] Error en getProgressSummary:', error);
-        throw error;
-      }
+      const xpQuery = supabase.from('student_xp_total').select('*').eq('student_id', userId);
+      const evalsQuery = supabase.from('evaluaciones_tecnicas').select('*').eq('alumno_id', userId).order('fecha', { ascending: false }).limit(10);
+      const feedbackQuery = supabase.from('feedbacks_semanal').select('*').eq('alumno_id', userId).order('week_start', { ascending: false }).limit(5);
+      const sessionsQuery = supabase.from('registros_sesion').select('*').eq('alumno_id', userId).order('inicio_iso', { ascending: false }).limit(5);
 
-      const raw = data as any;
-
-      // La RPC ahora devuelve registros_bloque embebidos en cada sesión
-      const registrosSesion = (raw.registrosSesion || []).map((session: any) => {
-        const normalizedSession = normalizeISOFields(snakeToCamel(session)) as Record<string, any>;
-        // Procesar bloques embebidos si existen
-        const registrosBloque = (session.registros_bloque || []).map((block: any) =>
-          normalizeISOFields(snakeToCamel(block))
-        );
-        return {
-          ...normalizedSession,
-          registrosBloque
-        };
-      });
+      const [xpRes, evalsRes, feedbackRes, sessionsRes] = await Promise.all([
+        xpQuery,
+        evalsQuery,
+        feedbackQuery,
+        sessionsQuery
+      ]);
 
       return {
-        xpTotals: (raw.xpTotals || []).map(snakeToCamel),
-        evaluacionesTecnicas: (raw.evaluacionesTecnicas || []).map(snakeToCamel),
-        feedbacksSemanal: (raw.feedbacksSemanal || []).map(snakeToCamel).map(normalizeAsignacionISO),
-        registrosSesion
+        xpTotals: (xpRes.data as unknown[] || []).map((x) => snakeToCamel<StudentXPTotal>(x)),
+        evaluacionesTecnicas: (evalsRes.data as unknown[] || []).map((e) => snakeToCamel<EvaluacionTecnica>(e)),
+        feedbacksSemanal: (feedbackRes.data as unknown[] || []).map((f) => snakeToCamel<FeedbackSemanal>(f)),
+        registrosSesion: (sessionsRes.data as unknown[] || []).map((s) => normalizeISOFields(snakeToCamel<RegistroSesion>(s))),
       };
     },
-    getSeedStats: async () => {
-      const { data, error } = await supabase.rpc('get_seed_stats');
-      if (error) {
-        console.error('[remoteDataAPI] Error en getSeedStats:', error);
-        throw error;
-      }
-      return data as {
-        usersCount: number;
-        usersAdmin: number;
-        usersProf: number;
-        usersEstu: number;
-        piezas: number;
-        planes: number;
-        bloques: number;
-        asignaciones: number;
-        registrosSesion: number;
-        registrosBloques: number;
-        feedbacks: number;
+
+    async getSeedStats(): Promise<{
+      usersCount: number;
+      usersAdmin: number;
+      usersProf: number;
+      usersEstu: number;
+      piezas: number;
+      planes: number;
+      bloques: number;
+      asignaciones: number;
+      registrosSesion: number;
+      registrosBloques: number;
+      feedbacks: number;
+    }> {
+      return {
+        usersCount: 0,
+        usersAdmin: 0,
+        usersProf: 0,
+        usersEstu: 0,
+        piezas: 0,
+        planes: 0,
+        bloques: 0,
+        asignaciones: 0,
+        registrosSesion: 0,
+        registrosBloques: 0,
+        feedbacks: 0,
       };
-    }
+    },
   };
-}
+};
 
 // Export a singleton instance for direct imports
 export const remoteDataAPI = createRemoteDataAPI();

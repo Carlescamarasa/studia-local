@@ -4,6 +4,9 @@
  * Define el contrato común para todas las implementaciones de acceso a datos
  * (local y remoto). Todas las implementaciones deben cumplir esta interfaz.
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { localDataClient } from '@/api/localDataClient';
 
 import type {
   StudiaUser,
@@ -87,7 +90,11 @@ export type BloqueAPI = EntityAPI<Bloque, CreateBloqueInput, UpdateBloqueInput>;
 /**
  * API de planes
  */
-export type PlanAPI = EntityAPI<Plan, CreatePlanInput, UpdatePlanInput>;
+export interface PlanAPI extends EntityAPI<Plan, CreatePlanInput, UpdatePlanInput> {
+  preview: () => Promise<Plan[]>;
+  previewEjercicios: () => Promise<Plan[]>;
+  resolveForAsignacion: (asignacion: any, planesList?: Plan[]) => Promise<Plan | null>;
+}
 
 /**
  * API de asignaciones
@@ -97,7 +104,10 @@ export type AsignacionAPI = EntityAPI<Asignacion, CreateAsignacionInput, UpdateA
 /**
  * API de registros de sesión
  */
-export type RegistroSesionAPI = EntityAPI<RegistroSesion, CreateRegistroSesionInput, UpdateRegistroSesionInput>;
+export interface RegistroSesionAPI extends EntityAPI<RegistroSesion, CreateRegistroSesionInput, UpdateRegistroSesionInput> {
+  preview: () => Promise<RegistroSesion[]>;
+  listByUsuario: (alumnoId: string, limit?: number | null) => Promise<RegistroSesion[]>;
+}
 
 /**
  * API de registros de bloque

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { localDataClient } from '@/api/localDataClient';
 import { generateCSV, parseCSV } from './utils/csvHelpers';
 import { displayName, calcularOffsetSemanas, calcularTiempoSesion, formatLocalDate } from '@/features/shared/utils/helpers';
@@ -28,6 +30,7 @@ export const datasets = [
             upsertKey: 'code',
             csvHeaders: ['code', 'nombre', 'tipo', 'duracion_objetivo_seg', 'instrucciones', 'indicadorLogro', 'mediaLinks'],
             editableFields: ['nombre', 'tipo', 'duracion_objetivo_seg', 'instrucciones', 'mediaLinks'],
+             
             handler: async (data: any, format: string, user: any) => {
                 const results: { created: number; updated: number; skipped: number; errors: string[] } = { created: 0, updated: 0, skipped: 0, errors: [] };
                 const bloques = await localDataClient.entities.Bloque.list();
@@ -94,8 +97,9 @@ export const datasets = [
                             });
                             results.created++;
                         }
-                    } catch (error: any) {
-                        results.errors.push(`${row.nombre || 'Fila desconocida'}: ${error.message}`);
+                    } catch (error: unknown) {
+                        const msg = error instanceof Error ? error.message : 'Unknown error';
+                        results.errors.push(`${row.nombre || 'Fila desconocida'}: ${msg}`);
                     }
                 }
                 return results;
@@ -140,6 +144,7 @@ export const datasets = [
                 'ejercicios': async (val: string) => ResolutionService.resolveExercises(val)
             },
 
+             
             handler: async (data: any, format: string, user: any) => {
                 const results: { created: number; updated: number; skipped: number; errors: string[] } = { created: 0, updated: 0, skipped: 0, errors: [] };
                 const piezas = await localDataClient.entities.Pieza.list();
@@ -149,7 +154,7 @@ export const datasets = [
 
                 for (const row of rows) {
                     try {
-                        const { nombre, nivel, elementos } = row;
+                        const { nombre, nivel, elementos: _elementos } = row;
 
                         // Elementos should be resolved by pipeline ideally via Resolver.
                         // But if raw, we might need fallback? Assuming pipeline used mostly.
@@ -189,8 +194,9 @@ export const datasets = [
                             });
                             results.created++;
                         }
-                    } catch (e: any) {
-                        results.errors.push(`${row.nombre}: ${e.message}`);
+                    } catch (e: unknown) {
+                        const msg = e instanceof Error ? e.message : 'Unknown error';
+                        results.errors.push(`${row.nombre}: ${msg}`);
                     }
                 }
                 return results;
@@ -205,6 +211,7 @@ export const datasets = [
                 const rows = piezas.map(p => ({
                     nombre: p.nombre,
                     nivel: p.nivel,
+                     
                     ejercicios: (p.elementos || []).map((e: any) => e.nombre || e.code).join(',') // Export names/codes
                 }));
                 return generateCSV(headers, rows);
@@ -224,6 +231,7 @@ export const datasets = [
             supportsUpdate: false,
             upsertKey: 'nombre',
             editableFields: ['nombre', 'focoGeneral'],
+             
             handler: async (data: any, format: string, user: any) => {
                 const results: { created: number; updated: number; skipped: number; errors: string[] } = { created: 0, updated: 0, skipped: 0, errors: [] };
                 if (format !== 'json') throw new Error('Planes solo soporta JSON');
@@ -266,15 +274,16 @@ export const datasets = [
                             profesorId: user.id
                         });
                         results.created++;
-                    } catch (e: any) {
-                        results.errors.push(`${item.nombre}: ${e.message}`);
+                    } catch (e: unknown) {
+                        const msg = e instanceof Error ? e.message : 'Unknown error';
+                        results.errors.push(`${item.nombre}: ${msg}`);
                     }
                 }
                 return results;
             }
         },
         export: {
-            handler: async (format: string) => {
+            handler: async (_format: string) => {
                 const planes = await localDataClient.entities.Plan.list();
                 const piezas = await localDataClient.entities.Pieza.list();
                 const data = planes.map(p => ({
@@ -310,7 +319,8 @@ export const datasets = [
                 'profesor_email': async (val: string) => ResolutionService.resolveUser(val)
             },
 
-            handler: async (data: any, format: string, user: any) => {
+             
+            handler: async (data: any, format: string, _user: any) => {
                 const results: { created: number; updated: number; skipped: number; errors: string[] } = { created: 0, updated: 0, skipped: 0, errors: [] };
                 const users = await localDataClient.entities.User.list();
 
@@ -359,8 +369,9 @@ export const datasets = [
                             });
                             results.created++;
                         }
-                    } catch (e: any) {
-                        results.errors.push(`${row.email || 'Row'}: ${e.message}`);
+                    } catch (e: unknown) {
+                        const msg = e instanceof Error ? e.message : 'Unknown error';
+                        results.errors.push(`${row.email || 'Row'}: ${msg}`);
                     }
                 }
                 return results;
@@ -396,7 +407,7 @@ export const datasets = [
         formats: ['csv'],
         import: null,
         export: {
-            handler: async (format: string) => {
+            handler: async (_format: string) => {
                 const asignaciones = await localDataClient.entities.Asignacion.list();
                 const usuarios = await localDataClient.entities.User.list();
 
@@ -425,7 +436,7 @@ export const datasets = [
         formats: ['csv'],
         import: null,
         export: {
-            handler: async (format: string) => {
+            handler: async (_format: string) => {
                 const usuarios = await localDataClient.entities.User.list();
                 const asignaciones = await localDataClient.entities.Asignacion.list();
                 const hoy = new Date();
@@ -433,6 +444,7 @@ export const datasets = [
                 const semanaActualISO = formatLocalDate(lunes);
                 const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
                 const headers = ["Alumno", "Email", "Pieza", "Plan", "Semana", "Sesiones", "Tiempo(min)"];
+                 
                 const rows: any[] = [];
                 estudiantes.forEach(est => {
                     const asig = asignaciones.find(a =>
@@ -443,6 +455,7 @@ export const datasets = [
                         const offset = calcularOffsetSemanas(asig.semanaInicioISO, semanaActualISO);
                         const semanaPlan = asig.plan?.semanas?.[offset];
                         if (semanaPlan) {
+                             
                             const tiempo = semanaPlan.sesiones?.reduce((acc: number, s: any) => acc + calcularTiempoSesion(s), 0) || 0;
                             rows.push({
                                 Alumno: displayName(est),

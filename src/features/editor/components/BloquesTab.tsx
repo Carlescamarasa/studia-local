@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { useBloques } from "@/features/estudio/hooks/useBloques";
 import { Button } from "@/features/shared/components/ui/button";

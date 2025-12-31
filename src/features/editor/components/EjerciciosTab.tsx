@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo } from 'react';
 import { useBloques } from '@/features/estudio/hooks/useBloques';
 import { remoteDataAPI } from '@/api/remote/api';

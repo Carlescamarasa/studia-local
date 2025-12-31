@@ -1,4 +1,5 @@
-import React from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/features/shared/components/ds";
 import { Music, BarChart3 } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";

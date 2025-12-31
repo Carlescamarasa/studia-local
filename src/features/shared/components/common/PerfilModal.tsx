@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useState, useEffect, useCallback } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -53,7 +55,7 @@ export default function PerfilModal({
   const [phoneCountryCode, setPhoneCountryCode] = useState('+34'); // Default: España
 
   // Lista de prefijos de país comunes con longitud estándar de número y formato de placeholder
-  const countryCodes = [
+  const countryCodes = useMemo(() => [
     { code: '+34', country: '🇪🇸 España', digits: 9, placeholder: '600 000 000' },
     { code: '+1', country: '🇺🇸 USA/Canadá', digits: 10, placeholder: '(555) 123-4567' },
     { code: '+52', country: '🇲🇽 México', digits: 10, placeholder: '55 1234 5678' },
@@ -72,7 +74,7 @@ export default function PerfilModal({
     { code: '+49', country: '🇩🇪 Alemania', digits: 11, placeholder: '0171 1234567' },
     { code: '+44', country: '🇬🇧 Reino Unido', digits: 10, placeholder: '7700 123456' },
     { code: '+351', country: '🇵🇹 Portugal', digits: 9, placeholder: '912 345 678' },
-  ];
+  ], []);
 
 
 
@@ -277,7 +279,7 @@ export default function PerfilModal({
     }
 
     return '+34'; // Default
-  }, []);
+  }, [countryCodes]);
 
 
   // Normalizar número de teléfono (eliminar espacios, guiones, paréntesis, etc.)
@@ -302,7 +304,7 @@ export default function PerfilModal({
     cleaned = cleaned.replace(/[\s().-]/g, '');
 
     return cleaned;
-  }, []);
+  }, [countryCodes]);
 
 
 
@@ -342,7 +344,7 @@ export default function PerfilModal({
       });
       setSaveResult(null);
     }
-  }, [targetUser, open, targetUserEmail, extractCountryCodeFromPhone, normalizePhoneNumber]); // Añadir targetUserEmail como dependencia para actualizar cuando cambie
+  }, [targetUser, open, targetUserEmail, extractCountryCodeFromPhone, normalizePhoneNumber, allUsers, countryCodes]);
 
   const updateUserMutation = useMutation<any, Error, any>({
     mutationFn: async (data: any) => {

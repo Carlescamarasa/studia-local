@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/features/shared/components/ds/PageHeader';
 import { Tabs } from '@/features/shared/components/ds/Tabs';
 import MarkdownPage from '@/features/support/components/MarkdownPage';
@@ -9,7 +9,7 @@ import { HelpCircle, BookOpen, User, Users, Settings, Keyboard, Video, Info } fr
 
 export default function AyudaPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+
 
   // Obtener tab desde URL o usar 'README' por defecto
   const tabFromUrl = searchParams.get('tab') || 'README';

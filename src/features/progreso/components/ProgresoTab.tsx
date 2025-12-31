@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { Popover, PopoverContent, PopoverTrigger } from "@/features/shared/components/ui/popover";

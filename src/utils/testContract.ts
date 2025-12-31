@@ -1,6 +1,9 @@
 /**
  * Test Contract - TypeScript definitions for actionable test system
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 export type Severity = "critical" | "high" | "medium" | "low";
 export type Status = "pass" | "warn" | "fail" | "skip";

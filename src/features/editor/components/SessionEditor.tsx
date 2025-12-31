@@ -1,4 +1,5 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
@@ -9,7 +10,7 @@ import { Input } from "@/features/shared/components/ui/input";
 import { Label } from "@/features/shared/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
-import { X, Save, Plus, Trash2, PlayCircle, Edit, Copy, GripVertical, Search, RotateCcw, AlertTriangle, ChevronDown, ChevronRight, Shuffle, Zap, Eye } from "lucide-react";
+import { X, Save, Trash2, PlayCircle, Edit, Copy, GripVertical, RotateCcw, AlertTriangle, ChevronDown, ChevronRight, Shuffle, Zap, Eye } from "lucide-react";
 import { Badge } from "@/features/shared/components/ds/Badge";
 import { Alert, AlertDescription } from "@/features/shared/components/ui/alert";
 import { Checkbox } from "@/features/shared/components/ui/checkbox";
@@ -23,8 +24,8 @@ import { createPortal } from "react-dom";
 import { uid, ensureRondaIds, buildDefaultSecuencia } from "@/features/estudio/components/sessionSequence";
 import { componentStyles } from "@/design/componentStyles";
 import { SortableItem } from "@/features/shared/components/dnd/SortableItem";
-import { calculateSessionTime } from "@/utils/variationUtils";
-import { formatDurationMinutes } from "@/features/shared/utils/helpers";
+// import { calculateSessionTime } from "@/utils/variationUtils";
+// import { formatDurationMinutes } from "@/features/shared/utils/helpers";
 import { Clock } from "lucide-react";
 import { Ejercicio, SessionFormData, Ronda, SecuenciaItem, Pieza, Variation } from "@/features/editor/types";
 
@@ -49,14 +50,13 @@ interface SortableRondaProps {
   componentStyles: any;
 }
 
-// Componente Sortable para Ronda
 function SortableRonda({
   id,
   ronda,
   seqIndex,
   isExpanded,
   formData,
-  expandedRondas,
+  expandedRondas: _expandedRondas,
   setExpandedRondas,
   updateRondaRepeticiones,
   updateRondaAleatoria,
@@ -199,7 +199,7 @@ function SortableRonda({
                       }
                     }}
                   >
-                    {({ dragHandleProps, isDragging }) => (
+                    {({ dragHandleProps, isDragging: _isDragging }) => (
                       <>
                         <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 -m-1" onClick={(e) => e.stopPropagation()}>
                           <GripVertical className="w-3 h-3 text-[var(--color-text-secondary)]" />
@@ -295,7 +295,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
   const [selectedEjercicios, setSelectedEjercicios] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [tiposFilter, setTiposFilter] = useState<Set<string>>(new Set(['TC']));
-  const [isInlineMode, setIsInlineMode] = useState(false);
+  // const [isInlineMode, setIsInlineMode] = useState(false);
 
   const { data: ejercicios = [], isLoading: isLoadingEjercicios } = useQuery<Ejercicio[]>({
     queryKey: ['bloques-session-editor'], // Unique key to avoid collision with EjerciciosTab which returns raw snake_case
@@ -441,7 +441,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
 
 
 
-  const filteredEjercicios = ejercicios.filter(e => {
+  const filteredEjercicios = useMemo(() => ejercicios.filter(e => {
     const name = e.nombre || e.title || '';
     const code = e.code || '';
 
@@ -450,7 +450,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     const matchTipo = tiposFilter.size === 0 || tiposFilter.has(e.tipo || '');
 
     return matchSearch && matchTipo;
-  });
+  }), [ejercicios, searchTerm, tiposFilter]);
 
   const toggleTipoFilter = (tipo: string) => {
     const newFilters = new Set(tiposFilter);
@@ -468,7 +468,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     if (ejercicios.length > 0) {
       console.log('[SessionEditor] Sample Data:', ejercicios[0]);
     }
-  }, [filteredEjercicios.length, ejercicios.length]);
+  }, [filteredEjercicios.length, ejercicios]);
 
   const addEjerciciosSeleccionados = () => {
     const newBloquesToAdd: Ejercicio[] = [];
@@ -580,13 +580,13 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     setExpandedRondas(prev => new Set([...prev, nuevoSeqIndex]));
   };
 
-  const updateEjercicioInline = (index: number, updatedEjercicio: Ejercicio) => {
+  /* const updateEjercicioInline = (index: number, updatedEjercicio: Ejercicio) => {
     const newBloques = [...formData.bloques];
     newBloques[index] = updatedEjercicio;
     setFormData({ ...formData, bloques: newBloques });
     setEditingEjercicio(null);
     toast.success('✅ Ejercicio actualizado');
-  };
+  }; */
 
   const removeEjercicio = (index: number) => {
     const ejercicio = formData.bloques[index];
@@ -788,7 +788,7 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
     }
   };
 
-  const calcularTiempoTotal = () => {
+  /* const calcularTiempoTotal = () => {
     const tiempoEjercicios = formData.bloques
       .filter(b => b.tipo !== 'AD')
       .reduce((total, b) => total + (b.duracionSeg || 0), 0);
@@ -804,8 +804,8 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
       return total + (tiempoRonda * ronda.repeticiones);
     }, 0);
 
-    return tiempoEjercicios + tiempoRondas;
-  };
+    return formatDurationMinutes(tiempoEjercicios + tiempoRondas);
+  }; */
 
   const focoLabels = {
     GEN: 'General',

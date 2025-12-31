@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useAuth } from '@/auth/AuthProvider';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';

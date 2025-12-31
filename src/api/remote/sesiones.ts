@@ -31,7 +31,7 @@ interface DbRegistroBloque {
 /**
  * Obtiene una vista previa de los registros de sesión (limitado a 20)
  */
-export async function fetchRegistrosSesionPreview(): Promise<any[]> {
+export async function fetchRegistrosSesionPreview(): Promise<RegistroSesion[]> {
     const { data, error } = await withAuthErrorHandling(
         supabase
             .from('registros_sesion')
@@ -44,13 +44,13 @@ export async function fetchRegistrosSesionPreview(): Promise<any[]> {
         throw error;
     }
 
-    return ((data as DbRegistroSesion[]) || []);
+    return ((data as DbRegistroSesion[]) || []).map(r => normalizeISOFields<RegistroSesion>(snakeToCamel<RegistroSesion>(r)));
 }
 
 /**
  * Obtiene todos los registros de sesión (para migración de multimedia)
  */
-export async function fetchRegistrosSesionMultimedia(): Promise<any[]> {
+export async function fetchRegistrosSesionMultimedia(): Promise<RegistroSesion[]> {
     const { data, error } = await withAuthErrorHandling(
         supabase
             .from('registros_sesion')
@@ -61,13 +61,13 @@ export async function fetchRegistrosSesionMultimedia(): Promise<any[]> {
         throw error;
     }
 
-    return ((data as DbRegistroSesion[]) || []);
+    return ((data as DbRegistroSesion[]) || []).map(r => normalizeISOFields<RegistroSesion>(snakeToCamel<RegistroSesion>(r)));
 }
 
 /**
  * Obtiene las sesiones recientes (para página de ejercicios)
  */
-export async function fetchRecentRegistrosSesion(): Promise<any[]> {
+export async function fetchRecentRegistrosSesion(): Promise<RegistroSesion[]> {
     const { data, error } = await withAuthErrorHandling(
         supabase
             .from('registros_sesion')
@@ -80,7 +80,7 @@ export async function fetchRecentRegistrosSesion(): Promise<any[]> {
         throw error;
     }
 
-    return ((data as DbRegistroSesion[]) || []);
+    return ((data as DbRegistroSesion[]) || []).map(r => normalizeISOFields<RegistroSesion>(snakeToCamel<RegistroSesion>(r)));
 }
 
 export async function fetchRegistrosSesionList(sort?: string, options: { includeBlocks?: boolean } = { includeBlocks: true }): Promise<RegistroSesion[]> {
@@ -108,7 +108,7 @@ export async function fetchRegistrosSesionList(sort?: string, options: { include
     // Fetch associated blocks in batches to avoid URL length limits
     const sessionIds = sessions.map(s => s.id);
     const chunkSize = 50;
-    let allBlocks: any[] = [];
+    let allBlocks: DbRegistroBloque[] = [];
 
     // Process in chunks
     for (let i = 0; i < sessionIds.length; i += chunkSize) {
@@ -124,11 +124,11 @@ export async function fetchRegistrosSesionList(sort?: string, options: { include
         }
 
         if (blocksData) {
-            allBlocks = [...allBlocks, ...blocksData];
+            allBlocks = [...allBlocks, ...(blocksData as DbRegistroBloque[])];
         }
     }
 
-    const blocks = (allBlocks as DbRegistroBloque[]).map((b: DbRegistroBloque) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
+    const blocks = allBlocks.map((b: DbRegistroBloque) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
 
     // Join blocks to sessions
     return sessions.map(session => ({
@@ -171,7 +171,7 @@ export async function fetchRegistroSesion(id: string): Promise<RegistroSesion | 
     };
 }
 
-export async function fetchRegistrosSesionByFilter(filters: Record<string, any>, limit?: number | null, options: { includeBlocks?: boolean } = { includeBlocks: true }): Promise<RegistroSesion[]> {
+export async function fetchRegistrosSesionByFilter(filters: Record<string, unknown>, limit?: number | null, options: { includeBlocks?: boolean } = { includeBlocks: true }): Promise<RegistroSesion[]> {
     let query = supabase.from('registros_sesion').select('*');
 
     for (const [key, value] of Object.entries(filters)) {
@@ -196,7 +196,7 @@ export async function fetchRegistrosSesionByFilter(filters: Record<string, any>,
     // Fetch associated blocks in batches to avoid URL length limits
     const sessionIds = sessions.map(s => s.id);
     const chunkSize = 50;
-    let allBlocks: any[] = [];
+    let allBlocks: DbRegistroBloque[] = [];
 
     // Process in chunks
     for (let i = 0; i < sessionIds.length; i += chunkSize) {
@@ -212,11 +212,11 @@ export async function fetchRegistrosSesionByFilter(filters: Record<string, any>,
         }
 
         if (blocksData) {
-            allBlocks = [...allBlocks, ...blocksData];
+            allBlocks = [...allBlocks, ...(blocksData as DbRegistroBloque[])];
         }
     }
 
-    const blocks = (allBlocks as DbRegistroBloque[]).map((b: DbRegistroBloque) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
+    const blocks = allBlocks.map((b: DbRegistroBloque) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
 
     // Join blocks to sessions
     return sessions.map(session => ({

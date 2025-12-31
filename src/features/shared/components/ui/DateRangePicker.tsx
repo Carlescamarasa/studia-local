@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Calendar } from "@/features/shared/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/features/shared/components/ui/popover";

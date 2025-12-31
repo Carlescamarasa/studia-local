@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * HardcodeInspector - Floating widget for detecting hardcoded styles
  * 
@@ -270,6 +272,24 @@ export function HardcodeInspector({ showToggleButton = true }) {
         } catch { /* Intentionally swallowed - sessionStorage may be blocked */ }
     }, [isEnabled]);
 
+    const handleScan = useCallback(() => {
+        setIsScanning(true);
+        requestAnimationFrame(() => {
+            try {
+                const data = scanPage();
+                setResults(data);
+                if (data.length === 0) {
+                    toast.success('✅ No se encontraron estilos hardcodeados');
+                }
+            } catch (e) {
+                console.error('[HardcodeInspector]', e);
+                toast.error('Error al escanear');
+            } finally {
+                setIsScanning(false);
+            }
+        });
+    }, []);
+
     // Auto-scan when enabled (initial scan)
     useEffect(() => {
         if (isEnabled && !isMinimized) {
@@ -278,7 +298,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [isEnabled, isMinimized]);
+    }, [isEnabled, isMinimized, handleScan]);
 
     // Cleanup highlights on unmount or disable
     useEffect(() => {
@@ -345,23 +365,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
         }
     }, [isEnabled, isMinimized, handleMouseMove, handleMouseUp]);
 
-    const handleScan = useCallback(() => {
-        setIsScanning(true);
-        requestAnimationFrame(() => {
-            try {
-                const data = scanPage();
-                setResults(data);
-                if (data.length === 0) {
-                    toast.success('✅ No se encontraron estilos hardcodeados');
-                }
-            } catch (e) {
-                console.error('[HardcodeInspector]', e);
-                toast.error('Error al escanear');
-            } finally {
-                setIsScanning(false);
-            }
-        });
-    }, []);
+
 
 
     // Auto-scan on route changes only (not on every DOM mutation to avoid excessive scanning)
@@ -411,6 +415,14 @@ export function HardcodeInspector({ showToggleButton = true }) {
         }
     }, [selectedColor]);
 
+    const totalCount = useMemo(() => results.reduce((acc, r) => acc + r.count, 0), [results]);
+
+    // Filter results by type
+    const filteredResults = useMemo(() => {
+        if (typeFilter === 'all') return results;
+        return results.filter(r => r.type === typeFilter);
+    }, [results, typeFilter]);
+
     const handleCopyReport = useCallback(() => {
         const currentUrl = window.location.href;
         const lines = [
@@ -445,7 +457,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
 
         navigator.clipboard.writeText(lines.join('\\n'));
         toast.success('📋 Reporte copiado');
-    }, [results, savedAdjustments]);
+    }, [results, savedAdjustments, typeFilter, filteredResults]);
 
     // Apply CSS variable preview to elements and save adjustment
     const handleApplyPreview = useCallback((colorData: any, cssVar: string) => {
@@ -515,14 +527,6 @@ export function HardcodeInspector({ showToggleButton = true }) {
         });
         toast.info('❌ Ajuste eliminado');
     }, []);
-
-    const totalCount = useMemo(() => results.reduce((acc, r) => acc + r.count, 0), [results]);
-
-    // Filter results by type
-    const filteredResults = useMemo(() => {
-        if (typeFilter === 'all') return results;
-        return results.filter(r => r.type === typeFilter);
-    }, [results, typeFilter]);
 
     const inlineCount = useMemo(() => results.filter(r => r.type === 'inline').length, [results]);
     const tailwindCount = useMemo(() => results.filter(r => r.type === 'tailwind').length, [results]);

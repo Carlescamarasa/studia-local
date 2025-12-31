@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Generador de datos locales desde cero
  * Crea una base de datos local completa y coherente para desarrollo
  */
 
 import { localUsers } from './localUsers';
+import { localDataClient } from '@/api/localDataClient';
 import { calcularTiempoSesion } from '@/features/shared/utils/helpers';
 
 // IDs válidos de usuarios (fuente de verdad)

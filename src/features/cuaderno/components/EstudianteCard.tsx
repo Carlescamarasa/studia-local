@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { Badge } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ui/button";
@@ -5,6 +6,7 @@ import {
     Notebook, Music, PlayCircle, ChevronRight, MessageSquare,
     Edit, Trash2
 } from "lucide-react";
+
 import UserActionsMenu from "@/features/shared/components/common/UserActionsMenu";
 import SessionContentView from "@/features/shared/components/study/SessionContentView";
 import MediaLinksBadges from "@/features/shared/components/media/MediaLinksBadges";
@@ -20,10 +22,6 @@ interface Sesion {
     [key: string]: unknown;
 }
 
-interface Semana {
-    nombre?: string;
-    sesiones?: Sesion[];
-}
 
 interface MediaLink {
     url: string;

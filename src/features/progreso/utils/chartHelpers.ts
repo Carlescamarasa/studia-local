@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { formatLocalDate, parseLocalDate, startOfMonday } from "./progresoUtils";
 
 /**
@@ -136,7 +137,6 @@ export function aggregateData(dailySeries: any[], bucketMode: string) {
     dailySeries.forEach((item: any) => {
         const d = parseLocalDate(item.fecha);
         let key;
-        let labelLong; // Para tooltip "Del X al Y"
 
         if (bucketMode === 'semana') {
             const monday = startOfMonday(d);
@@ -175,7 +175,6 @@ export function aggregateData(dailySeries: any[], bucketMode: string) {
 
     // Procesar grupos
     return Object.values(groups).map((g: any) => {
-        const count = g.items.length;
         const totalTiempo = g.items.reduce((sum: number, i: any) => sum + i.tiempo, 0);
         const totalSesiones = g.items.reduce((sum: number, i: any) => sum + i.sesiones, 0);
         const totalCompletados = g.items.reduce((sum: number, i: any) => sum + i.completados, 0);

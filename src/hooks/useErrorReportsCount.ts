@@ -32,7 +32,7 @@ export function useErrorReportsCount() {
         if (!session?.access_token) {
           return { nuevos: 0, enRevision: 0 };
         }
-      } catch (sessionError) {
+      } catch {
         return { nuevos: 0, enRevision: 0 };
       }
 

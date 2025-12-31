@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Bloque, Plan, Pieza, EvaluacionTecnica, PlanSemana, PlanSesion, SesionBloque, SesionRonda } from '@/features/shared/types/domain';
 
 export type { Bloque, Plan, Pieza, EvaluacionTecnica, PlanSemana, PlanSesion, SesionBloque, SesionRonda };

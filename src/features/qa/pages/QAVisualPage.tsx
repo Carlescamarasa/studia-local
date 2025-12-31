@@ -1,3 +1,5 @@
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/features/shared/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/features/shared/components/ds";
@@ -146,7 +148,7 @@ function QAVisualContent({ embedded = false }: QAVisualContentProps) {
 
   useEffect(() => {
     runChecks();
-  }, [config]);
+  }, [runChecks]);
 
   const passed = checks.filter(c => c.pass).length;
   const failed = checks.filter(c => !c.pass).length;

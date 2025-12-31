@@ -24,7 +24,7 @@ export interface CurrentProfileResult {
 }
 
 export function useCurrentProfile(): CurrentProfileResult {
-  const { effectiveUserId, effectiveEmail, isImpersonating } = useEffectiveUser();
+  const { effectiveUserId, effectiveEmail } = useEffectiveUser();
   const { data: allUsers, isLoading: usersLoading, error: usersError, refetch } = useUsers();
 
   // Buscar perfil en datos cacheados de useUsers()

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useMemo } from "react";
 import { Button } from "@/features/shared/components/ds/Button";
 import { X, Calendar, Clock, TrendingUp, FileText } from "lucide-react";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { Button } from "@/features/shared/components/ui/button";
 import { Eye } from "lucide-react";

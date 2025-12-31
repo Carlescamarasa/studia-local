@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { getEntity, createItem, updateItem, deleteItem } from './localStorageClient';
 
 const ENTITY_KEY = 'eventosCalendario';

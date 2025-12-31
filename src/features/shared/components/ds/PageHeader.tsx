@@ -1,3 +1,5 @@
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useRef } from "react";
 import { componentStyles } from "@/design/componentStyles";
 import { Menu, X, Info } from "lucide-react";

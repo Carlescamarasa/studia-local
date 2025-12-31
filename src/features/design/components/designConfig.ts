@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 /**
  * Design System Configuration - Origen único de verdad
  * Estructura completa y profesional para todo el sistema de diseño
@@ -149,8 +151,8 @@ export interface DesignOverlay {
  */
 export interface DesignChangePartitioned {
   path: string;
-  from: any;
-  to: any;
+  from: unknown;
+  to: unknown;
   scope: 'common' | 'light' | 'dark';
 }
 
@@ -646,6 +648,7 @@ function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>)
         if (!(keyTyped in target)) {
           Object.assign(output, { [keyTyped]: source[keyTyped] });
         } else {
+           
           output[keyTyped] = deepMerge(target[keyTyped] as any, source[keyTyped] as any);
         }
       } else {
@@ -656,8 +659,8 @@ function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>)
   return output;
 }
 
-function isObject(item: any): item is Record<string, any> {
-  return item && typeof item === 'object' && !Array.isArray(item);
+function isObject(item: unknown): item is Record<string, unknown> {
+  return item !== null && typeof item === 'object' && !Array.isArray(item);
 }
 
 /**
@@ -695,7 +698,7 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
 
   // Escala de marca HSL para utilidades [hsl(var(--brand-500))] usadas en estilos
   // Tomamos el tono desde brandHue y aplicamos una escala de luminosidad estándar
-  const brandHue = typeof (normalized as any).brandHue === 'number' ? (normalized as any).brandHue : 26;
+  const brandHue = typeof normalized.brandHue === 'number' ? normalized.brandHue : 26;
   const brandSaturation = 100; // saturación fija para consistencia visual
   const brandScale: Record<string, number> = {
     '50': 97,
@@ -716,6 +719,7 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
   // Radius - con soporte para preset (sharp/soft/round)
   if (normalized.layout?.radius) {
     // Check for radius preset (sharp/soft/round)
+     
     const radiusPresetName = (normalized.layout.radius as any).preset as RadiusPresetValue | undefined;
     const radiusPreset = radiusPresetName ? RADIUS_PRESET_MAP[radiusPresetName] : null;
 
@@ -744,20 +748,20 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
         vars['--radius'] = getRadiusValue(normalized.layout.radius.global as RadiusValue);
       }
       // Alias de compatibilidad: emitir también --radius-ctrl
-      const controlsRadius = (normalized.layout.radius as any).controls;
+      const controlsRadius = normalized.layout.radius.controls;
       if (controlsRadius) {
-        vars['--radius-ctrl'] = getRadiusValue(controlsRadius as RadiusValue);
+        vars['--radius-ctrl'] = getRadiusValue(controlsRadius);
       }
-      const cardRadius = (normalized.layout.radius as any).card;
+      const cardRadius = normalized.layout.radius.card;
       if (cardRadius) {
-        vars['--radius-card'] = getRadiusValue(cardRadius as RadiusValue);
+        vars['--radius-card'] = getRadiusValue(cardRadius);
       }
       // Header inner radius - usa card radius por defecto
-      vars['--header-inner-radius'] = getRadiusValue((normalized.layout.radius as any).card || 'none');
+      vars['--header-inner-radius'] = getRadiusValue(normalized.layout.radius.card || 'none');
 
       // Table radius - usa card radius por defecto si no existe
-      const tableRadius = (normalized.layout.radius as any).table;
-      vars['--radius-table'] = tableRadius ? getRadiusValue(tableRadius as RadiusValue) : (vars['--radius-card'] || getRadiusValue('sm'));
+      const tableRadius = normalized.layout.radius.table;
+      vars['--radius-table'] = tableRadius ? getRadiusValue(tableRadius) : (vars['--radius-card'] || getRadiusValue('sm'));
 
       // Badge and pill radius - uses pill from preset or defaults to control radius
       const pillRadius = vars['--radius-pill'] || vars['--radius-ctrl'] || getRadiusValue('full');
@@ -1183,14 +1187,18 @@ export function generateCSSVariables(design: Partial<DesignTokens> | null | unde
 
 interface DesignChange {
   path: string;
+   
   from: any;
+   
   to: any;
 }
 
 /**
  * Recursively compute flattened paths and values from an object
  */
+ 
 function flattenObject(obj: Record<string, any>, prefix = ''): Record<string, any> {
+   
   const result: Record<string, any> = {};
 
   for (const key in obj) {
@@ -1221,7 +1229,9 @@ export function diffDesign(
   const normalizedBase = normalizeDesign(base);
   const normalizedNext = normalizeDesign(next);
 
+   
   const flatBase = flattenObject(normalizedBase as Record<string, any>);
+   
   const flatNext = flattenObject(normalizedNext as Record<string, any>);
 
   const changes: DesignChange[] = [];
@@ -1253,10 +1263,12 @@ export function diffDesign(
 export function applyDesignChange(
   design: Partial<DesignTokens>,
   path: string,
+   
   value: any
 ): Partial<DesignTokens> {
   const result = JSON.parse(JSON.stringify(design)); // Deep clone
   const keys = path.split('.');
+   
   let current: any = result;
 
   for (let i = 0; i < keys.length - 1; i++) {

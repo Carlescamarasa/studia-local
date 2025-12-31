@@ -117,7 +117,7 @@ export async function uploadFile(
 
     try {
         // Upload to Supabase Storage
-        const { data, error } = await supabase.storage
+        const { error } = await supabase.storage
             .from(MEDIA_BUCKET_NAME)
             .upload(storagePath, file, {
                 cacheControl: '3600',

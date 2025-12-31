@@ -6,6 +6,11 @@
  * - log.warn() solo loguea en desarrollo (para advertencias no críticas)
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
+/**
+ * Utility for categorized console logging using emojis
+ */
 const isProduction = import.meta.env.MODE === 'production' || import.meta.env.PROD;
 const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development';
 

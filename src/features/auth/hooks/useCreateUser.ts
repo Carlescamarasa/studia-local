@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { toast } from 'sonner';
+
 
 interface CreateUserData {
   email: string;

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from "@/features/shared/components/ui/button";
 import { Badge } from "@/features/shared/components/ds/Badge";
@@ -50,7 +52,7 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }: MetronomoPro
         nextNoteTimeRef.current += secondsPerBeat;
     }, [bpm]);
 
-    const playClick = (time: number) => {
+    const playClick = useCallback((time: number) => {
         if (!audioContextRef.current) return;
         const osc = audioContextRef.current.createOscillator();
         const gainNode = audioContextRef.current.createGain();
@@ -63,7 +65,7 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }: MetronomoPro
 
         osc.start(time);
         osc.stop(time + 0.05);
-    };
+    }, [volume]);
 
     const scheduler = useCallback(() => {
         if (!audioContextRef.current) return;
@@ -72,7 +74,7 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }: MetronomoPro
             nextNote();
         }
         timerIDRef.current = setTimeout(scheduler, lookahead);
-    }, [nextNote, volume]);
+    }, [nextNote, playClick]);
 
     useEffect(() => {
         if (isPlaying && audioContextRef.current) {

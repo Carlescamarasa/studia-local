@@ -43,7 +43,7 @@ export default function HeatmapFranjas({ registrosFiltrados = [], periodoInicio,
     }, [periodoInicio, periodoFin, registrosFiltrados]);
 
     // Definir las 8 franjas horarias de 3h
-    const franjas = [
+    const franjas = useMemo(() => [
         { label: "00–03", start: 0, end: 3 },
         { label: "03–06", start: 3, end: 6 },
         { label: "06–09", start: 6, end: 9 },
@@ -52,7 +52,7 @@ export default function HeatmapFranjas({ registrosFiltrados = [], periodoInicio,
         { label: "15–18", start: 15, end: 18 },
         { label: "18–21", start: 18, end: 21 },
         { label: "21–24", start: 21, end: 24 },
-    ];
+    ], []);
 
     interface Columna {
         id: string | number;

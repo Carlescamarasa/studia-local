@@ -1,4 +1,4 @@
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/features/shared/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerTitle } from '@/features/shared/components/ui/drawer';
 import { Dialog, DialogContent, DialogTitle } from '@/features/shared/components/ui/dialog';
 import { Button } from '@/features/shared/components/ui/button';
 import { ChevronLeft } from 'lucide-react';

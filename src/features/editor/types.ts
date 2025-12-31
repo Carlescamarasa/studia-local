@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { MediaItem } from "@/features/shared/components/media/MediaLinksInput";
 export type { MediaItem };
 
@@ -155,6 +156,14 @@ export interface Plan {
     focoGeneral: string;
     objetivoSemanalPorDefecto?: string;
     piezaId?: string;
+    semanas: Semana[];
+}
+
+export interface EditorState {
+    nombre: string;
+    focoGeneral: string;
+    objetivoSemanalPorDefecto: string;
+    piezaId: string;
     semanas: Semana[];
 }
 

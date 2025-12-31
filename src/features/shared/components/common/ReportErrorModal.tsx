@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useLocation } from 'react-router-dom';
@@ -205,7 +207,6 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
           // Excluir overlays y modales
           try {
-            // @ts-expect-error
             const style = window.getComputedStyle(node);
             const zIndex = parseInt(style.zIndex);
             const isHighZIndex = zIndex >= 50;

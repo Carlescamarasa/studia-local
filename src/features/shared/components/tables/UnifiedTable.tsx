@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/features/shared/components/ui/table";
 import { Button } from "@/features/shared/components/ui/button";
@@ -327,7 +328,6 @@ export default function UnifiedTable<T>({
                   return (
                     <TableRow
                       key={itemKey}
-                      //@ts-expect-error - clickable is a valid prop in our table.tsx
                       clickable={!!(onRowClick || (hasOnlyOneAction && actions.length === 1))}
                       selected={isSelected}
                       className="group hover:bg-[var(--color-surface-muted)]/50 transition-colors"

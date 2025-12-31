@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/features/shared/components/ui/button';
 import { Play, ExternalLink, AlertCircle } from 'lucide-react';
 

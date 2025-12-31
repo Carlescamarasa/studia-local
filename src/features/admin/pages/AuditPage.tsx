@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useEffect, useState } from 'react';
 import { useData } from '@/providers/DataProvider';
 
@@ -91,7 +93,7 @@ export default function AuditPage() {
         };
 
         runAudit();
-    }, []);
+    }, [api.registrosSesion]);
 
     if (loading) return <div className="p-8">Running audit... check console</div>;
     if (error) return <div className="p-8 text-red-500">Error: {error}</div>;

@@ -1,3 +1,6 @@
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useEffect, useState } from 'react';
 import { useDesign } from "@/features/design/components/DesignProvider";
 import { DEFAULT_DESIGN, getSpacingForDensity } from "./designConfig";
 

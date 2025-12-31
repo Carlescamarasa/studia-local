@@ -1,4 +1,6 @@
 // Edge Function para subir vídeos a YouTube
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // Genera títulos y descripciones estructuradas basadas en metadata
 
 const corsHeaders = {

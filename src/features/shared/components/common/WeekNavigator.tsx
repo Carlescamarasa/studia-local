@@ -4,7 +4,7 @@ import { Card } from "@/features/shared/components/ui/card";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 
-const pad2 = (n: number): string => String(n).padStart(2, "0");
+
 const parseLocalDate = (s: string): Date => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
 const getISOWeekNumber = (date: Date): number => {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));

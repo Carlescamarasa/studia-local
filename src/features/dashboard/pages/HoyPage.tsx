@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState, useMemo, useEffect } from "react";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 

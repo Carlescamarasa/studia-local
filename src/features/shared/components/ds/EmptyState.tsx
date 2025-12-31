@@ -1,6 +1,7 @@
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { ReactNode } from "react";
 
 interface EmptyStateProps {
   icon: ReactNode;

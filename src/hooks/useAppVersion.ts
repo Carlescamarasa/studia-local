@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { versionClient } from '@/lib/versionClient';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useAuth } from '@/auth/AuthProvider';
 import { toast } from 'sonner';
 

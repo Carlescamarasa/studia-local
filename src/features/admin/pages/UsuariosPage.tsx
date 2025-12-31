@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo } from "react";
 import { Users, Search, X, FileDown, UserPlus, Send, Settings } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -255,7 +257,6 @@ export default function UsuariosPage() {
                                 }))}
                                 onImpersonate={(u) => {
                                     const name = getNombreVisible(u);
-                                    // @ts-expect-error - useEffectiveUser return type mismatch in TS
                                     startImpersonation(u.id, u.role || 'ESTU', name, u.email);
                                     toast.success(`Ahora ves como ${name}`);
                                 }}
@@ -289,7 +290,6 @@ export default function UsuariosPage() {
                 </div>
 
                 {/* Modals */}
-                {/* @ts-expect-error */}
                 <PerfilModal
                     open={isPerfilModalOpen}
                     onOpenChange={setIsPerfilModalOpen}

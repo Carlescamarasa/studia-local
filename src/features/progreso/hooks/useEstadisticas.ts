@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useMemo } from "react";
 import { formatLocalDate, parseLocalDate, startOfMonday } from "../utils/progresoUtils";
 import { buildDailySeries, aggregateData } from "../utils/chartHelpers";

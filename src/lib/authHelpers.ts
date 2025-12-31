@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Helpers centralizados para autenticación
  * Compatible con frontend (browser) y Edge Functions (Deno)

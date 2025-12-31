@@ -91,6 +91,9 @@ export function shouldIgnoreHotkey(event: KeyboardEvent): boolean {
  * @param {boolean} useCmdOnMac - Si es true, usa ⌘ en Mac (solo para feedback-submit)
  * @returns {string} - Combinación formateada para mostrar
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useEffect, useRef } from 'react';
 export function formatShortcut(combo: string, useCmdOnMac = false): string {
   const parts = combo.split('+').map(p => p.trim());
   const hasAlt = parts.includes('alt');

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react";
-import { Routes, Route, Navigate, useSearchParams, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import RequireAuth from "@/features/auth/components/RequireAuth";
 import PublicRoute from "@/features/auth/components/PublicRoute";
 import { useAuth } from "@/auth/AuthProvider";
@@ -92,7 +92,7 @@ function RedirectToCuaderno() {
   }
 
   const queryString = newParams.toString();
-  const targetUrl = `/cuaderno${queryString ? `?${queryString}` : ''}`;
+  const targetUrl = `/ cuaderno${queryString ? `?${queryString}` : ''} `;
 
   return <Navigate to={targetUrl} replace />;
 }

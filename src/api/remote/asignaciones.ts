@@ -1,4 +1,6 @@
-import { supabase } from './client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
+import { supabase } from '@/lib/supabaseClient';
 import {
     snakeToCamel,
     camelToSnake,
@@ -19,10 +21,10 @@ interface DbAsignacion {
     estado: 'borrador' | 'publicada' | 'archivada' | 'en_curso' | 'cerrada';
     foco: 'GEN' | 'SON' | 'FLX' | 'ART' | 'MOT' | 'COG';
     notas?: string | null;
-    plan?: any; // Legacy
-    plan_adaptado?: any;
+    plan?: Plan; // Legacy
+    plan_adaptado?: Plan;
     pieza_id: string;
-    pieza_snapshot?: any;
+    pieza_snapshot?: any; // PiezaSnapshot is defined in domain.ts, but DbAsignacion might have a slightly different raw format
     is_draft?: boolean;
     modo?: 'manual' | 'asignada';
     created_at?: string;
@@ -36,7 +38,13 @@ interface DbPlan {
 }
 
 // Helper type for runtime fields that might not be in the strict domain interface yet
-type IntermediateAsignacion = Asignacion & { planId?: string; planAdaptado?: any };
+type IntermediateAsignacion = Asignacion & {
+    planId?: string;
+    planAdaptado?: Plan;
+    alumnoNombre?: string;
+    profesorNombre?: string;
+    [key: string]: unknown;
+};
 
 export async function fetchAsignaciones(sort?: string): Promise<Asignacion[]> {
     try {
@@ -53,25 +61,19 @@ export async function fetchAsignaciones(sort?: string): Promise<Asignacion[]> {
         }
 
         // RPC devuelve objeto con propiedad 'asignaciones'
-        const rawAsignaciones = data?.asignaciones || [];
+        const rawAsignaciones = (data?.asignaciones as DbAsignacion[]) || [];
 
         // Normalizar fechas y deserializar JSONs
-        const asignacionesParsed = (rawAsignaciones as DbAsignacion[]).map((a: DbAsignacion) => {
+        const asignacionesParsed = rawAsignaciones.map((a: DbAsignacion) => {
             // El RPC ya devuelve camelCase, así que no necesitamos snakeToCamel para las props del RPC
             // PERO: normalizeAsignacionISO espera un objeto Asignacion.
             // Los campos extra (alumnoNombre, etc) se preservan.
 
-            // Asegurar que tenemos los campos mínimos requeridos
-            const baseObj = {
-                ...a,
-                // Asegurar que plan_id vs planId se maneje (el RPC devuelve planId)
-            };
-
-            const normalized = normalizeAsignacionISO(baseObj);
+            const normalized = normalizeAsignacionISO(a as unknown as Asignacion);
             // Deserializar campos JSON (el RPC devuelve JSON objects ya, pero deserializeJsonFields asegura tipos correctos)
             // Nota: el RPC devuelve jsonb nativo, que postgrest convierte a objeto JS.
             // deserializeJsonFields a veces parsea strings. Si ya es objeto, lo deja igual.
-            return deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
+            return deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']) as IntermediateAsignacion;
         });
 
         // Ordenar en memoria si se pide sort (RPC devuelve por fecha desc por defecto)
@@ -79,9 +81,11 @@ export async function fetchAsignaciones(sort?: string): Promise<Asignacion[]> {
             const direction = sort.startsWith('-') ? 'desc' : 'asc';
             const field = sort.startsWith('-') ? sort.slice(1) : sort;
 
-            asignacionesParsed.sort((a: any, b: any) => {
-                if (a[field] < b[field]) return direction === 'asc' ? -1 : 1;
-                if (a[field] > b[field]) return direction === 'asc' ? 1 : -1;
+            asignacionesParsed.sort((a: IntermediateAsignacion, b: IntermediateAsignacion) => {
+                const valA = (a as any)[field];
+                const valB = (b as any)[field];
+                if (valA < valB) return direction === 'asc' ? -1 : 1;
+                if (valA > valB) return direction === 'asc' ? 1 : -1;
                 return 0;
             });
         }
@@ -89,7 +93,7 @@ export async function fetchAsignaciones(sort?: string): Promise<Asignacion[]> {
         // Obtener todos los planIds únicos que necesitamos cargar (para planes NO embebidos)
         // El RPC devuelve 'plan' y 'planAdaptado'. Si faltan y hay planId, cargamos.
         const planIdsNecesarios = new Set<string>();
-        asignacionesParsed.forEach((a: any) => {
+        asignacionesParsed.forEach((a: IntermediateAsignacion) => {
             if (a.planId && !a.planAdaptado && !a.plan) {
                 planIdsNecesarios.add(a.planId);
             }
@@ -104,13 +108,13 @@ export async function fetchAsignaciones(sort?: string): Promise<Asignacion[]> {
                 .in('id', Array.from(planIdsNecesarios));
 
             if (!planesError && planesData) {
-                planesList = planesData.map((p: any) => snakeToCamel<Plan>(p));
+                planesList = (planesData as DbPlan[]).map((p: DbPlan) => snakeToCamel<Plan>(p));
             }
         }
 
         // Resolver planes para cada asignación
         const asignacionesResueltas = await Promise.all(
-            asignacionesParsed.map(async (a: any) => {
+            asignacionesParsed.map(async (a: IntermediateAsignacion) => {
                 const plan = await resolvePlanForAsignacion(a, planesList);
                 return {
                     ...a, // Preservar campos extra (alumnoNombre, etc)
@@ -197,7 +201,7 @@ export async function fetchAsignacion(id: string): Promise<Asignacion | null> {
     // Deserializar campos JSON después de leer
     const parsed = snakeToCamel<IntermediateAsignacion>(data as DbAsignacion);
     const normalized = normalizeAsignacionISO<IntermediateAsignacion>(parsed);
-    const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
+    const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']) as IntermediateAsignacion;
 
     // Resolver el plan
     const plan = await resolvePlanForAsignacion(deserialized);
@@ -208,7 +212,7 @@ export async function fetchAsignacion(id: string): Promise<Asignacion | null> {
     } as Asignacion;
 }
 
-export async function fetchAsignacionesByFilter(filters: Record<string, any>, limit?: number | null): Promise<Asignacion[]> {
+export async function fetchAsignacionesByFilter(filters: Record<string, unknown>, limit?: number | null): Promise<Asignacion[]> {
     let query = supabase.from('asignaciones').select('*');
 
     for (const [key, value] of Object.entries(filters)) {
@@ -295,17 +299,16 @@ export async function createAsignacion(data: Partial<Asignacion>): Promise<Asign
     } else if (planIdValue) {
         // Solo planId: usar referencia
         snakeData.plan_id = planIdValue;
-        snakeData.plan_adaptado = null;
+        snakeData.plan_adaptado = undefined; // Use undefined instead of null to match Partial<DbAsignacion>
         // Si la BD requiere plan NOT NULL, necesitamos un valor por defecto
-        // Por ahora, dejamos null y el constraint CHECK debería permitirlo
-        snakeData.plan = null;
+        snakeData.plan = undefined;
     } else if (planValue) {
         // Solo snapshot: usar snapshot
         snakeData.plan_adaptado = planValue;
         // Mantener compatibilidad con campo legacy: también asignar a plan
         // Esto asegura que el constraint se cumpla si plan es NOT NULL
         snakeData.plan = planValue;
-        snakeData.plan_id = null;
+        snakeData.plan_id = undefined;
     } else {
         // Si no hay ninguno, el constraint de la BD fallará (correcto)
         throw new Error('Debe proporcionarse planId o plan/planAdaptado');
@@ -317,8 +320,6 @@ export async function createAsignacion(data: Partial<Asignacion>): Promise<Asign
         // pieza_snapshot es NOT NULL según el esquema
         throw new Error('piezaSnapshot es requerido');
     }
-
-    console.log('[remoteDataAPI.asignaciones.create] snakeData being sent:', JSON.stringify(snakeData, null, 2));
 
     const { data: result, error } = await supabase
         .from('asignaciones')
@@ -338,7 +339,7 @@ export async function createAsignacion(data: Partial<Asignacion>): Promise<Asign
     // Deserializar y resolver el plan
     const parsed = snakeToCamel<IntermediateAsignacion>(result as DbAsignacion);
     const normalized = normalizeAsignacionISO<IntermediateAsignacion>(parsed);
-    const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']);
+    const deserialized = deserializeJsonFields(normalized, ['planAdaptado', 'piezaSnapshot']) as IntermediateAsignacion;
 
     // Resolver el plan para retornarlo
     const plan = await resolvePlanForAsignacion(deserialized);
@@ -392,7 +393,7 @@ export async function updateAsignacion(id: string, updates: Partial<Intermediate
             console.warn('[remoteDataAPI] Campos eliminados del update:', camposNoPermitidos);
         }
         camposNoPermitidos.forEach(campo => {
-            delete (updatesWithoutJson as any)[campo];
+            delete (updatesWithoutJson as Record<string, unknown>)[campo];
         });
     }
 
@@ -407,7 +408,7 @@ export async function updateAsignacion(id: string, updates: Partial<Intermediate
         // Solo establecer plan_id a null si realmente estamos actualizando plan_adaptado
         // No tocar plan_id si no se está actualizando explícitamente
         if (planIdValue === undefined) {
-            snakeUpdates.plan_id = null; // Ya no usa referencia
+            snakeUpdates.plan_id = undefined; // Ya no usa referencia
         }
     }
 
@@ -416,7 +417,7 @@ export async function updateAsignacion(id: string, updates: Partial<Intermediate
         // Solo establecer plan_adaptado a null si realmente estamos actualizando planId
         // No tocar plan_adaptado si no se está actualizando explícitamente
         if (planAdaptadoValue === undefined) {
-            snakeUpdates.plan_adaptado = null; // Vuelve a usar referencia
+            snakeUpdates.plan_adaptado = undefined; // Vuelve a usar referencia
         }
     }
 

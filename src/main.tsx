@@ -6,7 +6,6 @@ import "./index.css";
 
 // Migration Logic
 import { localDataClient } from './api/localDataClient';
-import { RegistrosBloqueAPI } from './data/registrosBloqueClient';
 import { Bloque, RegistroBloque } from './features/shared/types/domain';
 
 // @ts-expect-error

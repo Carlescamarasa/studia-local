@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState } from 'react';
 // Eliminado: importación de base44Client, ya no es necesaria
 // Reemplazado por lógica local con almacenamiento en localStorage
 import { Card, CardContent } from "@/features/shared/components/ds";

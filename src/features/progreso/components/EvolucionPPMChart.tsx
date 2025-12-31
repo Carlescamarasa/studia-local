@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo } from 'react';
 import {
     LineChart,
@@ -33,7 +34,7 @@ export default function EvolucionPPMChart({ alumnoId }: EvolucionPPMChartProps) 
     );
 
     // 2. Obtener bloques con hook centralizado
-    const { data: bloquesData = [], isLoading: loadingBloques, isError: errorBloques } = useBloques();
+    const { data: bloquesData = [], isLoading: loadingBloques } = useBloques();
     const bloques = bloquesData as Bloque[];
 
     const chartData = useMemo(() => {

@@ -42,7 +42,7 @@ export async function fetchPiezasList(sort?: string): Promise<Pieza[]> {
 
     const { data, error } = await query;
     if (error) throw error;
-    return (data || []).map((p: any) => snakeToCamel<Pieza>(p as DbPieza));
+    return (data || []).map((p: unknown) => snakeToCamel<Pieza>(p as DbPieza));
 }
 
 export async function fetchPieza(id: string): Promise<Pieza | null> {
@@ -59,7 +59,7 @@ export async function fetchPieza(id: string): Promise<Pieza | null> {
     return snakeToCamel<Pieza>(data as DbPieza);
 }
 
-export async function fetchPiezasByFilter(filters: Record<string, any>, limit?: number | null): Promise<Pieza[]> {
+export async function fetchPiezasByFilter(filters: Record<string, unknown>, limit?: number | null): Promise<Pieza[]> {
     let query = supabase.from('piezas').select('*');
 
     for (const [key, value] of Object.entries(filters)) {
@@ -73,7 +73,7 @@ export async function fetchPiezasByFilter(filters: Record<string, any>, limit?: 
 
     const { data, error } = await query;
     if (error) throw error;
-    return (data || []).map((p: any) => snakeToCamel<Pieza>(p as DbPieza));
+    return (data || []).map((p: unknown) => snakeToCamel<Pieza>(p as DbPieza));
 }
 
 export async function createPieza(data: Partial<Pieza>): Promise<Pieza> {

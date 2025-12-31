@@ -3,23 +3,13 @@
  * (invitación, reset password, etc.)
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from '@/lib/supabaseClient';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /**
- * Obtiene la URL de redirect para reset password
- * Reutiliza el mismo patrón que se usa en el resto de la app
- */
-function getResetPasswordRedirectUrl(): string {
-  if (supabaseUrl) {
-    return `${new URL(supabaseUrl).origin}/reset-password`;
-  }
-  // Fallback si no hay VITE_SUPABASE_URL
-  return `${window.location.origin}/reset-password`;
-}
-
 /**
  * Invita a un usuario por email usando la Edge Function invite-user
  * @param email - Email del usuario a invitar

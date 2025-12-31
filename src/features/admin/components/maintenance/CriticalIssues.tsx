@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { AlertTriangle, ExternalLink, FileText, Terminal, ArrowRight, Copy } from 'lucide-react';
 import { Button } from '@/features/shared/components/ds/Button';

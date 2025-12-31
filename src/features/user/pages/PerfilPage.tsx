@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQueryClient } from "@tanstack/react-query";
@@ -340,7 +342,7 @@ export default function PerfilPage() {
                 <Select
                   value={activeMode}
                   onValueChange={(value) => {
-                    setActiveMode(value);
+                    setActiveMode(value as any);
                     toast.success(`Tema cambiado a ${value === 'dark' ? 'Oscuro' : 'Claro'}`);
                   }}
                 >

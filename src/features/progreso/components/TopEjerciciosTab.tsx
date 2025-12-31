@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/features/shared/components/ds";
 import { Input } from "@/features/shared/components/ui/input";
 import { Star } from "lucide-react";

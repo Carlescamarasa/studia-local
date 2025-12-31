@@ -1,3 +1,5 @@
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/components/ds';
 import { Loader2, Activity } from 'lucide-react';

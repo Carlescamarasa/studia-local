@@ -26,7 +26,7 @@ export async function getCachedAuthUser(): Promise<{ id: string; email: string |
             cachedAuthUserTimestamp = now;
             return cachedAuthUser;
         }
-    } catch (e) {
+    } catch {
         // Ignorar errores de autenticación
     }
 

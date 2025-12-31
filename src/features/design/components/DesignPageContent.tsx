@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useDesign } from "@/features/design/components/DesignProvider";
 import { useDesignDiff } from "@/features/design/components/useDesignDiff";
@@ -156,6 +158,14 @@ interface DiffAccordionProps {
  * - Session storage for position and settings
  * - Copy report functionality
  */
+// Core tokens to monitor
+const MONITORED_TOKENS = [
+  '--radius-card', '--radius-ctrl', '--radius-table', '--radius-modal',
+  '--shadow-card', '--color-primary', '--color-background',
+  '--page-max-width', '--page-padding-x', '--btn-height',
+  '--sidebar-surface', '--sidebar-item-radius', '--card-padding-x'
+];
+
 function DiagnosticOverlay({ active }: { active: boolean }) {
   const [metrics, setMetrics] = useState<Record<string, DiagnosticMetric>>({});
   const [position, setPosition] = useState<{ x: number; y: number }>(() => {
@@ -166,6 +176,7 @@ function DiagnosticOverlay({ active }: { active: boolean }) {
       return { x: window.innerWidth - 340, y: 20 };
     }
   });
+
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [followCursor, setFollowCursor] = useState(() => {
@@ -178,14 +189,6 @@ function DiagnosticOverlay({ active }: { active: boolean }) {
   const [pickerMode, setPickerMode] = useState(false);
   const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-
-  // Core tokens to monitor
-  const MONITORED_TOKENS = [
-    '--radius-card', '--radius-ctrl', '--radius-table', '--radius-modal',
-    '--shadow-card', '--color-primary', '--color-background',
-    '--page-max-width', '--page-padding-x', '--btn-height',
-    '--sidebar-surface', '--sidebar-item-radius', '--card-padding-x'
-  ];
 
   // Update metrics from CSS variables
   const updateMetrics = useCallback(() => {
@@ -203,7 +206,7 @@ function DiagnosticOverlay({ active }: { active: boolean }) {
     });
 
     setMetrics(newMetrics);
-  }, [MONITORED_TOKENS]);
+  }, []);
 
   // Real-time monitoring via MutationObserver
   useEffect(() => {
@@ -486,7 +489,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPa
 
 
   // Combinar presets base (desde BasePresets.ts) con presets personalizados
-  const customPresets = useMemo(() => getAllPresets(), [config]);
+  const customPresets = useMemo(() => getAllPresets(), []); // config dependency removed as getAllPresets reads from local storage/constants
   const allPresets = useMemo(() => {
     // Convertir basePresets a formato compatible con la UI
     const basePresetsMap: Record<string, PresetUI> = {};

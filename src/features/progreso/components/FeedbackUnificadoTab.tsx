@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, Badge } from "@/features/shared/components/ds";
 import TablePagination from "@/features/shared/components/common/TablePagination";

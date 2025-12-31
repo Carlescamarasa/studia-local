@@ -1,3 +1,5 @@
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -28,7 +30,6 @@ import MediaLinksBadges from "@/features/shared/components/media/MediaLinksBadge
 import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 import { log } from "@/utils/log";
 
-// --- Helpers de fechas locales ---
 // --- Helpers de fechas locales ---
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const formatLocalDate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
@@ -64,10 +65,6 @@ function SemanaPageContent() {
 
   const { data: registrosSesion = [] } = useRegistrosSesion();
 
-
-
-  // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
-  // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
   // Buscar el usuario real en la base de datos por email si effectiveUser viene de Supabase
   // Esto es necesario porque effectiveUser puede tener el ID de Supabase Auth, no el ID de la BD
   const usuarioActual = usuarios.find(u => {
@@ -309,7 +306,7 @@ function SemanaPageContent() {
         }
       />
 
-      <div className={`$"studia-section" space-y-4`}>
+      <div className="studia-section space-y-4">
         {!asignacionActiva || !semanaDelPlan ? (
           <Card className={componentStyles.containers.cardBase}>
             <CardContent className="text-center py-16">

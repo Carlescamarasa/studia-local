@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Helper compartido para rate limiting en Edge Functions
  * Usa una tabla en Supabase para rastrear intentos por IP y usuario
@@ -24,12 +26,12 @@ function getClientIP(req: Request): string {
   if (forwarded) {
     return forwarded.split(',')[0].trim();
   }
-  
+
   const realIP = req.headers.get('x-real-ip');
   if (realIP) {
     return realIP;
   }
-  
+
   // Fallback: usar un identificador único basado en headers
   return req.headers.get('user-agent') || 'unknown';
 }
@@ -48,15 +50,15 @@ export async function checkRateLimit(
 ): Promise<{ isBlocked: boolean; remainingAttempts: number; lockoutUntil?: number }> {
   const now = Date.now();
   const windowStart = now - config.windowMs;
-  
+
   // Intentar usar una tabla de rate limiting (crearla si no existe)
   // Por simplicidad, usamos una tabla temporal en memoria o Supabase Storage
   // En producción, deberías crear una tabla dedicada
-  
+
   // Por ahora, retornamos que no está bloqueado
   // TODO: Implementar tabla de rate limiting en Supabase
   // La tabla debería tener: identifier, attempts, firstAttempt, lockoutUntil
-  
+
   return {
     isBlocked: false,
     remainingAttempts: config.maxAttempts,

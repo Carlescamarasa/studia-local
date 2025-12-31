@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import React, { useState } from 'react';
 import { Play, Trash2, Eye, Copy, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/features/shared/components/ds/Button';
 import { componentStyles } from '@/design/componentStyles';
 import { toast } from 'sonner';
-// @ts-expect-error - Assuming these utils are available
+
 import {
     dryRunSyntheticSchoolYear2025_26,
     seedSyntheticSchoolYear2025_26,

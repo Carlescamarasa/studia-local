@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/features/shared/components/ds";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { LoadingSpinner, Skeleton, SkeletonText, SkeletonCard, EmptyState, FormField } from "@/features/shared/components/ds";
@@ -8,17 +10,17 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/features/shared/components/ui/drawer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/features/shared/components/ui/table";
 import { Input } from "@/features/shared/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
+import { Select } from "@/features/shared/components/ui/select";
 import { Textarea } from "@/features/shared/components/ui/textarea";
 import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { SkipLink } from "@/features/shared/components/ds";
 import { componentStyles } from "@/design/componentStyles";
-import { toast } from "sonner";
+// import { toast } from "sonner";
 import {
-  Play, Save, Upload, RefreshCw, Trash2, Download,
+  Save, Upload,
   Inbox, Search, AlertCircle, Plus, Music, Users,
-  FileText, FolderOpen, Sparkles, CheckCircle2, XCircle,
-  Clock, Target, Zap, Star, TrendingUp, Activity
+  FileText, CheckCircle2, XCircle,
+  Target, Activity
 } from "lucide-react";
 
 export default function TestLoadingPage() {
@@ -37,8 +39,8 @@ export default function TestLoadingPage() {
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [showModal, setShowModal] = useState(false);
-  const [modalSize, setModalSize] = useState("md");
+  // const [showModal, setShowModal] = useState(false);
+  // const [modalSize, setModalSize] = useState("md");
 
   const simulateAction = (key: string, duration = 2000) => {
     setLoadingStates(prev => ({ ...prev, [key]: true }));

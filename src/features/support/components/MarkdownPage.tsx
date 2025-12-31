@@ -1,4 +1,5 @@
- 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -130,7 +131,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
         rehypePlugins={[rehypeRaw]}
         components={{
           // Estilizar enlaces
-          a: ({ node, href, children, ...props }) => {
+          a: ({ href, children, ...props }) => {
             // Si es un email, abrir el cliente de correo
             if (href?.startsWith('mailto:')) {
               return (
@@ -156,7 +157,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             );
           },
           // Estilizar títulos
-          h1: ({ node, children, ...props }) => (
+          h1: ({ children, ...props }) => (
             <h1
               className="text-3xl font-bold text-[var(--color-text-primary)] mt-8 mb-4 pb-2 border-b border-[var(--color-border-default)]"
               {...props}
@@ -164,7 +165,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               {children}
             </h1>
           ),
-          h2: ({ node, children, ...props }) => (
+          h2: ({ children, ...props }) => (
             <h2
               className="text-2xl font-semibold text-[var(--color-text-primary)] mt-6 mb-3"
               {...props}
@@ -172,7 +173,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               {children}
             </h2>
           ),
-          h3: ({ node, children, ...props }) => (
+          h3: ({ children, ...props }) => (
             <h3
               className="text-xl font-semibold text-[var(--color-text-primary)] mt-4 mb-2"
               {...props}
@@ -181,24 +182,24 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             </h3>
           ),
           // Estilizar listas
-          ul: ({ node, children, ...props }) => (
+          ul: ({ children, ...props }) => (
             <ul className="list-disc list-inside space-y-2 my-4 text-[var(--color-text-primary)]" {...props}>
               {children}
             </ul>
           ),
-          ol: ({ node, children, ...props }) => (
+          ol: ({ children, ...props }) => (
             <ol className="list-decimal list-inside space-y-2 my-4 text-[var(--color-text-primary)]" {...props}>
               {children}
             </ol>
           ),
           // Estilizar párrafos
-          p: ({ node, children, ...props }) => (
+          p: ({ children, ...props }) => (
             <p className="text-[var(--color-text-primary)] leading-relaxed my-3" {...props}>
               {children}
             </p>
           ),
           // Estilizar código inline
-          code: ({ node, children, className, ...props }) => {
+          code: ({ children, className, ...props }) => {
             const inline = !className;
             if (inline) {
               return (
@@ -220,7 +221,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             );
           },
           // Estilizar tablas
-          table: ({ node, children, ...props }) => (
+          table: ({ children, ...props }) => (
             <div className="overflow-x-auto my-4">
               <table
                 className="min-w-full border-collapse border border-[var(--color-border-default)] rounded-lg"
@@ -230,22 +231,22 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               </table>
             </div>
           ),
-          thead: ({ node, children, ...props }) => (
+          thead: ({ children, ...props }) => (
             <thead className="bg-[var(--color-surface-muted)]" {...props}>
               {children}
             </thead>
           ),
-          tbody: ({ node, children, ...props }) => (
+          tbody: ({ children, ...props }) => (
             <tbody {...props}>
               {children}
             </tbody>
           ),
-          tr: ({ node, children, ...props }) => (
+          tr: ({ children, ...props }) => (
             <tr className="border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]/50" {...props}>
               {children}
             </tr>
           ),
-          th: ({ node, children, ...props }) => (
+          th: ({ children, ...props }) => (
             <th
               className="px-4 py-2 text-left font-semibold text-[var(--color-text-primary)] border border-[var(--color-border-default)]"
               {...props}
@@ -253,7 +254,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               {children}
             </th>
           ),
-          td: ({ node, children, ...props }) => (
+          td: ({ children, ...props }) => (
             <td
               className="px-4 py-2 text-[var(--color-text-primary)] border border-[var(--color-border-default)]"
               {...props}
@@ -262,7 +263,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             </td>
           ),
           // Estilizar blockquotes
-          blockquote: ({ node, children, ...props }) => (
+          blockquote: ({ children, ...props }) => (
             <blockquote
               className="border-l-4 border-[var(--color-primary)] pl-4 py-2 my-4 italic text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]/50 rounded-r"
               {...props}
@@ -271,13 +272,13 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             </blockquote>
           ),
           // Estilizar strong/bold
-          strong: ({ node, children, ...props }) => (
+          strong: ({ children, ...props }) => (
             <strong className="font-bold text-[var(--color-text-primary)]" {...props}>
               {children}
             </strong>
           ),
           // Estilizar em/italic
-          em: ({ node, children, ...props }) => (
+          em: ({ children, ...props }) => (
             <em className="italic text-[var(--color-text-primary)]" {...props}>
               {children}
             </em>

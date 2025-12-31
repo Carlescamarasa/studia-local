@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
 import { Calendar } from "lucide-react";

@@ -4,6 +4,8 @@
  * REFACTORED: Now uses partitioned diffs (common/light/dark) and new export APIs
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useMemo, useCallback } from 'react';
 import { useDesign } from './DesignProvider';
 
@@ -19,8 +21,7 @@ interface DiffChange {
  */
 export function useDesignDiff() {
     const {
-        baseDesign,
-        previewOverlay,
+
         isPreviewActive,
         activeMode,
         revertChange,
@@ -34,7 +35,7 @@ export function useDesignDiff() {
     // Compute partitioned diff
     const diff = useMemo(() => {
         return getPartitionedDiff();
-    }, [getPartitionedDiff, previewOverlay, baseDesign]);
+    }, [getPartitionedDiff]);
 
     // Counts
     const counts = useMemo(() => ({

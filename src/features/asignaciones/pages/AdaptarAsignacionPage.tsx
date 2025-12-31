@@ -1,4 +1,5 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";

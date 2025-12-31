@@ -1,5 +1,8 @@
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '@/features/shared/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/features/shared/components/ui/drawer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/features/shared/components/ui/dialog';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState } from 'react';
 import { Button } from '@/features/shared/components/ui/button';
 import { ScrollArea } from '@/features/shared/components/ui/scroll-area';
 import { FileText, FileJson } from 'lucide-react';

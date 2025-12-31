@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/features/shared/components/ui/button";
 import { Textarea } from "@/features/shared/components/ui/textarea";
 import { CheckCircle, XCircle, Clock, RotateCcw, Home, Loader2 } from "lucide-react";
@@ -110,39 +112,7 @@ export default function ResumenFinal({
 
     const pendientes = totalEjercicios - completados.size - omitidos.size;
 
-    // Hotkeys para ResumenFinal: 1-4 para valoración rápida, Ctrl+Enter para guardar
-    useEffect(() => {
-        if (!open) return;
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // No procesar si está en un campo editable (notas, etc.)
-            if (shouldIgnoreHotkey(e)) return;
-
-            // Teclas 1-4: valoración rápida
-            if (['1', '2', '3', '4'].includes(e.key)) {
-                e.preventDefault();
-                const nivel = parseInt(e.key);
-                setCalidad(nivel);
-                return;
-            }
-
-            // Ctrl+Enter: guardar feedback y cerrar
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                if (!guardado && !uploadingVideo) {
-                    handleGuardarFeedback();
-                }
-                return;
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown, true);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown, true);
-        };
-    }, [open, calidad, guardado, uploadingVideo]);
-
-    const handleGuardarFeedback = async () => {
+    const handleGuardarFeedback = useCallback(async () => {
         let finalMediaLinks = mediaLinks.map(l => (typeof l === 'string' ? l : l.url));
 
         // Si hay vídeo, subirlo primero
@@ -187,7 +157,39 @@ export default function ResumenFinal({
         setTimeout(() => {
             onGuardarYSalir();
         }, 1500);
-    };
+    }, [mediaLinks, videoFile, userId, userProfile, notas, profesorAsignadoId, registroSesionId, sesion, onCalidadNotas, onGuardarYSalir, calidad]);
+
+    // Hotkeys para ResumenFinal: 1-4 para valoración rápida, Ctrl+Enter para guardar
+    useEffect(() => {
+        if (!open) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // No procesar si está en un campo editable (notas, etc.)
+            if (shouldIgnoreHotkey(e)) return;
+
+            // Teclas 1-4: valoración rápida
+            if (['1', '2', '3', '4'].includes(e.key)) {
+                e.preventDefault();
+                const nivel = parseInt(e.key);
+                setCalidad(nivel);
+                return;
+            }
+
+            // Ctrl+Enter: guardar feedback y cerrar
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (!guardado && !uploadingVideo) {
+                    handleGuardarFeedback();
+                }
+                return;
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown, true);
+        };
+    }, [open, calidad, guardado, uploadingVideo, handleGuardarFeedback]);
 
     const handlePreview = (index: number) => {
         setPreviewIndex(index);

@@ -64,7 +64,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
         checkIntervalRef.current = null;
       }
     };
-  }, [user?.id, checkSession, signOut]); // Solo reejecutar si cambia el ID del usuario
+  }, [user, checkSession, signOut]); // Reejecutar si cambia el usuario
 
   if (loading) {
     return (

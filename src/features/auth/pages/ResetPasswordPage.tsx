@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
@@ -47,7 +48,7 @@ export default function ResetPasswordPage() {
     // El AuthProvider detectará el cambio y actualizará el estado
     if (hasHash) {
       // Verificar también si hay sesión (Supabase puede haber procesado el token ya)
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(() => {
         // Si hay sesión, no hacer nada - el componente se actualizará
         // Si no hay sesión, el token se está procesando, esperar
       });

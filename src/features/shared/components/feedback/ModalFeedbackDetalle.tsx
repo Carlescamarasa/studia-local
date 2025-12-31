@@ -12,6 +12,8 @@ import { getNombreVisible } from "@/features/shared/utils/helpers";
 import MediaLinksBadges from "@/features/shared/components/media/MediaLinksBadges";
 import { MessageSquare, Calendar, User, Music, Brain, TrendingUp, Zap, Gauge, Target, Edit, Trash2 } from "lucide-react";
 import { startOfWeek, endOfWeek, format } from "date-fns";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { es } from "date-fns/locale";
 
 /**

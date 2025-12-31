@@ -23,8 +23,7 @@ import MultiSelect from "@/features/shared/components/ui/MultiSelect";
 import { FormField } from "@/features/shared/components/ds/FormField";
 import { componentStyles } from "@/design/componentStyles";
 import { getNombreVisible } from "@/features/shared/utils/helpers";
-import { User, userService } from '../services/userService';
-import { toast } from 'sonner';
+import { User } from '../services/userService';
 
 interface UserModalsProps {
     users: User[];

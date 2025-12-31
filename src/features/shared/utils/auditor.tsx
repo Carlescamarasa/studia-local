@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { supabase } from '@/lib/supabaseClient';
 
 // Auditoría de Diseño (runtime) para Vite - v2 afinado
 // Escanea archivos, detecta patrones de diseño/estándares y genera un informe JSON.

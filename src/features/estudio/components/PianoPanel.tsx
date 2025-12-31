@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from "@/features/shared/components/ui/button";
 import { X, Piano, ChevronUp, ChevronDown, Play, Pause, Info } from "lucide-react";
 import { cn } from "@/lib/utils";

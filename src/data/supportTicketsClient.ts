@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 /**
  * Cliente para trabajar con tickets de soporte en Supabase
  */

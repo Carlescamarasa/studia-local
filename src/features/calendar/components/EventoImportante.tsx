@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
-import { obtenerColorTipoEvento, obtenerLabelTipoEvento, type TipoEventoImportante } from "./utils";
+import { obtenerColorTipoEvento, obtenerLabelTipoEvento } from "./utils";
 import MediaLinksBadges from "@/features/shared/components/media/MediaLinksBadges";
 
 import { EventoImportante as EventoData } from "./utils";

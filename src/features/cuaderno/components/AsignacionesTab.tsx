@@ -1,7 +1,8 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo, useEffect } from "react";
 import { localDataClient } from "@/api/localDataClient";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/features/shared/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
@@ -9,7 +10,7 @@ import { Button } from "@/features/shared/components/ui/button";
 import { Badge } from "@/features/shared/components/ds";
 import { Input } from "@/features/shared/components/ui/input";
 import {
-    Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, ChevronUp, ChevronDown, Check, Clock, Circle, FileText, Send, CheckCircle, LayoutList, User, Users, XCircle
+    Target, Copy, Trash2, FileDown, X, Clock, FileText, Send, CheckCircle, LayoutList, User, Users, XCircle
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -112,7 +113,6 @@ export default function AsignacionesTab({
     const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState<boolean>(false);
     const [asignacionParaAsignar, setAsignacionParaAsignar] = useState<string | null>(null);
     const [idsParaAsignar, setIdsParaAsignar] = useState<string[] | null>(null);
-    const [tipoAsignacion, setTipoAsignacion] = useState<TipoAsignacion>(null);
     const [profesorSeleccionado, setProfesorSeleccionado] = useState<string>('');
     const [estudianteSeleccionado, setEstudianteSeleccionado] = useState<string>('');
 
@@ -522,7 +522,7 @@ export default function AsignacionesTab({
                                 i === offsetWeeks ? '●' : '○'
                             ).join(' ');
                         }
-                    } catch (_error) { /* Intentionally swallowed */ }
+                    } catch { /* Intentionally swallowed */ }
                 }
 
                 return (
@@ -557,7 +557,7 @@ export default function AsignacionesTab({
                 }
                 try {
                     return <p className="text-sm">{parseLocalDate(a.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</p>;
-                } catch (_error) {
+                } catch {
                     return <p className="text-sm text-ui/60">-</p>;
                 }
             },
@@ -731,7 +731,6 @@ export default function AsignacionesTab({
                                         if (!ids) return;
                                         setIdsParaAsignar(ids);
                                         setAsignacionParaAsignar(null);
-                                        setTipoAsignacion('profesor');
                                         setProfesorSeleccionado('');
                                         setShowAsignarProfesorDialog(true);
                                     },
@@ -744,7 +743,6 @@ export default function AsignacionesTab({
                                         if (!ids) return;
                                         setIdsParaAsignar(ids);
                                         setAsignacionParaAsignar(null);
-                                        setTipoAsignacion('estudiante');
                                         setEstudianteSeleccionado('');
                                         setShowAsignarEstudianteDialog(true);
                                     },
@@ -834,7 +832,6 @@ export default function AsignacionesTab({
                                         onClick: () => {
                                             setAsignacionParaAsignar(a.id);
                                             setIdsParaAsignar(null);
-                                            setTipoAsignacion('profesor');
                                             setProfesorSeleccionado(a.profesorId || '');
                                             setShowAsignarProfesorDialog(true);
                                         },
@@ -846,7 +843,6 @@ export default function AsignacionesTab({
                                         onClick: () => {
                                             setAsignacionParaAsignar(a.id);
                                             setIdsParaAsignar(null);
-                                            setTipoAsignacion('estudiante');
                                             setEstudianteSeleccionado(a.alumnoId || '');
                                             setShowAsignarEstudianteDialog(true);
                                         },

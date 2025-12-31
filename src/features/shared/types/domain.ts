@@ -8,6 +8,8 @@
 /**
  * Roles de usuario en el sistema
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 export type UserRole = 'ADMIN' | 'PROF' | 'ESTU';
 
 /**
@@ -687,6 +689,8 @@ export type UpdateMediaAssetInput = Partial<Omit<MediaAsset, 'id' | 'created_at'
 // Student Backpack - Spaced Repetition System
 // ============================================================================
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type AsignacionStatus = 'pendiente' | 'completada' | 'corregida';
 export type BackpackStatus = 'nuevo' | 'en_progreso' | 'dominado' | 'oxidado' | 'archivado';
 
 export interface StudentBackpackItem {

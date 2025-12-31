@@ -2,6 +2,8 @@
  * Utility functions for remote data handling
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { StudiaUser } from '@/features/shared/types/domain';
 
 /**

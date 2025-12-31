@@ -1,4 +1,6 @@
-import React from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { Button } from '@/features/shared/components/ds/Button';
 import { componentStyles } from '@/design/componentStyles';

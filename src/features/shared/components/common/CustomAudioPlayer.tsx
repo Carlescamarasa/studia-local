@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useState, useEffect } from 'react';
 import { Slider } from "@/features/shared/components/ui/slider";
 import { Button } from "@/features/shared/components/ds/Button";

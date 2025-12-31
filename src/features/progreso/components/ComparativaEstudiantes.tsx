@@ -1,4 +1,6 @@
-import React from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useMemo } from "react";
 import { Card, CardContent } from "@/features/shared/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 import { formatDuracionHM } from "../utils/progresoUtils";

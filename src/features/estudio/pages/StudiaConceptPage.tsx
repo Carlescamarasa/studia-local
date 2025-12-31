@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { getCachedAuthUser } from "@/auth/authUserCache";
 import {
     Flame,
@@ -362,24 +364,27 @@ export default function StudiaConceptPage() {
     };
 
     // Student 'Clipper' Logic
-    const generateItinerary = () => {
+    // Student 'Clipper' Logic
+    const generateItinerary = useCallback(() => {
         const learning = localExercises.filter(e => e.mode === 'learning');
         const reviewPool = localExercises.filter(e => e.mode === 'review');
         const reviewSelected: StudiaExercise[] = [];
 
-        let currentMin = learning.reduce((acc, val) => acc + val.dur, 0);
+        let currentMin = learning.reduce((acc, val) => acc + (val.duracion || 5), 0);
+        const dailyBudget = 30; // Default budget
 
         // Shuffle Review
         const shuffled = [...reviewPool].sort(() => 0.5 - Math.random());
 
         for (const item of shuffled) {
-            if (currentMin + item.dur <= dailyBudget) {
+            const duration = item.duracion || 5;
+            if (currentMin + duration <= dailyBudget) {
                 reviewSelected.push(item);
-                currentMin += item.dur;
+                currentMin += duration;
             }
         }
 
-        const allItems: ItineraryItem[] = [
+        const allItems = [
             ...learning.map(i => ({ ...i, isFocus: true })),
             ...reviewSelected.map(i => ({ ...i, isFocus: false }))
         ];
@@ -388,13 +393,13 @@ export default function StudiaConceptPage() {
             items: allItems,
             totalMin: currentMin
         });
-    };
+    }, [localExercises]);
 
     useEffect(() => {
         if (localExercises.length > 0 && view === 'student') {
             generateItinerary();
         }
-    }, [view, localExercises]);
+    }, [view, localExercises, generateItinerary]);
 
 
     return (

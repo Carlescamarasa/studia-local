@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { localDataClient } from '@/api/localDataClient';
 import { QUERY_KEYS } from '@/lib/queryKeys';
 

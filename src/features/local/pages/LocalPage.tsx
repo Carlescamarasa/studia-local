@@ -1,4 +1,6 @@
 // src/pages/local.jsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalData } from '@/local-data/LocalDataProvider';
@@ -53,7 +55,7 @@ export default function LocalPage() {
         error: error?.message || error,
         code: error?.code,
       });
-      toast.error(`❌ Error: ${error.message}`);
+      toast.error(`❌ Error: ${error.message} `);
       setIsRegenerating(false);
     }
   };
@@ -68,7 +70,7 @@ export default function LocalPage() {
         error: error?.message || error,
         code: error?.code,
       });
-      toast.error(`❌ Error: ${error.message}`);
+      toast.error(`❌ Error: ${error.message} `);
     } finally {
       setIsValidating(false);
     }
@@ -94,7 +96,7 @@ export default function LocalPage() {
         error: error?.message || error,
         code: error?.code,
       });
-      toast.error(`❌ Error: ${error.message}`);
+      toast.error(`❌ Error: ${error.message} `);
       setIsRepairing(false);
     }
   };
@@ -141,13 +143,13 @@ export default function LocalPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className={`${componentStyles.typography.sectionTitle} mb-2 block`}>
+              <label className={`${componentStyles.typography.sectionTitle} mb - 2 block`}>
                 Seleccionar Usuario:
               </label>
               <select
                 value={selectedUserId}
                 onChange={(e) => handleUserChange(e.target.value)}
-                className={`w-full ${componentStyles.controls.selectDefault}`}
+                className={`w - full ${componentStyles.controls.selectDefault} `}
               >
                 {usuarios.map((user) => (
                   <option key={user.id} value={user.id}>
@@ -158,7 +160,7 @@ export default function LocalPage() {
             </div>
 
             <div className="pt-4 border-t border-[var(--color-border-default)]">
-              <p className={`${componentStyles.typography.smallMetaText} mb-4`}>
+              <p className={`${componentStyles.typography.smallMetaText} mb - 4`}>
                 Usuario actual: <strong>{displayName(currentUser)}</strong> ({roleLabel[role]})
               </p>
             </div>
@@ -210,7 +212,7 @@ export default function LocalPage() {
           {navigationItems[role]?.map((item) => (
             <Card
               key={item.url}
-              className={`${componentStyles.items.itemCard} cursor-pointer hover:shadow-lg transition-shadow`}
+              className={`${componentStyles.items.itemCard} cursor - pointer hover: shadow - lg transition - shadow`}
               onClick={() => navigate(createPageUrl(item.url.split('/').pop()))}
             >
               <CardContent className="p-6">

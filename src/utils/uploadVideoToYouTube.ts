@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
+/**
+ * Utility script to upload a video file to YouTube via Data API v3 (browser-side flow).
+ * NOTE: This requires a Google Cloud project with YouTube Data API enabled,
+ */
 /**
  * Helper para subir vídeos a YouTube usando la Edge Function
  */
@@ -43,7 +49,7 @@ export async function uploadVideoToYouTube(
 
   // Llamar a la Edge Function
   const functionUrl = `${supabaseUrl}/functions/v1/upload-youtube`;
-  
+
   const res = await fetch(functionUrl, {
     method: 'POST',
     headers: {
@@ -56,7 +62,7 @@ export async function uploadVideoToYouTube(
   // Parsear respuesta
   let data: UploadVideoResult;
   const contentType = res.headers.get('content-type');
-  
+
   if (contentType && contentType.includes('application/json')) {
     data = await res.json();
   } else {

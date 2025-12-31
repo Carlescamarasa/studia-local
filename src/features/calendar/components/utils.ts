@@ -8,7 +8,6 @@ import {
     FeedbackSemanal as Feedback,
     Asignacion,
     EventoCalendario as EventoImportante,
-    UserRole
 } from "@/features/shared/types/domain";
 
 // Import shared date utilities

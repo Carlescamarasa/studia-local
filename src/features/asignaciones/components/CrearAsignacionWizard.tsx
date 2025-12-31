@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -25,7 +25,7 @@ import { componentStyles } from "@/design/componentStyles";
 // Type Definitions
 // ============================================================================
 
-type FocoKey = 'GEN' | 'SON' | 'FLX' | 'MOT' | 'ART' | 'COG';
+
 
 interface WizardFormData {
   estudiantesIds: string[];

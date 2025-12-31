@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
     Dialog,
     DialogContent,
@@ -6,7 +8,15 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/features/shared/components/ui/dialog";
-import { HabilidadesMaestras } from "@/features/shared/types/domain";
+import {
+    FeedbackSemanal,
+    HabilidadesMaestras,
+    StudiaUser,
+    LevelConfig,
+    UserRole,
+    MediaItem,
+    CriteriaStatus
+} from "@/features/shared/types/domain";
 import {
     Drawer,
     DrawerContent,
@@ -26,38 +36,31 @@ import { MessageSquare, Music, Brain, Save, X, Activity, Paperclip, CheckSquare,
 // FeedbacksSemanalAPI removed - using localDataClient for Supabase sync
 import { toast } from "sonner";
 import MediaLinksInput from "@/features/shared/components/media/MediaLinksInput";
-import { normalizeMediaLinks } from "@/features/shared/utils/media";
+import { normalizeMediaLinks, MediaInput } from "@/features/shared/utils/media";
 import { cn } from "@/lib/utils";
 import { localDataClient } from '@/api/localDataClient';
 import { useFeedbacksSemanal } from "@/features/progreso/hooks/useFeedbacksSemanal";
 import { useUsers } from '@/features/admin/hooks/useUsers';
-import { computeKeyCriteriaStatus, canPromote, promoteLevel } from '@/utils/levelLogic';
+import { computeKeyCriteriaStatus, canPromote, promoteLevel, CriteriaStatusResult, PromotionCheckResult } from '@/utils/levelLogic';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Checkbox } from '@/features/shared/components/ui/checkbox';
 import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 
 
-interface FeedbackData {
-    id?: string;
-    notaProfesor?: string;
-    sonido?: number | null;
-    cognicion?: number | null;
-    habilidades?: HabilidadesMaestras | Record<string, unknown>;
-    mediaLinks?: unknown[];
-}
+// FeedbackData was moved to domain types or handled via Partial<FeedbackSemanal>
 
 interface ModalFeedbackSemanalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    feedback?: FeedbackData | null;
+    feedback?: Partial<FeedbackSemanal> | null;
     studentId: string;
     weekStartISO: string;
     weekLabel?: string;
     onSaved?: () => void;
-    onMediaClick?: (mediaLinks: unknown[], index: number) => void;
-    usuarios?: any[];
+    onMediaClick?: (mediaLinks: (string | MediaItem)[], index: number) => void;
+    usuarios?: StudiaUser[];
     userIdActual?: string;
-    userRole?: string;
+    userRole?: UserRole;
     onFeedbackSaved?: () => void;
     defaultStudentId?: string;
 }
@@ -87,8 +90,8 @@ export default function ModalFeedbackSemanal({
     useEffect(() => {
         const mqMobile = window.matchMedia('(max-width: 1023px)');
         const mqTablet = window.matchMedia('(min-width: 450px) and (max-width: 1023px)');
-        const handleMobileChange = (e: any) => setIsMobile(e.matches);
-        const handleTabletChange = (e: any) => setIsTablet(e.matches);
+        const handleMobileChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+        const handleTabletChange = (e: MediaQueryListEvent) => setIsTablet(e.matches);
         setIsMobile(mqMobile.matches);
         setIsTablet(mqTablet.matches);
         mqMobile.addEventListener('change', handleMobileChange);
@@ -104,9 +107,9 @@ export default function ModalFeedbackSemanal({
 
     // --- LEFT COLUMN STATE (Level Logic) ---
     const [currentLevel, setCurrentLevel] = useState(0);
-    const [currentLevelConfig, setCurrentLevelConfig] = useState<any>(null); // Config for CURRENT level (XP targets)
-    const [nextLevelCriteria, setNextLevelCriteria] = useState<any[]>([]);
-    const [promotionCheck, setPromotionCheck] = useState<any>(null);
+    const [currentLevelConfig, setCurrentLevelConfig] = useState<LevelConfig | null>(null); // Config for CURRENT level (XP targets)
+    const [nextLevelCriteria, setNextLevelCriteria] = useState<CriteriaStatusResult[]>([]);
+    const [promotionCheck, setPromotionCheck] = useState<PromotionCheckResult | null>(null);
     const [loadingLevelData, setLoadingLevelData] = useState(false);
 
     // --- RIGHT COLUMN STATE ---
@@ -126,7 +129,7 @@ export default function ModalFeedbackSemanal({
     const [notaProfesor, setNotaProfesor] = useState("");
 
     // 3. Multimedia
-    const [mediaLinks, setMediaLinks] = useState<any[]>([]);
+    const [mediaLinks, setMediaLinks] = useState<(string | MediaItem)[]>([]);
     const [videoFile, setVideoFile] = useState<File | null>(null);
     const [uploadingVideo, setUploadingVideo] = useState(false);
 
@@ -174,7 +177,7 @@ export default function ModalFeedbackSemanal({
 
 
     // Helper to hydrate form from feedback data
-    const hydrateFormFromFeedback = (fb: any) => {
+    const hydrateFormFromFeedback = (fb: Partial<FeedbackSemanal>) => {
         console.log('[ModalFeedbackSemanal] hydrateFormFromFeedback:', fb);
         setNotaProfesor(fb.notaProfesor || "");
 
@@ -183,13 +186,13 @@ export default function ModalFeedbackSemanal({
         console.log('[ModalFeedbackSemanal] habilidades object:', habilidades);
 
         // Read from habilidades.sonido/cognicion first, fallback to top-level for legacy data
-        const loadedSonido = habilidades.sonido ?? fb.sonido ?? 5.0;
-        const loadedCognicion = habilidades.cognicion ?? fb.cognicion ?? 5.0;
+        const loadedSonido = (habilidades as any).sonido ?? (fb as any).sonido ?? 5.0;
+        const loadedCognicion = (habilidades as any).cognicion ?? (fb as any).cognicion ?? 5.0;
         setSonido(Number(loadedSonido));
         setCognicion(Number(loadedCognicion));
 
         // XP deltas - stored inside habilidades.xpDeltas
-        const deltas = habilidades.xpDeltas || fb.xp_delta_by_skill || fb.xpDeltaBySkill || {};
+        const deltas = (habilidades as any).xpDeltas || (fb as any).xp_delta_by_skill || (fb as any).xpDeltaBySkill || {};
         console.log('[ModalFeedbackSemanal] XP Deltas loaded:', deltas);
 
         const dMotr = deltas.motricidad != null ? Number(deltas.motricidad) : 0;
@@ -207,41 +210,12 @@ export default function ModalFeedbackSemanal({
         });
 
         // Media
-        setMediaLinks(fb.mediaLinks || []);
+        setMediaLinks((fb.mediaLinks as unknown as (string | MediaItem)[]) || []);
         setVideoFile(null);
     };
 
     // LOAD DATA
     const { data: allFeedbacks = [], isLoading: isLoadingFeedbacks } = useFeedbacksSemanal();
-
-    useEffect(() => {
-        if (open) {
-            loadLevelData(); // Always reload level data on open
-
-            if (feedback) {
-                // If feedback prop is provided (edit mode), use it directly
-                hydrateFormFromFeedback(feedback);
-            } else if (studentId && weekStartISO) {
-                // If no feedback prop but we have studentId + week, try to find existing in cache
-                if (!isLoadingFeedbacks) {
-                    const existing = allFeedbacks.find((f: any) =>
-                        (f.alumnoId === studentId || f.alumno_id === studentId || f.student_id === studentId) &&
-                        f.semanaInicioISO === weekStartISO
-                    );
-
-                    if (existing) {
-                        hydrateFormFromFeedback(existing);
-                    } else {
-                        // Truly new
-                        resetForm();
-                    }
-                }
-            } else {
-                // Reset form for truly new feedback
-                resetForm();
-            }
-        }
-    }, [open, feedback, studentId, weekStartISO, allFeedbacks, isLoadingFeedbacks]);
 
     const resetForm = () => {
         setNotaProfesor("");
@@ -259,7 +233,7 @@ export default function ModalFeedbackSemanal({
     // OPTIMIZACIÓN: Usar allUsers de useUsers() para datos cacheados
     const { data: allUsersData = [] } = useUsers();
 
-    const loadLevelData = async () => {
+    const loadLevelData = useCallback(async () => {
         if (!studentId) return;
         setLoadingLevelData(true);
         try {
@@ -287,7 +261,36 @@ export default function ModalFeedbackSemanal({
         } finally {
             setLoadingLevelData(false);
         }
-    };
+    }, [studentId, allUsersData]);
+
+    useEffect(() => {
+        if (open) {
+            loadLevelData(); // Always reload level data on open
+
+            if (feedback) {
+                // If feedback prop is provided (edit mode), use it directly
+                hydrateFormFromFeedback(feedback);
+            } else if (studentId && weekStartISO) {
+                // If no feedback prop but we have studentId + week, try to find existing in cache
+                if (!isLoadingFeedbacks) {
+                    const existing = (allFeedbacks as unknown[] as FeedbackSemanal[]).find((f) =>
+                        (f.alumnoId === studentId) &&
+                        f.semanaInicioISO === weekStartISO
+                    );
+
+                    if (existing) {
+                        hydrateFormFromFeedback(existing);
+                    } else {
+                        // Truly new
+                        resetForm();
+                    }
+                }
+            } else {
+                // Reset form for truly new feedback
+                resetForm();
+            }
+        }
+    }, [open, feedback, studentId, weekStartISO, allFeedbacks, isLoadingFeedbacks, loadLevelData]);
 
     const handleCriteriaToggle = async (criterionId: string, currentStatus: string) => {
         const newStatus = currentStatus === 'PASSED' ? 'FAILED' : 'PASSED';
@@ -301,14 +304,14 @@ export default function ModalFeedbackSemanal({
             const existing = allStatus.find(s => s.studentId === studentId && s.criterionId === criterionId);
 
             if (existing && existing.id && existing.id.length === 36) {
-                await localDataClient.entities.StudentCriteriaStatus.update(existing.id, { status: newStatus as any });
+                await localDataClient.entities.StudentCriteriaStatus.update(existing.id, { status: newStatus as CriteriaStatus });
             } else {
                 await localDataClient.entities.StudentCriteriaStatus.create({
                     studentId: studentId,
                     criterionId: criterionId,
-                    status: newStatus as any,
+                    status: newStatus as CriteriaStatus,
                     assessedAt: new Date().toISOString(),
-                    assessedBy: (effectiveUser as any)?.id
+                    assessedBy: effectiveUser.effectiveUserId || 'unknown'
                 });
             }
             const check = await canPromote(studentId, currentLevel);
@@ -325,7 +328,7 @@ export default function ModalFeedbackSemanal({
 
         try {
             const reason = force ? 'Promoción forzada por profesor' : 'Promoción por evaluación';
-            await promoteLevel(studentId, nextLevel, reason, (effectiveUser as any)?.id || 'system');
+            await promoteLevel(studentId, nextLevel, reason, effectiveUser.effectiveUserId || 'system');
 
             // Reset XP inputs for the new level context
             setDeltaMotricidad("");
@@ -346,7 +349,7 @@ export default function ModalFeedbackSemanal({
         const prevLevel = currentLevel - 1;
 
         try {
-            await promoteLevel(studentId, prevLevel, 'Descenso de nivel por profesor', (effectiveUser as any)?.id || 'system');
+            await promoteLevel(studentId, prevLevel, 'Descenso de nivel por profesor', effectiveUser.effectiveUserId || 'system');
 
             // Reset XP inputs for the new level context
             setDeltaMotricidad("");
@@ -377,8 +380,8 @@ export default function ModalFeedbackSemanal({
                 try {
                     const uploadResult = await uploadVideoToYouTube(videoFile, {
                         contexto: 'sesion_estudio',
-                        profesor_id: (effectiveUser as any)?.id || "unknown",
-                        profesor_nombre: (effectiveUser as any)?.full_name || (effectiveUser as any)?.email || 'Profesor',
+                        profesor_id: effectiveUser.effectiveUserId || "unknown",
+                        profesor_nombre: effectiveUser.effectiveUserName || effectiveUser.effectiveEmail || 'Profesor',
                         alumno_id: studentId,
                         comentarios: notaProfesor,
                     } as any);
@@ -441,13 +444,13 @@ export default function ModalFeedbackSemanal({
 
             const dataToSave = {
                 alumnoId: studentId,
-                profesorId: (effectiveUser as any)?.id || "current-prof-id",
+                profesorId: effectiveUser.effectiveUserId || "current-prof-id",
                 semanaInicioISO: weekStartISO,
                 notaProfesor: notaProfesor,
                 sonido: Number(sonido),
                 cognicion: Number(cognicion),
-                habilidades: mergedHabilidades,
-                mediaLinks: normalizeMediaLinks(finalMediaLinks),
+                habilidades: mergedHabilidades as HabilidadesMaestras,
+                mediaLinks: normalizeMediaLinks(finalMediaLinks as (string | MediaInput)[]) as string[],
                 lastEditedAt: new Date().toISOString(),
             };
 
@@ -552,13 +555,13 @@ export default function ModalFeedbackSemanal({
 
                                                     {/* Experiencia (XP) Section */}
                                                     {(() => {
-                                                        const xpItems = projectedPromotionStatus?.missing?.filter((m: any) => m.includes('XP:')) || [];
+                                                        const xpItems = (projectedPromotionStatus?.missing?.filter((m: string) => m.includes('XP:')) || []) as string[];
                                                         if (xpItems.length === 0) return null;
                                                         return (
                                                             <div>
                                                                 <p className="font-medium text-xs uppercase text-[var(--color-text-secondary)]">Experiencia</p>
                                                                 <ul className="text-xs list-disc pl-4 mt-1">
-                                                                    {xpItems.map((m: any, i: number) => {
+                                                                    {xpItems.map((m: string, i: number) => {
                                                                         const cleaned = m.replace(' XP:', ':');
                                                                         return <li key={i}>{cleaned}</li>;
                                                                     })}
@@ -569,16 +572,16 @@ export default function ModalFeedbackSemanal({
 
                                                     {/* Criterios Section */}
                                                     {(() => {
-                                                        const criteriaItems = projectedPromotionStatus?.missing?.filter((m: any) => m.startsWith('Criterio:')) || [];
+                                                        const criteriaItems = (projectedPromotionStatus?.missing?.filter((m: string) => m.startsWith('Criterio:')) || []) as string[];
                                                         if (criteriaItems.length === 0) return null;
                                                         return (
                                                             <div>
                                                                 <p className="font-medium text-xs uppercase text-[var(--color-text-secondary)]">Criterios</p>
                                                                 <ul className="text-xs list-disc pl-4 mt-1">
-                                                                    {criteriaItems.map((m: any, i: number) => {
+                                                                    {criteriaItems.map((m: string, i: number) => {
                                                                         const desc = m.replace('Criterio: ', '');
-                                                                        const criterion = nextLevelCriteria.find((c: any) => (c.criterion as any).description === desc);
-                                                                        const skill = (criterion as any)?.criterion?.skill || '';
+                                                                        const criterion = nextLevelCriteria.find((c: CriteriaStatusResult) => c.criterion.description === desc);
+                                                                        const skill = criterion?.criterion?.skill || '';
                                                                         const skillLabel = skill.charAt(0).toUpperCase() + skill.slice(1);
                                                                         return <li key={i}>{skillLabel}: {desc}</li>;
                                                                     })}
@@ -607,7 +610,7 @@ export default function ModalFeedbackSemanal({
                                     </span>
                                 </div>
                                 <div className={cn("space-y-1 overflow-y-auto pr-1", isTablet ? "max-h-[100px]" : isMobile ? "max-h-[150px]" : "max-h-[300px]")}>
-                                    {nextLevelCriteria.map((item: any) => (
+                                    {nextLevelCriteria.map((item: CriteriaStatusResult) => (
                                         <div key={item.criterion.id} className="flex items-start space-x-2 p-1.5 rounded hover:bg-[var(--color-surface-muted)] transition-colors">
                                             <Checkbox
                                                 id={`crit-${item.criterion.id}`}
@@ -618,10 +621,10 @@ export default function ModalFeedbackSemanal({
                                             />
                                             <div className="grid gap-0.5 leading-none">
                                                 <label htmlFor={`crit-${item.criterion.id}`} className="text-xs font-medium text-[var(--color-text-primary)] cursor-pointer">
-                                                    {(item.criterion as any).description}
+                                                    {item.criterion.description}
                                                 </label>
                                                 <span className="text-[10px] text-[var(--color-text-secondary)] uppercase">
-                                                    {(item.criterion as any).skill} • {(item.criterion as any).source}
+                                                    {item.criterion.skill} • {item.criterion.source}
                                                 </span>
                                             </div>
                                         </div>
@@ -829,11 +832,11 @@ export default function ModalFeedbackSemanal({
                                         Añade enlaces a vídeos, partituras o grabaciones para el alumno.
                                     </p>
                                     <MediaLinksInput
-                                        value={mediaLinks as any}
+                                        value={mediaLinks}
                                         onChange={setMediaLinks}
                                         showFileUpload={true}
-                                        videoFile={videoFile as any}
-                                        onVideoFileChange={setVideoFile as any}
+                                        videoFile={videoFile}
+                                        onVideoFileChange={setVideoFile}
                                         uploadingVideo={uploadingVideo}
                                         disabled={isSubmitting || uploadingVideo}
                                         onPreview={onMediaClick ? (idx: number) => onMediaClick(mediaLinks, idx) : undefined}

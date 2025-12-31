@@ -107,6 +107,8 @@ export function EffectiveUserProvider({ children }: { children: React.ReactNode 
             };
         }
 
+
+
         const isImpersonating = impersonatedUser !== null;
 
         return {
@@ -161,7 +163,7 @@ export function useEffectiveUser(): EffectiveUserContextValue {
                 realRole: 'ESTU',
                 realUserName: null,
                 realEmail: null,
-                startImpersonation: (userId: string, role: UserRole, userName: string, email: string | null = null) => { },
+                startImpersonation: (_userId: string, _role: UserRole, _userName: string, _email: string | null = null) => { },
                 stopImpersonation: () => { },
             };
         }

@@ -9,7 +9,7 @@ import { useLoginForm } from '../hooks/useLoginForm';
 import { normalizeEmail } from '../utils/validation';
 import { authConfig } from '../config/authConfig';
 import { componentStyles } from '@/design/componentStyles';
-import { useRateLimit, RateLimitStatus } from '../hooks/useRateLimit';
+import { RateLimitStatus } from '../hooks/useRateLimit';
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => void;

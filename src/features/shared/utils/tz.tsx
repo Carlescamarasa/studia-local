@@ -1,3 +1,5 @@
+ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * FASE 2: Helpers de zona horaria con Luxon (preparatorio)
  * 

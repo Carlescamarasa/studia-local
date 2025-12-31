@@ -1,5 +1,5 @@
- 
-import React, { useState, useRef, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { remoteDataAPI, fetchBloquesPreview, fetchPiezasPreview, fetchFeedbacksSemanales, fetchRegistrosSesionMultimedia, fetchSupportMensajes } from "@/api/remoteDataAPI";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/features/shared/components/ds";

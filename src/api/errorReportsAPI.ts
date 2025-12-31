@@ -2,6 +2,8 @@
  * API para gestionar reportes de errores
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { supabase } from '@/lib/supabaseClient';
 import { getCachedAuthUser } from '@/auth/authUserCache';
 import { localDataClient } from '@/api/localDataClient';

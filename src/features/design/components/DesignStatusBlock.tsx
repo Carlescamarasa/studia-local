@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useState } from 'react';
 import { useDesign } from './DesignProvider';
@@ -15,8 +16,8 @@ interface DesignStatusBlockProps {
 
 interface DiffChange {
     path: string;
-    newValue: any;
-    to?: any;
+    from: any;
+    to: any;
 }
 
 export function DesignStatusBlock({ activeTab, onTabChange, tabs }: DesignStatusBlockProps) {
@@ -129,9 +130,9 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }: DesignStatus
                                 size="sm"
                                 onClick={() => {
                                     const text = [
-                                        common.length > 0 && `Comunes (${common.length}):\n${common.map((c: DiffChange) => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`,
-                                        light.length > 0 && `Solo Light (${light.length}):\n${light.map((c: DiffChange) => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`,
-                                        dark.length > 0 && `Solo Dark (${dark.length}):\n${dark.map((c: DiffChange) => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`
+                                        common.length > 0 && `Comunes (${common.length}):\n${common.map((c: DiffChange) => `  ${c.path}: ${c.to}`).join('\n')}`,
+                                        light.length > 0 && `Solo Light (${light.length}):\n${light.map((c: DiffChange) => `  ${c.path}: ${c.to}`).join('\n')}`,
+                                        dark.length > 0 && `Solo Dark (${dark.length}):\n${dark.map((c: DiffChange) => `  ${c.path}: ${c.to}`).join('\n')}`
                                     ].filter(Boolean).join('\n\n');
                                     navigator.clipboard.writeText(text);
                                     toast.success('Cambios copiados al portapapeles');
@@ -180,7 +181,7 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }: DesignStatus
                                         {common.map((c: DiffChange, i: number) => (
                                             <li key={i} className="flex items-center justify-between gap-2 group">
                                                 <span className="truncate font-mono text-[11px]">
-                                                    {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
+                                                    {c.path}: {String(c.to).slice(0, 20)}
                                                 </span>
                                                 <button
                                                     type="button"
@@ -209,7 +210,7 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }: DesignStatus
                                         {light.map((c: DiffChange, i: number) => (
                                             <li key={i} className="flex items-center justify-between gap-2 group">
                                                 <span className="truncate font-mono text-[11px]">
-                                                    {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
+                                                    {c.path}: {String(c.to).slice(0, 20)}
                                                 </span>
                                                 <button
                                                     type="button"
@@ -238,7 +239,7 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }: DesignStatus
                                         {dark.map((c: DiffChange, i: number) => (
                                             <li key={i} className="flex items-center justify-between gap-2 group">
                                                 <span className="truncate font-mono text-[11px]">
-                                                    {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
+                                                    {c.path}: {String(c.to).slice(0, 20)}
                                                 </span>
                                                 <button
                                                     type="button"

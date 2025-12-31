@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo } from "react";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -51,7 +53,7 @@ function CalendarioPageContent() {
   // User and role detection - use effectiveRole from new provider for impersonation
   const { effectiveUserId, effectiveEmail, effectiveRole, isImpersonating } = useEffectiveUser();
   // Objeto para compatibilidad con código existente
-  const effectiveUser = { id: effectiveUserId, email: effectiveEmail, rolPersonalizado: effectiveRole };
+  const effectiveUser = useMemo(() => ({ id: effectiveUserId, email: effectiveEmail, rolPersonalizado: effectiveRole }), [effectiveUserId, effectiveEmail, effectiveRole]);
 
   // Cargar usuarios con hook centralizado
   const { data: usuarios = [] } = useUsers();

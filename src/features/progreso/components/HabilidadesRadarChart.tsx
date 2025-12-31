@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
  
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
     Radar,
     RadarChart,

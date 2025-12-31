@@ -7,7 +7,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/features/shared/components/ui/dialog";
-import { componentStyles } from "@/design/componentStyles";
+
 import { Keyboard, HelpCircle } from "lucide-react";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { getHotkeysForRole, formatShortcut } from "@/utils/hotkeys";

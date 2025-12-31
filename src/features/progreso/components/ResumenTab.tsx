@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import React from "react";
 import KpiTile from "./KpiTile";
 import StreakMetric from "./StreakMetric";

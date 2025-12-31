@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Sistema de Presets Personalizados del Design System
  * Permite guardar, cargar y gestionar configuraciones visuales personalizadas
@@ -61,7 +62,7 @@ export function deleteCustomPreset(id: string) {
  * NOTA: Los presets base están en BasePresets.ts, no aquí
  * Esta función siempre devuelve false porque aquí solo hay presets personalizados
  */
-export function isBuiltInPreset(id: string) {
+export function isBuiltInPreset(_id: string) {
   // Los presets base están en BasePresets.ts, no aquí
   // Todos los presets aquí son personalizados y se pueden eliminar
   return false;

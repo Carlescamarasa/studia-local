@@ -13,7 +13,9 @@
  * Bloque 3: Estadísticas embebidas (no link)
  */
 
-import React, { useState, useMemo, useEffect } from "react";
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { localDataClient } from "@/api/localDataClient";
@@ -112,7 +114,11 @@ function ProgresoPageContent() {
     // User and role detection - use effectiveRole from new provider for impersonation
     const { effectiveUserId, effectiveEmail, effectiveRole } = useEffectiveUser();
     // Objeto para compatibilidad con código existente
-    const effectiveUser = { id: effectiveUserId, email: effectiveEmail, rolPersonalizado: effectiveRole };
+    const effectiveUser = useMemo(() => ({
+        id: effectiveUserId,
+        email: effectiveEmail,
+        rolPersonalizado: effectiveRole
+    }), [effectiveUserId, effectiveEmail, effectiveRole]);
     const isAdmin = effectiveRole === 'ADMIN';
     const isProf = effectiveRole === 'PROF';
     const isEstu = effectiveRole === 'ESTU';
@@ -304,7 +310,7 @@ function ProgresoPageContent() {
         // Redundant block removed (it was already filtered above by alumnosSeleccionados)
 
         return filtered;
-    }, [registrosSesionValidos, isEstu, isProf, userIdActual, alumnosSeleccionados, estudiantesDelProfesor, estudiantes, periodoInicio, periodoFin]);
+    }, [registrosSesionValidos, isEstu, isProf, userIdActual, alumnosSeleccionados, estudiantesDelProfesor, periodoInicio, periodoFin, effectiveStudentId, isAdmin]);
 
     // Unique registros
     const registrosFiltradosUnicos = useMemo(() => {
@@ -457,8 +463,10 @@ function ProgresoPageContent() {
         return map;
     }, [usuarios]);
 
-    // Helper function to calculate streak (reutilized from estadisticas.jsx)
-    const calcularRacha = (registros: RegistroSesion[], alumnoId: string | null = null) => {
+
+
+    // Helper function to calculate streak (moved outside or memoized)
+    const calcularRacha = useCallback((registros: RegistroSesion[], alumnoId: string | null = null) => {
         const targetRegistros = registros
             .filter((r: RegistroSesion) => (!alumnoId || r.alumnoId === alumnoId) && (r.duracionRealSeg || 0) >= 60);
 
@@ -525,7 +533,7 @@ function ProgresoPageContent() {
         }
 
         return { actual: rachaActual, maxima: rachaMaxima };
-    };
+    }, []);
 
     // Calculate student comparison data (for PROF/ADMIN Comparar tab)
     const estudiantesComparacion = useMemo(() => {
@@ -589,7 +597,7 @@ function ProgresoPageContent() {
                 rachaMaxima: racha.maxima,
             };
         });
-    }, [isEstu, isProf, alumnosSeleccionados, estudiantesDelProfesor, estudiantes, registrosFiltradosUnicos, periodoInicio, periodoFin]);
+    }, [isEstu, isProf, alumnosSeleccionados, estudiantesDelProfesor, estudiantes, registrosFiltradosUnicos, periodoInicio, periodoFin, calcularRacha]);
 
     // ============================================================================
     // URL Sync

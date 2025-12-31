@@ -1,6 +1,8 @@
 import { localDataClient } from "@/api/localDataClient";
 import { remoteDataAPI } from "@/api/remote/api";
 import { calcularLunesSemanaISO } from "@/features/shared/utils/helpers";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { supabase } from "@/lib/supabaseClient";
 import { getCachedAuthUser } from "@/auth/authUserCache";
 

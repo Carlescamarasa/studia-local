@@ -3,6 +3,7 @@
  */
 
 // Import shared date utilities
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   formatLocalDate as sharedFormatLocalDate,
   parseLocalDate as sharedParseLocalDate,

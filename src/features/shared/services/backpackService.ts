@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { localDataClient } from '@/api/localDataClient';
 import { startOfWeek, formatISO, differenceInDays } from 'date-fns';
 import { StudentBackpackItem, BackpackStatus } from '@/features/shared/types/domain';

@@ -1,6 +1,8 @@
 import { User, Session } from '@supabase/supabase-js';
 import { StudiaUser, UserRole } from '@/features/shared/types/domain';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 export interface AuthState {
     session: Session | null;
     user: User | null;

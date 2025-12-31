@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Studia - Full-screen practice mode (no sidebar)
  * 
@@ -117,7 +118,11 @@ function StudiaPageContent() {
 
     // Try Mode - detect from URL params (mode=try&codes=...)
     const isTryMode = searchParams.get('mode') === 'try';
-    const tryCodes = searchParams.get('codes')?.split(',').filter(Boolean) || [];
+    // Memoize tryCodes to prevent useEffect re-renders
+    const tryCodes = useMemo(() => {
+        const codesStr = searchParams.get('codes');
+        return codesStr ? codesStr.split(',').filter(Boolean) : [];
+    }, [searchParams]);
 
     // Session state
     const [sesionActiva, setSesionActiva] = useState<(PlanSesion & { bloques: any[] }) | null>(null);

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     fetchBloquesListado,
@@ -11,7 +12,7 @@ import {
 export function useExercisesList() {
     return useQuery({
         queryKey: ['exercises-list'],
-        queryFn: fetchBloquesListado,
+        queryFn: () => fetchBloquesListado(),
         staleTime: 60 * 1000, // 1 minute
     });
 }
@@ -19,7 +20,7 @@ export function useExercisesList() {
 export function usePlanesPreview() {
     return useQuery({
         queryKey: ['planes-preview'],
-        queryFn: fetchPlanesPreviewEjercicios,
+        queryFn: () => fetchPlanesPreviewEjercicios(),
         staleTime: 60 * 1000,
     });
 }
@@ -27,7 +28,7 @@ export function usePlanesPreview() {
 export function useRecentSessions() {
     return useQuery({
         queryKey: ['recent-sessions'],
-        queryFn: fetchRecentRegistrosSesion,
+        queryFn: () => fetchRecentRegistrosSesion(),
         staleTime: 60 * 1000,
     });
 }

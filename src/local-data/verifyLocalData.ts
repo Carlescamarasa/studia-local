@@ -1,6 +1,10 @@
+
 // Script de validación de coherencia de datos locales
 // Verifica que todas las referencias entre entidades sean válidas
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { localDataClient } from '@/api/localDataClient';
 import { localUsers } from './localUsers';
 import { loadFromStorage, StorageData } from '@/data/localStorageClient';
 import {
@@ -143,8 +147,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Bloques con piezaId inexistente (si tienen referencia)
     const bloquesPiezaInvalida = bloques.filter(b => {
-      // @ts-expect-error
-      const piezaId = b.piezaRefId;
+      const piezaId = (b as any).piezaRefId;
       return piezaId && !piezasById.has(piezaId);
     });
     if (bloquesPiezaInvalida.length > 0) {
@@ -272,8 +275,7 @@ export function printValidationReport(autoFix = false) {
 }
 
 // Auto-ejecutar si se importa directamente (útil para desarrollo)
-// @ts-expect-error
-if (import.meta.hot) {
+if ((import.meta as any).hot) {
   // Solo en desarrollo, opt-in mediante localStorage
   try {
     const shouldAuto = typeof localStorage !== 'undefined' && localStorage.getItem('debug.validation.auto') === 'true';

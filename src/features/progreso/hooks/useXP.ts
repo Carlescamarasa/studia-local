@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useMemo } from 'react';
 import { computePracticeXP, computeEvaluationXP, computeManualXP, capXPForDisplay } from '@/features/shared/services/xpService';
 import { localDataClient } from '@/api/localDataClient';

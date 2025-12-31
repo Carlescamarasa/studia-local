@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/features/shared/components/ds/Badge";
 import { ChevronDown, ChevronRight, Layers, Shuffle, Eye, Zap, Clock } from "lucide-react";
@@ -84,7 +85,7 @@ const formatDuration = (seconds: number): string | null => {
  */
 export default function SessionContentView({
     sesion,
-    compact = false,
+    compact: _compact = false,
     dbBloques = [],
     semanaFoco = null,
     expandedRondas = null,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/features/shared/components/ui/button';
 import { Pencil, ArrowRight, Circle, Square, Type, Undo, Redo, Save } from 'lucide-react';

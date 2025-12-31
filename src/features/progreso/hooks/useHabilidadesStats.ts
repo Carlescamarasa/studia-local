@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useMemo } from 'react';
 import { useAllStudentXPTotals, useAggregateLevelGoals } from './useXP';
 import { useFeedbacksSemanal } from '@/features/progreso/hooks/useFeedbacksSemanal';
@@ -94,7 +96,8 @@ export function useHabilidadesStats(alumnoId: string, options?: HabilidadesStats
 
     // 2. Override Qualitative Data with Stateful Logic (Client-side)
     // We fetch raw data (or use provided) to ensure consistency with Multi view
-    const allEvaluations = options?.providedEvaluations || [];
+    const providedEvaluations = options?.providedEvaluations;
+    const allEvaluations = useMemo(() => providedEvaluations || [], [providedEvaluations]);
     const { data: fetchedFeedbacks } = useFeedbacksSemanal(); // Fetch if not provided
     const allFeedbacks = options?.providedFeedbacks || fetchedFeedbacks;
 
@@ -213,7 +216,8 @@ export function useHabilidadesStatsMultiple(studentIds: string[], options?: Habi
 
     // 3. Fetch all Evaluations & Feedbacks if not provided
     // useEvaluacionesTecnicas removed
-    const allEvaluations: any[] = options?.providedEvaluations || [];
+    const providedEvaluations = options?.providedEvaluations;
+    const allEvaluations: any[] = useMemo(() => providedEvaluations || [], [providedEvaluations]);
 
     const { data: fetchedFeedbacks } = useFeedbacksSemanal();
 
