@@ -9,7 +9,7 @@ import RequireRole from "@/features/auth/components/RequireRole";
 import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { Tabs } from "@/features/shared/components/ds/Tabs";
 
-interface TabItem {
+interface LibraryTabItem {
     value: string;
     label: string;
     icon: React.ElementType;
@@ -60,7 +60,7 @@ function BibliotecaPageContent() {
         }
     };
 
-    const tabs: TabItem[] = [
+    const tabs: LibraryTabItem[] = [
         {
             value: "piezas",
             label: "Piezas",
@@ -91,7 +91,7 @@ function BibliotecaPageContent() {
                     variant="segmented"
                     value={activeTab}
                     onChange={handleTabChange}
-                    items={tabs}
+                    items={tabs as any}
                 />
                 {/* Lazy-rendered content: only active tab mounts */}
                 <div className="mt-4">

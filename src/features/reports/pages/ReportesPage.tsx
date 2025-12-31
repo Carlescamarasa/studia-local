@@ -438,29 +438,33 @@ function ReportesPageContent() {
                         onRowClick={(report: ErrorReport) => handleViewReport(report)}
                         bulkActions={[
                             {
+                                id: 'mark_new',
                                 label: 'Marcar como nuevo',
                                 icon: XCircle,
-                                onClick: handleBulkUpdateStatus('nuevo'),
+                                onClick: handleBulkUpdateStatus('nuevo') as any,
                             },
                             {
+                                id: 'mark_process',
                                 label: 'Marcar como en proceso',
                                 icon: Clock,
-                                onClick: handleBulkUpdateStatus('en_revision'),
+                                onClick: handleBulkUpdateStatus('en_revision') as any,
                             },
                             {
+                                id: 'mark_resolved',
                                 label: 'Marcar como resuelto',
                                 icon: CheckCircle,
-                                onClick: handleBulkUpdateStatus('resuelto'),
+                                onClick: handleBulkUpdateStatus('resuelto') as any,
                             },
                             {
+                                id: 'delete',
                                 label: 'Eliminar',
                                 icon: Trash2,
-                                onClick: (selectedIds: string[]) => {
+                                onClick: ((selectedIds: string[]) => {
                                     if (window.confirm(`¿Estás seguro de que quieres eliminar ${selectedIds.length} reporte(s)?`)) {
                                         bulkDeleteMutation.mutate(selectedIds);
                                     }
-                                },
-                                variant: 'danger',
+                                }) as any,
+                                variant: 'destructive',
                             },
                         ]}
                     />

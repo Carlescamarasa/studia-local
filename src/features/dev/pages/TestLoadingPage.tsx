@@ -14,15 +14,15 @@ import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { SkipLink } from "@/features/shared/components/ds";
 import { componentStyles } from "@/design/componentStyles";
 import { toast } from "sonner";
-import { 
-  Play, Save, Upload, RefreshCw, Trash2, Download, 
+import {
+  Play, Save, Upload, RefreshCw, Trash2, Download,
   Inbox, Search, AlertCircle, Plus, Music, Users,
   FileText, FolderOpen, Sparkles, CheckCircle2, XCircle,
   Clock, Target, Zap, Star, TrendingUp, Activity
 } from "lucide-react";
 
 export default function TestLoadingPage() {
-  const [loadingStates, setLoadingStates] = useState({
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({
     button1: false,
     button2: false,
     button3: false,
@@ -36,20 +36,20 @@ export default function TestLoadingPage() {
     descripcion: "",
   });
 
-  const [formErrors, setFormErrors] = useState({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showModal, setShowModal] = useState(false);
   const [modalSize, setModalSize] = useState("md");
 
-  const simulateAction = (key, duration = 2000) => {
+  const simulateAction = (key: string, duration = 2000) => {
     setLoadingStates(prev => ({ ...prev, [key]: true }));
     setTimeout(() => {
       setLoadingStates(prev => ({ ...prev, [key]: false }));
     }, duration);
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const errors = {};
+    const errors: Record<string, string> = {};
     if (!formData.nombre) errors.nombre = "El nombre es requerido";
     if (!formData.email) {
       errors.email = "El email es requerido";
@@ -72,28 +72,28 @@ export default function TestLoadingPage() {
     { id: 4, nombre: "Ana Martínez", email: "ana@example.com", estado: "cancelled", prioridad: "critical" },
   ];
 
-  const estadoLabels = {
+  const estadoLabels: Record<string, string> = {
     active: "Activo",
     pending: "Pendiente",
     completed: "Completado",
     cancelled: "Cancelado",
   };
 
-  const estadoStyles = {
+  const estadoStyles: Record<string, string> = {
     active: componentStyles.status.statusActive,
     pending: componentStyles.status.statusPending,
     completed: componentStyles.status.statusCompleted,
     cancelled: componentStyles.status.statusCancelled,
   };
 
-  const prioridadLabels = {
+  const prioridadLabels: Record<string, string> = {
     low: "Baja",
     medium: "Media",
     high: "Alta",
     critical: "Crítica",
   };
 
-  const prioridadStyles = {
+  const prioridadStyles: Record<string, string> = {
     low: componentStyles.status.priorityLow,
     medium: componentStyles.status.priorityMedium,
     high: componentStyles.status.priorityHigh,
@@ -419,7 +419,7 @@ export default function TestLoadingPage() {
                         Contenido del modal pequeño.
                       </p>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => {}}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => { }}>Cancelar</Button>
                         <Button className={componentStyles.buttons.primary}>Aceptar</Button>
                       </DialogFooter>
                     </DialogContent>
@@ -442,7 +442,7 @@ export default function TestLoadingPage() {
                         Contenido del modal mediano con más espacio.
                       </p>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => {}}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => { }}>Cancelar</Button>
                         <Button className={componentStyles.buttons.primary}>Aceptar</Button>
                       </DialogFooter>
                     </DialogContent>
@@ -470,7 +470,7 @@ export default function TestLoadingPage() {
                         </FormField>
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => {}}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => { }}>Cancelar</Button>
                         <Button className={componentStyles.buttons.primary}>Aceptar</Button>
                       </DialogFooter>
                     </DialogContent>
@@ -509,7 +509,7 @@ export default function TestLoadingPage() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => {}}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => { }}>Cancelar</Button>
                         <Button className={componentStyles.buttons.primary}>Aceptar</Button>
                       </DialogFooter>
                     </DialogContent>
@@ -566,8 +566,8 @@ export default function TestLoadingPage() {
               <div>
                 <h3 className="text-sm font-semibold mb-3">Cards Interactivas</h3>
                 <div className={componentStyles.layout.grid3}>
-                  <Card 
-                    interactive 
+                  <Card
+                    interactive
                     className={`${componentStyles.containers.cardBase} ${componentStyles.elevation.level1} ${componentStyles.elevation.hoverLevel2}`}
                   >
                     <CardContent className="pt-4">
@@ -576,8 +576,8 @@ export default function TestLoadingPage() {
                       <p className="text-sm text-[var(--color-text-secondary)]">Hover para ver efecto</p>
                     </CardContent>
                   </Card>
-                  <Card 
-                    interactive 
+                  <Card
+                    interactive
                     className={`${componentStyles.containers.cardBase} ${componentStyles.elevation.level1} ${componentStyles.elevation.hoverLevel2}`}
                   >
                     <CardContent className="pt-4">
@@ -586,8 +586,8 @@ export default function TestLoadingPage() {
                       <p className="text-sm text-[var(--color-text-secondary)]">Hover para ver efecto</p>
                     </CardContent>
                   </Card>
-                  <Card 
-                    interactive 
+                  <Card
+                    interactive
                     className={`${componentStyles.containers.cardBase} ${componentStyles.elevation.level1} ${componentStyles.elevation.hoverLevel2}`}
                   >
                     <CardContent className="pt-4">

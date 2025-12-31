@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { displayName } from '@/features/shared/utils/helpers';
 import { PageHeader } from '@/features/shared/components/ds/PageHeader';
 import { componentStyles } from '@/design/componentStyles';
+import { UserRole } from '@/features/shared/types/domain';
 
 export default function LocalPage() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export default function LocalPage() {
   // Solo mostrar en desarrollo
   const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
 
-  const handleUserChange = (userId) => {
+  const handleUserChange = (userId: string) => {
     setSelectedUserId(userId);
     setCurrentUser(userId);
     window.location.reload(); // Recargar para actualizar estado global
@@ -42,12 +43,12 @@ export default function LocalPage() {
       toast.info('🔄 Regenerando datos locales...');
       const report = await rebuildAllLocalData({ numSemanas: 4, limpiarExistente: true });
       toast.success(`✅ Datos regenerados: ${report.stats.asignaciones} asignaciones, ${report.stats.sesiones} sesiones`);
-      
+
       // Recargar la app después de un breve delay
       setTimeout(() => {
         window.location.reload();
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('[local.jsx] Error regenerando datos:', {
         error: error?.message || error,
         code: error?.code,
@@ -62,7 +63,7 @@ export default function LocalPage() {
     try {
       printValidationReport();
       toast.success('✅ Validación completada. Revisa la consola para ver el reporte.');
-    } catch (error) {
+    } catch (error: any) {
       console.error('[local.jsx] Error validando datos:', {
         error: error?.message || error,
         code: error?.code,
@@ -83,12 +84,12 @@ export default function LocalPage() {
       toast.info('🔧 Reparando datos locales...');
       const report = await rebuildLocalData();
       toast.success(`✅ Datos reparados: ${report.stats.asignaciones} asignaciones, ${report.stats.registrosSesion} sesiones`);
-      
+
       // Recargar la app después de un breve delay
       setTimeout(() => {
         window.location.reload();
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('[local.jsx] Error reparando datos:', {
         error: error?.message || error,
         code: error?.code,
@@ -98,7 +99,7 @@ export default function LocalPage() {
     }
   };
 
-  const roleLabel = {
+  const roleLabel: Record<string, string> = {
     ADMIN: 'Administrador',
     PROF: 'Profesor',
     ESTU: 'Estudiante',
@@ -106,7 +107,7 @@ export default function LocalPage() {
 
   const role = currentUser?.rolPersonalizado || 'ESTU';
 
-  const navigationItems = {
+  const navigationItems: Record<string, any[]> = {
     ADMIN: [
       { title: 'Usuarios', url: '/usuarios', icon: Users },
       { title: 'Asignaciones', url: '/asignaciones', icon: Target },
