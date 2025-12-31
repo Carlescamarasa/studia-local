@@ -4,7 +4,7 @@ import { computePracticeXP, computeEvaluationXP, computeManualXP, capXPForDispla
 import { localDataClient } from '@/api/localDataClient';
 import { useUsers, type UserEntity } from '@/features/admin/hooks/useUsers';
 import { useLevelsConfig } from '@/features/admin/hooks/useLevelsConfig';
-import type { RecentXPResult, StudentXPTotal } from '@/features/shared/services/xpService';
+import type { RecentXPResult, StudentXPTotal } from '@/features/shared/types/domain';
 
 /**
  * Hook to fetch recent XP (last N days) for radar display

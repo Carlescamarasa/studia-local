@@ -124,7 +124,7 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
             const semana = asignacionActiva?.plan?.semanas?.[semanaIdx];
 
             return { id: alumno.id, alumno, asignacionActiva, semana, semanaIdx, feedback };
-        }).filter((row: { asignacionActiva?: Asignacion | undefined; feedback?: FeedbackSemanal | undefined }) => {
+        }).filter((row: any) => {
             if (filtroRapido === 'todos') return true;
             if (filtroRapido === 'con-asignacion') return !!row.asignacionActiva;
             if (filtroRapido === 'sin-asignacion') return !row.asignacionActiva;
@@ -220,7 +220,7 @@ export default function CuadernoEstudiantesTab({ semanaActualISO, searchTerm }: 
                         <p>{searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes que coincidan con los filtros'}</p>
                     </div>
                 ) : (
-                    tableData.map((row: { id: string; alumno: UserEntity; asignacionActiva?: Asignacion | undefined; semana?: any; semanaIdx: number; feedback?: FeedbackSemanal | undefined }) => (
+                    (tableData as any[]).map((row: any) => (
                         <EstudianteCard
                             key={row.id}
                             alumno={row.alumno}

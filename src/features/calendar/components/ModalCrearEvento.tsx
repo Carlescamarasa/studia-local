@@ -131,7 +131,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      return await localDataClient.entities.EventoCalendario.create(eventoData);
+      return await localDataClient.entities.EventoCalendario.create(eventoData as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarSummary'] });
@@ -160,7 +160,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
         ...data,
         updated_at: new Date().toISOString(),
       };
-      return await localDataClient.entities.EventoCalendario.update(id, eventoData);
+      return await localDataClient.entities.EventoCalendario.update(id, eventoData as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarSummary'] });

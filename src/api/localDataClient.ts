@@ -547,7 +547,7 @@ export const localDataClient: LocalDataClient = {
                 const index = localDataRef.usuarios.findIndex(u => u.id === userIdToUse);
                 if (index !== -1) {
                     localDataRef.usuarios[index] = updated;
-                    await UsuariosAPI.updateUsuario(userIdToUse!, data);
+                    await UsuariosAPI.updateUsuario(userIdToUse!, data as any);
                 }
                 return updated;
             } else {
@@ -556,7 +556,7 @@ export const localDataClient: LocalDataClient = {
                     const existingUser = localDataRef.usuarios[index];
                     const updated = { ...existingUser, ...data };
                     localDataRef.usuarios[index] = updated;
-                    await UsuariosAPI.updateUsuario(userIdToUse!, data);
+                    await UsuariosAPI.updateUsuario(userIdToUse!, data as any);
                     return updated;
                 }
                 throw new Error('No hay usuario autenticado');
@@ -678,7 +678,7 @@ export const localDataClient: LocalDataClient = {
                 if (index === -1) throw new Error('Usuario no encontrado');
                 const updated = { ...localDataRef.usuarios[index], ...data };
                 localDataRef.usuarios[index] = updated;
-                await UsuariosAPI.updateUsuario(id, data);
+                await UsuariosAPI.updateUsuario(id, data as any);
                 return updated as unknown as StudiaUser;
             },
             delete: async (id) => {

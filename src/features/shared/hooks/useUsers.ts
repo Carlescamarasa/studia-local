@@ -5,16 +5,16 @@ import { StudiaUser, UserRole } from '@/features/shared/types/domain';
 
 export interface UserEntity extends StudiaUser {
     fullName: string;
-    nombreCompleto: string;
-    rolPersonalizado: string;
+    nombreCompleto?: string;
+    rolPersonalizado?: string;
     role: UserRole;
-    profesorAsignadoId: string | null;
+    profesorAsignadoId?: string | null;
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
-    nivel: string | null;
-    nivelTecnico?: number;
-    telefono: string | null;
+    nivel?: string | null;
+    nivelTecnico?: number | null;
+    telefono?: string | null;
     profesorNombre: string | null;
 }
 
@@ -22,13 +22,13 @@ interface UserFromRPC {
     id: string;
     fullName: string;
     role: string;
-    profesorAsignadoId: string | null;
+    profesorAsignadoId?: string | null;
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
-    nivel: string | null;
-    nivelTecnico?: number;
-    telefono: string | null;
+    nivel?: string | null;
+    nivelTecnico?: number | null;
+    telefono?: string | null;
     profesorNombre: string | null;
 }
 

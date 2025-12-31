@@ -111,7 +111,7 @@ export async function resolveExercisesByCodes(codes: string[] | null | undefined
       instrucciones: found.instrucciones || '',
       indicadorLogro: found.indicadorLogro || '',
       materialesRequeridos: found.materialesRequeridos || [],
-      media: found.media || {},
+      media: (found as any).media || {},
       elementosOrdenados: found.elementosOrdenados || [],
     } as Partial<Bloque>;
   }).filter((b): b is Partial<Bloque> => !!b);

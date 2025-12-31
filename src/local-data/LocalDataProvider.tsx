@@ -230,7 +230,7 @@ export function LocalDataProvider({ children }: { children: React.ReactNode }) {
         };
 
         // Inyectar datos en localDataClient para que localDataClient.entities funcione
-        setLocalDataRef(loadedData);
+        setLocalDataRef(loadedData as any);
         setData(loadedData);
       } catch (error) {
         console.error('Error cargando datos locales:', error);

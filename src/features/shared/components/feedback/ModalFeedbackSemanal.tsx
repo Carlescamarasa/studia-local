@@ -415,7 +415,7 @@ export default function ModalFeedbackSemanal({
             console.log('[ModalFeedbackSemanal] Save - Existing habilidades:', existingHabilidades);
 
             // COMPUTE XP DELTA TO APPLY (difference from previous)
-            const previousXpDeltas = existingHabilidades.xpDeltas || {};
+            const previousXpDeltas = (existingHabilidades as any).xpDeltas || {};
             const xpDeltaToApply = {
                 motricidad: (xpDeltas.motricidad || 0) - (previousXpDeltas.motricidad || 0),
                 articulacion: (xpDeltas.articulacion || 0) - (previousXpDeltas.articulacion || 0),
@@ -450,9 +450,9 @@ export default function ModalFeedbackSemanal({
 
             // SAVE the feedback record
             if (existingRecord) {
-                await localDataClient.entities.FeedbackSemanal.update(existingRecord.id, dataToSave);
+                await localDataClient.entities.FeedbackSemanal.update(existingRecord.id, dataToSave as any);
             } else {
-                await localDataClient.entities.FeedbackSemanal.create(dataToSave);
+                await localDataClient.entities.FeedbackSemanal.create(dataToSave as any);
             }
 
             // Apply XP Deltas to system (Side Effect) - Only if there is a difference

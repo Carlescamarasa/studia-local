@@ -56,7 +56,7 @@ export default function PlanesTab() {
     },
   });
 
-  const filteredPlanes = planes.filter(p => {
+  const filteredPlanes = (planes as any[]).filter(p => {
     const matchesSearch = p.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFoco = focoFilter === 'all' || p.focoGeneral === focoFilter;
     return matchesSearch && matchesFoco;
@@ -235,7 +235,7 @@ export default function PlanesTab() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDuplicate(plan)}
+                        onClick={() => handleDuplicate(plan as any)}
                         className={`${componentStyles.buttons.iconSmall} ${componentStyles.buttons.ghost} ${componentStyles.buttons.editSubtle}`}
                         aria-label="Duplicar plan"
                       >
@@ -244,7 +244,7 @@ export default function PlanesTab() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(plan)}
+                        onClick={() => handleDelete(plan as any)}
                         className={`${componentStyles.buttons.ghost} ${componentStyles.buttons.deleteSubtle} px-3`}
                       >
                         <Trash2 className="w-4 h-4" />

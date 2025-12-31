@@ -172,7 +172,7 @@ export default function AsignacionesTab({
                 piezaSnapshot: JSON.parse(JSON.stringify(asignacion.piezaSnapshot)),
                 profesorId: userIdActual || effectiveUser.effectiveUserId,
             };
-            return localDataClient.entities.Asignacion.create(newData);
+            return localDataClient.entities.Asignacion.create(newData as any);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
@@ -223,7 +223,7 @@ export default function AsignacionesTab({
                     piezaSnapshot: JSON.parse(JSON.stringify(a.piezaSnapshot)),
                     profesorId: userIdActual || effectiveUser.effectiveUserId,
                 };
-                return localDataClient.entities.Asignacion.create(newData);
+                return localDataClient.entities.Asignacion.create(newData as any);
             }));
         },
         onSuccess: (_, ids) => {

@@ -5,26 +5,7 @@ import { QUERY_KEYS } from '@/lib/queryKeys';
  * XP Service - Manages student experience points (XP) for skill tracking
  */
 
-export interface StudentXPTotal {
-    id: string;
-    studentId: string;
-    skill: 'motricidad' | 'articulacion' | 'flexibilidad';
-    totalXp: number;
-    practiceXp: number;
-    evaluationXp: number;
-    lastUpdatedAt: string;
-    lastManualXpAt?: string;
-    lastManualXpAmount?: number;
-}
-
-export interface RecentXPResult {
-    motricidad: number;
-    articulacion: number;
-    flexibilidad: number;
-}
-
-export type XPSkill = 'motricidad' | 'articulacion' | 'flexibilidad';
-export type XPSource = 'BLOCK' | 'PROF';
+import { StudentXPTotal, XPSkill, XPSource, RecentXPResult } from '@/features/shared/types/domain';
 
 /**
  * Compute XP from recent practice blocks (last N days)

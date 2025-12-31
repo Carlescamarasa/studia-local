@@ -845,7 +845,7 @@ export async function rebuildLocalData() {
     setLocalDataRef({
       ...repaired,
       loading: false,
-    });
+    } as any);
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
 

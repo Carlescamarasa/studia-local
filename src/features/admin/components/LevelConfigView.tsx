@@ -372,7 +372,7 @@ export default function LevelConfigView() {
                 return localDataClient.entities.LevelKeyCriteria.create({
                     ...rest,
                     level: currentLvl
-                });
+                } as any);
             });
 
             const newItems = await Promise.all(promises);

@@ -83,8 +83,8 @@ export async function createManualSessionDraft({ studentId, exerciseCodes, sourc
         // Update the existing Asignacion
         await localDataClient.entities.Asignacion.update(existingDraft.id, {
             plan: updatedPlan,
-            planAdaptado: updatedPlan // Also update planAdaptado for consistency
-        });
+            planAdaptado: updatedPlan
+        } as any);
 
         const newSesionIdx = updatedPlan.semanas[0].sesiones.length - 1;
 
@@ -123,7 +123,7 @@ export async function createManualSessionDraft({ studentId, exerciseCodes, sourc
             }
         };
 
-        const nuevaAsignacion = await localDataClient.entities.Asignacion.create(asignacionData);
+        const nuevaAsignacion = await localDataClient.entities.Asignacion.create(asignacionData as any);
 
         return {
             sessionId: nuevaAsignacion.id,

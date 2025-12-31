@@ -165,12 +165,12 @@ export default function FormularioRapido({ onClose, initialStudentId = null, deb
       }
 
       const planCopy = JSON.parse(JSON.stringify(plan));
-      let piezaSnapshot = {
+      let piezaSnapshot: any = {
         nombre: 'Sin pieza asignada',
         descripcion: '',
         nivel: '',
         tiempoObjetivoSeg: 0,
-        elementos: [],
+        elementos: [] as any[],
       };
 
       if (pieza) {
@@ -198,7 +198,7 @@ export default function FormularioRapido({ onClose, initialStudentId = null, deb
       const results = [];
       for (const asignacion of asignaciones) {
         try {
-          const result = await localDataClient.entities.Asignacion.create(asignacion);
+          const result = await localDataClient.entities.Asignacion.create(asignacion as any);
           results.push(result);
         } catch (error) {
           if (import.meta.env.DEV) {

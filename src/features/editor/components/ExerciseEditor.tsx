@@ -447,10 +447,10 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
       }
 
       if (ejercicio?.id) {
-        await localDataClient.entities.Bloque.update(ejercicio.id, data as Partial<Ejercicio>);
+        await localDataClient.entities.Bloque.update(ejercicio.id, data as any);
         return data as unknown as Ejercicio;
       }
-      await localDataClient.entities.Bloque.create(data as Partial<Ejercicio>);
+      await localDataClient.entities.Bloque.create(data as any);
       return data as unknown as Ejercicio;
     },
     onSuccess: (result) => {
@@ -631,7 +631,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
 
   const resetElementosOrden = () => {
     if (elementosDisponibles && elementosDisponibles.length > 0) {
-      setSelectedElementos(elementosDisponibles.filter((availableEl: Elemento) =>
+      setSelectedElementos((elementosDisponibles as any[]).filter((availableEl: any) =>
         selectedElementos.some(selectedEl => selectedEl.nombre === availableEl.nombre)
       ));
     } else {
@@ -1033,7 +1033,7 @@ export default function ExerciseEditor({ ejercicio, onClose, piezaSnapshot, isIn
                         <div>
                           <Label>Elementos disponibles (multi-selección y ordenación)</Label>
                           <div className="border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] p-3 max-h-48 overflow-y-auto space-y-2 bg-muted">
-                            {elementosDisponibles.map((elemento: Elemento) => (
+                            {(elementosDisponibles as any[]).map((elemento: any) => (
                               <div
                                 key={elemento.nombre}
                                 className="flex items-center gap-2 p-2 bg-card border border-[var(--color-border-default)] rounded-[var(--radius-ctrl)] cursor-pointer hover:bg-muted hover:shadow-sm transition-all"

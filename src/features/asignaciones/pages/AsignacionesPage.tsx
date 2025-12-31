@@ -187,7 +187,7 @@ function AsignacionesPageContent() {
           piezaSnapshot: JSON.parse(JSON.stringify(a.piezaSnapshot)),
           profesorId: userIdActual || (effectiveUser as any).id,
         };
-        return localDataClient.entities.Asignacion.create(newData);
+        return localDataClient.entities.Asignacion.create(newData as any);
       }));
     },
     onSuccess: (_, ids) => {
@@ -393,7 +393,7 @@ function AsignacionesPageContent() {
     }
 
     if (profesoresFilter.length > 0) {
-      resultado = resultado.filter(a => profesoresFilter.includes(a.profesorId));
+      resultado = resultado.filter(a => a.profesorId && profesoresFilter.includes(a.profesorId));
     }
 
     if (searchTerm) {

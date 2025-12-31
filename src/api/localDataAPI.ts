@@ -497,7 +497,7 @@ export function createLocalDataAPI(): AppDataAPI {
         return items.map(i => mapLocalEntityToDomain<MediaAsset>(i));
       },
       create: async (data) => {
-        const item = await localDataClient.entities.MediaAsset.create(data);
+        const item = await localDataClient.entities.MediaAsset.create(data as any);
         return mapLocalEntityToDomain<MediaAsset>(item);
       },
       update: async (id: string, updates: any) => {

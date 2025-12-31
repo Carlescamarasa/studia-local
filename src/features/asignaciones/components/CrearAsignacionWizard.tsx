@@ -175,7 +175,7 @@ export default function CrearAsignacionWizard({ onClose }: CrearAsignacionWizard
       const results = [];
       for (const asignacion of asignaciones) {
         try {
-          const result = await localDataClient.entities.Asignacion.create(asignacion);
+          const result = await localDataClient.entities.Asignacion.create(asignacion as any);
           results.push(result);
         } catch (error) {
           console.error('[CrearAsignacionWizard] Error al crear asignación:', {

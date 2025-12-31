@@ -76,11 +76,11 @@ export function useUpdateUserMutation(
 
             if (isOwnProfile) {
                 // Update own profile
-                const updated = await localDataClient.auth.updateMe(data, userIdToUpdate);
+                const updated = await localDataClient.auth.updateMe(data as any, userIdToUpdate);
                 return updated as UserEntity | null;
             } else {
                 // Update another user's profile (admin only)
-                const updated = await localDataClient.entities.User.update(userIdToUpdate, data);
+                const updated = await localDataClient.entities.User.update(userIdToUpdate, data as any);
                 return updated as UserEntity | null;
             }
         },

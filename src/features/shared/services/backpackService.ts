@@ -1,30 +1,19 @@
 import { localDataClient } from '@/api/localDataClient';
-import { startOfWeek, formatISO, differenceInDays } from 'date-fns'; // Assuming date-fns is available or we use helpers
-
-// Interfaces matches DB schema
-export type BackpackStatus = 'nuevo' | 'en_progreso' | 'dominado' | 'oxidado' | 'archivado';
-
-export interface StudentBackpackItem {
-    id: string;
-    student_id: string;
-    backpack_key: string;
-    status: BackpackStatus;
-    mastery_score: number;
-    last_practiced_at: string | null;
-    mastered_weeks: string[]; // ISO Dates YYYY-MM-DD
-    last_mastered_week_start: string | null;
-    created_at: string;
-    updated_at: string;
-}
+import { startOfWeek, formatISO, differenceInDays } from 'date-fns';
+import { StudentBackpackItem, BackpackStatus } from '@/features/shared/types/domain';
 
 export interface SessionDataForBackpack {
     studentId: string;
     registrosBloque: Array<{
+        backpackKey?: string | null;
+        /** Legacy alias */
         backpack_key?: string | null;
         estado: 'completado' | 'omitido';
         duracionRealSeg: number;
         duracionObjetivoSeg?: number;
         ppmAlcanzado?: { bpm: number } | null;
+        ppmObjetivo?: number | null;
+        /** Legacy alias */
         ppm_objetivo?: number | null;
         inicioISO: string;
     }>;
@@ -37,14 +26,14 @@ export interface SessionDataForBackpack {
 export async function updateBackpackFromSession(sessionData: SessionDataForBackpack): Promise<void> {
     const { studentId, registrosBloque } = sessionData;
 
-    // Filter blocks relevant for backpack (must have backpack_key)
-    const validBlocks = registrosBloque.filter(b => b.backpack_key);
+    // Filter blocks relevant for backpack (must have backpackKey)
+    const validBlocks = registrosBloque.filter(b => b.backpackKey || b.backpack_key);
     if (validBlocks.length === 0) return;
 
-    // Group blocks by backpack_key (in case multiple blocks for same key in one session)
+    // Group blocks by backpackKey
     const blocksByKey = new Map<string, typeof validBlocks>();
     validBlocks.forEach(b => {
-        const key = b.backpack_key!;
+        const key = (b.backpackKey || b.backpack_key)!;
         if (!blocksByKey.has(key)) blocksByKey.set(key, []);
         blocksByKey.get(key)!.push(b);
     });
@@ -59,11 +48,11 @@ async function processBackpackItem(studentId: string, key: string, blocks: Sessi
     try {
         // 1. Fetch existing backpack item
         const existingItems = await localDataClient.entities.StudentBackpack.filter({
-            student_id: studentId,
-            backpack_key: key
+            studentId: studentId
         });
 
-        let item: Partial<StudentBackpackItem> = existingItems.length > 0 ? existingItems[0] : null;
+        // Manual filter since StudentBackpack.filter on localDataClient might be limited
+        const item = existingItems.find(i => i.backpackKey === key || (i as any).backpack_key === key);
 
         // Calculate aggregates from this session's blocks
         // Usually we take the "best" or "last" result if multiple? 
@@ -85,11 +74,12 @@ async function processBackpackItem(studentId: string, key: string, blocks: Sessi
                 scoreDelta += 10;
 
                 // Check PPM target if exists
-                if (block.ppm_objetivo && block.ppmAlcanzado?.bpm) {
-                    if (block.ppmAlcanzado.bpm >= block.ppm_objetivo) {
+                const ppmObjetivo = block.ppmObjetivo || block.ppm_objetivo;
+                if (ppmObjetivo && block.ppmAlcanzado?.bpm) {
+                    if (block.ppmAlcanzado.bpm >= ppmObjetivo) {
                         scoreDelta += 5; // Bonus for reaching target
                         isMasteryCandidate = true;
-                    } else if (block.ppmAlcanzado.bpm >= block.ppm_objetivo * 0.9) {
+                    } else if (block.ppmAlcanzado.bpm >= ppmObjetivo * 0.9) {
                         scoreDelta += 2; // Close enough
                     }
                 } else {
@@ -146,7 +136,8 @@ async function processBackpackItem(studentId: string, key: string, blocks: Sessi
             // Fetch last practice date from `item`. If `item.last_practiced_at` is in the same week AND was different day -> We hit 2 days.
             // This is a good heuristic without extra queries.
 
-            const prevLastPracticed = item?.last_practiced_at ? new Date(item.last_practiced_at) : null;
+            const lastPracticedStr = (item as any)?.lastPracticedAt || (item as any)?.last_practiced_at;
+            const prevLastPracticed = lastPracticedStr ? new Date(lastPracticedStr) : null;
             const currentPracticeDate = new Date(lastPracticedAt);
 
             if (prevLastPracticed) {
@@ -164,7 +155,7 @@ async function processBackpackItem(studentId: string, key: string, blocks: Sessi
         // --- State Transitions ---
 
         // Prepare new state
-        const oldMasteredWeeks = item?.mastered_weeks || [];
+        const oldMasteredWeeks = item?.masteredWeeks || (item as any)?.mastered_weeks || [];
         let newMasteredWeeks = [...oldMasteredWeeks];
 
         if (promotedToMasteredWeek) {
@@ -210,22 +201,23 @@ async function processBackpackItem(studentId: string, key: string, blocks: Sessi
         if (item && item.id) {
             await localDataClient.entities.StudentBackpack.update(item.id, {
                 status: newStatus,
-                mastery_score: (item.mastery_score || 0) + scoreDelta,
-                last_practiced_at: lastPracticedAt,
-                mastered_weeks: newMasteredWeeks,
-                last_mastered_week_start: promotedToMasteredWeek ? currentWeekStart : item.last_mastered_week_start,
-                updated_at: new Date().toISOString()
-            });
+                masteryScore: ((item?.masteryScore || (item as any)?.mastery_score || 0) + scoreDelta),
+                lastPracticedAt: lastPracticedAt,
+                masteredWeeks: newMasteredWeeks,
+                lastMasteredWeekStart: promotedToMasteredWeek ? currentWeekStart : (item?.lastMasteredWeekStart || (item as any)?.last_mastered_week_start),
+                updatedAt: new Date().toISOString()
+            } as Partial<StudentBackpackItem>);
         } else {
             await localDataClient.entities.StudentBackpack.create({
-                student_id: studentId,
-                backpack_key: key,
+                studentId: studentId,
+                backpackKey: key,
                 status: newStatus,
-                mastery_score: scoreDelta,
-                last_practiced_at: lastPracticedAt,
-                mastered_weeks: newMasteredWeeks,
-                updated_at: new Date().toISOString()
-            });
+                masteryScore: scoreDelta,
+                lastPracticedAt: lastPracticedAt,
+                masteredWeeks: newMasteredWeeks,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            } as any);
         }
 
     } catch (e) {
@@ -246,5 +238,5 @@ function getWeekStart(dateISO: string): string {
 }
 
 export async function getStudentBackpack(studentId: string): Promise<StudentBackpackItem[]> {
-    return await localDataClient.entities.StudentBackpack.filter({ student_id: studentId });
+    return await localDataClient.entities.StudentBackpack.filter({ studentId });
 }

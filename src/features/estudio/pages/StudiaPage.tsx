@@ -18,6 +18,15 @@ import { updateBackpackFromSession } from '@/features/shared/services/backpackSe
 import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 import { localDataClient } from "@/api/localDataClient";
 import { useQuery } from "@tanstack/react-query";
+import {
+    StudiaUser,
+    Asignacion,
+    RegistroSesion,
+    RegistroBloque,
+    Bloque,
+    PlanSemana,
+    PlanSesion
+} from "@/features/shared/types/domain";
 
 import RequireRole from "@/features/auth/components/RequireRole";
 import { ROUTES } from "@/lib/routes";
@@ -125,14 +134,14 @@ function StudiaPageContent() {
     const tryCodes = searchParams.get('codes')?.split(',').filter(Boolean) || [];
 
     // Session state
-    const [sesionActiva, setSesionActiva] = useState<any>(null);
+    const [sesionActiva, setSesionActiva] = useState<(PlanSesion & { bloques: any[] }) | null>(null);
     const [indiceActual, setIndiceActual] = useState(0);
     const [tiempoActual, setTiempoActual] = useState(0);
     const [cronometroActivo, setCronometroActiva] = useState(false);
     const [completados, setCompletados] = useState(new Set<number>());
     const [omitidos, setOmitidos] = useState(new Set<number>());
     const [sesionFinalizada, setSesionFinalizada] = useState(false);
-    const [datosFinal, setDatosFinal] = useState<any>(null);
+    const [datosFinal, setDatosFinal] = useState<Partial<RegistroSesion> | null>(null);
     const [mostrarModalCancelar, setMostrarModalCancelar] = useState(false);
     const [mostrarItinerario, setMostrarItinerario] = useState(false);
     const [reportModalAbierto, setReportModalAbierto] = useState(false);
@@ -181,11 +190,11 @@ function StudiaPageContent() {
     }, [mostrarPiano, syncNow]);
 
     // Timing state
-    const [registroSesionId, setRegistroSesionId] = useState(null);
+    const [registroSesionId, setRegistroSesionId] = useState<string | null>(null);
     const [timestampInicio, setTimestampInicio] = useState<number | null>(null);
     const [timestampUltimoPausa, setTimestampUltimoPausa] = useState<number | null>(null);
     const [tiempoAcumuladoAntesPausa, setTiempoAcumuladoAntesPausa] = useState(0);
-    const bloquesPendientesRef = useRef<any[]>([]);
+    const bloquesPendientesRef = useRef<Partial<RegistroBloque>[]>([]);
     const colaOfflineRef = useRef<any[]>([]);
 
     const { effectiveUserId, effectiveEmail } = useEffectiveUser();
@@ -194,7 +203,7 @@ function StudiaPageContent() {
     const { data: usuarios = [] } = useUsers();
 
     // Find actual user
-    const alumnoActual = usuarios.find(u => {
+    const alumnoActual = (usuarios as StudiaUser[]).find(u => {
         if (effectiveEmail && u.email) {
             return u.email.toLowerCase().trim() === (effectiveEmail as string).toLowerCase().trim();
         }
@@ -275,12 +284,14 @@ function StudiaPageContent() {
 
             // Fallback for exercises not found in DB
             return {
-                tipo: 'PR',
+                id: `fallback-${idx}`,
+                tipo: 'AD' as const,
                 code: code,
                 nombre: `Ejercicio ${idx + 1}`,
                 duracionSeg: 300,
                 modo: 'estudio',
-            };
+                rondas: []
+            } as any;
         });
 
         const trySesion = {
@@ -290,7 +301,7 @@ function StudiaPageContent() {
         };
 
         console.log('[TryMode] Session created:', trySesion);
-        setSesionActiva(trySesion);
+        setSesionActiva(trySesion as any);
         setIndiceActual(0);
         setTiempoActual(0);
         setCronometroActiva(false);
@@ -321,9 +332,9 @@ function StudiaPageContent() {
                 const fixedVariationKey = bloqueSnapshot.selected_variation_key;
                 let pickedVariation = null;
 
-                if (policy === 'fixed' && fixedVariationKey && bloqueActual.variations) {
-                    pickedVariation = bloqueActual.variations.find((v: any) => v.id === fixedVariationKey || v.label === fixedVariationKey);
-                } else if (policy === 'random' && bloqueActual.variations?.length > 0) {
+                if (policy === 'fixed' && fixedVariationKey && bloqueActual.variations && Array.isArray(bloqueActual.variations)) {
+                    pickedVariation = (bloqueActual.variations as any[]).find((v: any) => v.id === fixedVariationKey || v.label === fixedVariationKey);
+                } else if (policy === 'random' && Array.isArray(bloqueActual.variations) && bloqueActual.variations.length > 0) {
                     const userLevel = alumnoActual?.nivelTecnico || 1;
                     const validVars = getValidVariations(bloqueActual, userLevel);
                     if (validVars) {
@@ -350,9 +361,9 @@ function StudiaPageContent() {
                 let mediaLinksFinal = [];
                 if (selectedVariationMedia) {
                     mediaLinksFinal = selectedVariationMedia;
-                } else if (bloqueActual.content?.mediaItems?.length > 0) {
-                    mediaLinksFinal = bloqueActual.content.mediaItems;
-                } else if (bloqueActual.mediaLinks?.length > 0) {
+                } else if ((bloqueActual as any).content?.mediaItems?.length > 0) {
+                    mediaLinksFinal = (bloqueActual as any).content.mediaItems;
+                } else if ((bloqueActual.mediaLinks as any)?.length > 0) {
                     mediaLinksFinal = bloqueActual.mediaLinks.map((u: any) => typeof u === 'string' ? { url: u, name: null } : u);
                 } else if (bloqueSnapshot.mediaLinks?.length > 0) {
                     mediaLinksFinal = bloqueSnapshot.mediaLinks.map((u: any) => typeof u === 'string' ? { url: u, name: null } : u);
@@ -372,10 +383,10 @@ function StudiaPageContent() {
                     targetPPMs: bloqueActual.targetPPMs || bloqueSnapshot.targetPPMs || [],
                     variationName: variationLabel,
                     backpack_key: bloqueSnapshot.backpack_key || bloqueActual.backpack_key || null,
-                    variation_key: pickedVariation ? (pickedVariation.id || pickedVariation.label) : null,
+                    variation_key: pickedVariation ? ((pickedVariation as any).id || (pickedVariation as any).label) : null,
                     variation_policy: policy
                 };
-            })
+            }) as any[]
         };
 
         setSesionActiva(sesionActualizada);
@@ -491,22 +502,22 @@ function StudiaPageContent() {
         const bloque = listaEjecucion[indice];
         if (!bloque) return;
 
-        const dataBloque = {
+        const dataBloque: Partial<RegistroBloque> = {
             asignacionId: asignacionActiva!.id,
-            alumnoId: userIdActual,
+            alumnoId: userIdActual as string,
             semanaIdx: semanaIdxParam,
             sesionIdx: sesionIdxParam,
             ordenEjecucion: indice,
-            tipo: bloque.tipo,
+            tipo: (bloque.tipo as any) || 'PR',
             code: bloque.code,
             nombre: bloque.nombre,
             duracionObjetivoSeg: bloque.duracionSeg || 0,
             duracionRealSeg: bloque.tipo === 'AD' ? 0 : duracionReal,
-            estado: estado,
+            estado: (estado as 'completado' | 'omitido') || 'completado',
             inicioISO: new Date().toISOString(),
             finISO: new Date().toISOString(),
             iniciosPausa: 0,
-            ppmAlcanzado: ppmAlcanzado,
+            ppm_alcanzado: ppmAlcanzado || undefined,
             backpack_key: bloque.backpack_key || null,
             variation_key: bloque.variation_key || null,
             ppm_objetivo: bloque.targetPPMs?.[0] || null,
@@ -650,10 +661,10 @@ function StudiaPageContent() {
 
         const duracionRealTotal = bloquesPendientesRef.current.reduce((acc: number, b: any) => acc + (b.duracionRealSeg || 0), 0);
 
-        const dataRegistro = {
+        const dataRegistro: Partial<RegistroSesion> = {
             asignacionId: asignacionActiva.id,
-            alumnoId: userIdActual,
-            profesorAsignadoId: alumnoActual?.profesorAsignadoId || null,
+            alumnoId: userIdActual as string,
+            profesorAsignadoId: (alumnoActual as any)?.profesorAsignadoId || (alumnoActual as any)?.profesor_asignado_id || '',
             semanaIdx: semanaIdxParam,
             sesionIdx: sesionIdxParam,
             inicioISO: timestampInicio ? new Date(timestampInicio).toISOString() : new Date().toISOString(),
@@ -695,7 +706,7 @@ function StudiaPageContent() {
                 if (userIdActual) {
                     await updateBackpackFromSession({
                         studentId: userIdActual,
-                        registrosBloque: bloquesPendientesRef.current
+                        registrosBloque: bloquesPendientesRef.current as any[]
                     });
                 }
             } catch (bpError) {
@@ -864,7 +875,7 @@ function StudiaPageContent() {
         return (
             <ResumenFinal
                 sesion={sesionActiva}
-                tiempoReal={datosFinal?.tiempoReal || tiempoActual}
+                tiempoReal={(datosFinal as any)?.duracionRealSeg || tiempoActual}
                 tiempoPrevisto={tiempoPrevisto}
                 completados={completados}
                 omitidos={omitidos}
@@ -876,7 +887,12 @@ function StudiaPageContent() {
                     if (!open) cerrarSesion();
                 }}
                 onCalidadNotas={async (calidad: number, notas: string, mediaLinks: string[]) => {
-                    setDatosFinal((prev: { calidad?: number; notas?: string; mediaLinks?: string[] } | null) => ({ ...prev, calidad, notas, mediaLinks }));
+                    setDatosFinal((prev: any) => ({
+                        ...prev,
+                        calificacion: calidad,
+                        notas: notas || undefined,
+                        mediaLinks: mediaLinks
+                    }));
                     await finalizarSesion(calidad, notas, mediaLinks);
                 }}
                 userId={userIdActual ?? undefined}

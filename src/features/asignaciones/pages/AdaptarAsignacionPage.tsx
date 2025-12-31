@@ -99,7 +99,7 @@ function SortableSesionAdaptar({
   }
 
   const handleToggleRondaLocal = (rondaId: string) => {
-    const rIndex = sesion.rondas.findIndex(r => r.id === rondaId);
+    const rIndex = sesion.rondas?.findIndex(r => r.id === rondaId) ?? -1;
     if (rIndex !== -1) {
       toggleRonda(semanaIndex, sesionIndex, rIndex);
     }

@@ -604,9 +604,9 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
       }
 
       if (plan?.id) {
-        return localDataClient.entities.Plan.update(plan.id, data) as Promise<Plan>;
+        return localDataClient.entities.Plan.update(plan.id, data as any) as unknown as Promise<Plan>;
       }
-      return localDataClient.entities.Plan.create(data) as Promise<Plan>;
+      return localDataClient.entities.Plan.create(data as any) as unknown as Promise<Plan>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['planes'] });
@@ -1163,7 +1163,7 @@ export default function PlanEditor({ plan, onClose }: { plan: Plan | null; onClo
       {editingSesion && (
         <SessionEditor
           sesion={{ ...editingSesion.sesion, secuencia: [] }} // Ensure it's SessionFormData
-          pieza={piezas.find((p: any) => p.id === formData.piezaId)}
+          pieza={piezas.find((p: any) => p.id === formData.piezaId) as any}
           piezaSnapshot={null}
           alumnoId=""
           onSave={(updated: any) => {

@@ -36,17 +36,33 @@ export interface StudiaUser {
   id: string;
   email: string;
   full_name: string;
+  /** Alias for full_name in legacy code */
+  nombreCompleto?: string;
   role: UserRole;
+  /** Alias for role in legacy code */
+  rolPersonalizado?: string;
   profesor_asignado_id: string | null;
+  /** Legacy alias */
+  profesorAsignadoId?: string | null;
   is_active: boolean;
+  /** Alias for is_active in legacy code */
+  estado?: string;
   created_at: string; // ISO 8601 string
+  /** Alias for created_at in legacy code */
+  fechaRegistro?: string;
   updated_at: string; // ISO 8601 string
 
   /**
    * Nivel técnico numérico (1-100) para determinar BPMs objetivos.
    * El campo 'nivel' (string) se mantiene para descripción visual.
    */
-  nivelTecnico?: number;
+  nivelTecnico?: number | null;
+  /** Legacy alias */
+  nivel?: string | null;
+  /** Legacy alias */
+  telefono?: string | null;
+  /** Legacy alias */
+  password?: string;
 }
 
 /**
@@ -82,8 +98,13 @@ export interface Pieza {
   tiempoObjetivoSeg: number;
   elementos: PiezaElemento[];
   profesorId: string;
+  slug?: string; // Legacy alias
   created_at: string;
   updated_at: string;
+  backpack_key?: string | null;
+  variation_key?: string | null;
+  backpackKey?: string | null;
+  variationKey?: string | null;
 }
 
 export type CreatePiezaInput = Omit<Pieza, 'id' | 'created_at' | 'updated_at'> & { id?: string };
@@ -109,12 +130,24 @@ export interface Variation {
   id?: string;
   /** Nombre/etiqueta de la variación (ej: "Sistema 1", "Escala mayor") */
   nombre: string;
+  /** Legacy alias */
+  label?: string;
   /** Nivel mínimo requerido (1-10) para que esta variación sea elegible */
   nivelMinimo: number;
+  /** Legacy alias */
+  min_level?: number;
   /** Duración estimada en segundos */
   duracionSeg: number;
+  /** Legacy alias */
+  duracion_seg?: number;
   /** URLs de assets (PDF, audio, video, imagen) */
   mediaLinks?: string[];
+  /** Legacy alias */
+  mediaItems?: any[];
+  /** Legacy alias for single asset */
+  assetUrl?: string;
+  /** Legacy alias for single asset */
+  asset_url?: string;
   /** Tags opcionales para categorización */
   tags?: string[];
 }
@@ -164,6 +197,10 @@ export interface Bloque {
    */
   content?: Variation[];
   variations?: Variation[];
+  backpack_key?: string | null;
+  variation_key?: string | null;
+  backpackKey?: string | null;
+  variationKey?: string | null;
 }
 
 export type CreateBloqueInput = Omit<Bloque, 'id' | 'created_at' | 'updated_at'> & { id?: string };
@@ -199,7 +236,7 @@ export interface PlanSesion {
   nombre: string;
   foco?: string;
   bloques: SesionBloque[];
-  rondas: SesionRonda[];
+  rondas?: SesionRonda[];
   [key: string]: any;
 }
 
@@ -254,9 +291,15 @@ export interface PiezaSnapshot {
 export interface Asignacion {
   id: string;
   alumnoId: string;
-  profesorId: string;
+  /** Legacy alias for alumnoId */
+  alumno_id?: string;
+  profesorId: string | null;
+  /** Legacy alias for profesorId */
+  profesor_id?: string | null;
   piezaId: string;
   semanaInicioISO: string; // YYYY-MM-DD
+  /** Legacy alias for semanaInicioISO */
+  fechaAsignacion?: string;
   estado: 'borrador' | 'publicada' | 'archivada' | 'en_curso' | 'cerrada';
   foco: 'GEN' | 'SON' | 'FLX' | 'ART' | 'MOT' | 'COG';
   notas?: string | null;
@@ -264,8 +307,8 @@ export interface Asignacion {
   piezaSnapshot: PiezaSnapshot; // Snapshot completo de la pieza
   isDraft?: boolean;
   modo?: 'manual' | 'asignada';
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   updated_date?: string; // Legacy local field compatibility
 }
 
@@ -349,6 +392,12 @@ export interface RegistroBloque {
    * Ej: ["Articulación T", "Motricidad"]
    */
   skills?: string[];
+  ppm_alcanzado?: number | null; // Legacy alias
+  ppm_objetivo?: number | null; // Legacy alias
+  backpack_key?: string | null; // Legacy alias
+  variation_key?: string | null; // Legacy alias
+  backpackKey?: string | null;
+  variationKey?: string | null;
 }
 
 export type CreateRegistroBloqueInput = Omit<RegistroBloque, 'id' | 'created_at'> & { id?: string };
@@ -572,13 +621,28 @@ export type CreateStudentLevelHistoryInput = Omit<StudentLevelHistory, 'id' | 'c
 export interface StudentXPTotal {
   id: string;
   studentId: string;
+  /** Legacy alias for studentId */
+  student_id?: string;
   skill: 'motricidad' | 'articulacion' | 'flexibilidad';
   totalXp: number;
   practiceXp: number;
+  /** Legacy alias for practiceXp */
+  practice_xp?: number;
   evaluationXp: number;
+  /** Legacy alias for evaluationXp */
+  evaluation_xp?: number;
   lastUpdatedAt: string;
   lastManualXpAt?: string; // Timestamp when manual XP was last awarded
   lastManualXpAmount?: number; // Amount of last manual XP (for 30-day window)
+}
+
+export type XPSkill = 'motricidad' | 'articulacion' | 'flexibilidad';
+export type XPSource = 'BLOCK' | 'PROF';
+
+export interface RecentXPResult {
+  motricidad: number;
+  articulacion: number;
+  flexibilidad: number;
 }
 
 export type CreateStudentXPTotalInput = Omit<StudentXPTotal, 'id'>;
@@ -617,15 +681,29 @@ export type UpdateMediaAssetInput = Partial<Omit<MediaAsset, 'id' | 'created_at'
 // Student Backpack - Spaced Repetition System
 // ============================================================================
 
+export type BackpackStatus = 'nuevo' | 'en_progreso' | 'dominado' | 'oxidado' | 'archivado';
+
 export interface StudentBackpackItem {
   id: string;
   studentId: string;
+  /** Legacy alias for studentId */
+  student_id?: string;
   backpackKey: string;
-  status: 'nuevo' | 'en_progreso' | 'dominado' | 'oxidado' | 'archivado';
+  /** Legacy alias for backpackKey */
+  backpack_key?: string;
+  status: BackpackStatus;
   masteryScore: number;
+  /** Legacy alias for masteryScore */
+  mastery_score?: number;
   lastPracticedAt: string; // ISO timestamp
+  /** Legacy alias for lastPracticedAt */
+  last_practiced_at?: string;
   masteredWeeks: string[]; // ISO dates of weeks where item was mastered
+  /** Legacy alias for masteredWeeks */
+  mastered_weeks?: string[];
   lastMasteredWeekStart?: string; // ISO date
+  /** Legacy alias for lastMasteredWeekStart */
+  last_mastered_week_start?: string;
   createdAt: string;
   updatedAt: string;
 }
