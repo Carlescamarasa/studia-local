@@ -4,8 +4,8 @@ import { parseCSV } from './csvHelpers';
  * Executes the full import pipeline: Parse -> Validate -> Resolve Deps -> Diff
  * Returns a detailed report to be used by the Review Panel.
  */
-export async function runImportPipeline(dataset, rawData, format, existingData = []) {
-    const report = {
+export async function runImportPipeline(dataset: any, rawData: string, format: string, existingData: any[] = []): Promise<any> {
+    const report: { rows: any[]; summary: any; dependencies: Record<string, any> } = {
         rows: [],
         summary: { total: 0, valid: 0, errors: 0, warnings: 0, changes: { created: 0, updated: 0, skipped: 0 } },
         dependencies: {}
@@ -17,7 +17,7 @@ export async function runImportPipeline(dataset, rawData, format, existingData =
     try {
         parsedRows = format === 'csv' ? parseCSV(rawData) : JSON.parse(rawData);
         if (!Array.isArray(parsedRows)) throw new Error("Format invalid: Expected an array");
-    } catch (e) {
+    } catch (e: any) {
         throw new Error(`Error parsing file: ${e.message}`);
     }
 
@@ -29,7 +29,7 @@ export async function runImportPipeline(dataset, rawData, format, existingData =
     const dependencies = dataset.import?.dependencies || {};
 
     // Initialize dependency map
-    Object.keys(dependencies).forEach(key => {
+    Object.keys(dependencies).forEach((key: string) => {
         report.dependencies[key] = {
             targetDataset: dependencies[key],
             status: 'pending', // pending, resolved, partial
@@ -39,7 +39,7 @@ export async function runImportPipeline(dataset, rawData, format, existingData =
 
     for (const [index, row] of parsedRows.entries()) {
         const rowId = `row-${index}`;
-        const rowReport = {
+        const rowReport: any = {
             id: rowId,
             original: row,
             data: { ...row }, // clone for mutations
@@ -69,7 +69,7 @@ export async function runImportPipeline(dataset, rawData, format, existingData =
             // Check existence in DB (passed as existingData usually full list)
             // This requires the caller to pass the *target* dataset existing data
             // For now we assume existingData is the specific entity list.
-            const match = existingData.find(e =>
+            const match = existingData.find((e: any) =>
                 String(e[upsertKey] || '').toLowerCase() === String(row[upsertKey] || '').toLowerCase()
             );
             if (match) {
@@ -103,7 +103,7 @@ export async function runImportPipeline(dataset, rawData, format, existingData =
                     // Cache resolution for bulk fix UI (optimization for later)
                     // report.dependencies[field].matches[rawValue] = result; 
 
-                } catch (e) {
+                } catch (e: any) {
                     rowReport.errors.push(`Error resolviendo '${field}': ${e.message}`);
                 }
             }
@@ -118,12 +118,12 @@ export async function runImportPipeline(dataset, rawData, format, existingData =
 
     // 4. SUMMARY
     // -----------------------------------------------------------------------
-    report.summary.valid = report.rows.filter(r => r.status !== 'error').length;
-    report.summary.errors = report.rows.filter(r => r.status === 'error').length;
-    report.summary.warnings = report.rows.filter(r => r.status === 'warning').length;
+    report.summary.valid = report.rows.filter((r: any) => r.status !== 'error').length;
+    report.summary.errors = report.rows.filter((r: any) => r.status === 'error').length;
+    report.summary.warnings = report.rows.filter((r: any) => r.status === 'warning').length;
 
-    report.summary.changes.created = report.rows.filter(r => r.status !== 'error' && r.action === 'create').length;
-    report.summary.changes.updated = report.rows.filter(r => r.status !== 'error' && r.action === 'update').length;
+    report.summary.changes.created = report.rows.filter((r: any) => r.status !== 'error' && r.action === 'create').length;
+    report.summary.changes.updated = report.rows.filter((r: any) => r.status !== 'error' && r.action === 'update').length;
 
     return report;
 }

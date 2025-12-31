@@ -331,8 +331,8 @@ function SemanaPageContent() {
             <CardHeader>
               <div className="flex items-start md:items-center justify-between gap-3 flex-col md:flex-row">
                 <CardTitle className={componentStyles.typography.cardTitle}>{semanaDelPlan.nombre}</CardTitle>
-                <Badge className={(focoColors as any)[semanaDelPlan.foco]}>
-                  {(focoLabels as any)[semanaDelPlan.foco]}
+                <Badge className={(focoColors as any)[semanaDelPlan.foco || 'GEN']}>
+                  {(focoLabels as any)[semanaDelPlan.foco || 'GEN']}
                 </Badge>
               </div>
             </CardHeader>
@@ -418,8 +418,8 @@ function SemanaPageContent() {
                                   <Clock className="w-3 h-3 mr-1" />
                                   {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
                                 </Badge>
-                                <Badge className={`rounded-full ${(focoColors as any)[sesion.foco]}`} variant="outline">
-                                  {(focoLabels as any)[sesion.foco]}
+                                <Badge className={`rounded-full ${(focoColors as any)[sesion.foco || 'GEN']}`} variant="outline">
+                                  {(focoLabels as any)[sesion.foco || 'GEN']}
                                 </Badge>
                               </div>
                               {!isExpanded && (

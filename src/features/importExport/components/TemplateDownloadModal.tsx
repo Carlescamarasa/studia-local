@@ -6,10 +6,10 @@ import { FileText, FileJson } from 'lucide-react';
 import { useMobileStrict } from '@/hooks/useMobileStrict';
 import { datasets } from '../registry';
 
-export default function TemplateDownloadModal({ isOpen, onClose }) {
+export default function TemplateDownloadModal({ isOpen, onClose }: { isOpen: boolean, onClose: (open: boolean) => void }) {
     const isMobile = useMobileStrict();
 
-    const downloadTemplate = (dataset, type) => {
+    const downloadTemplate = (dataset: any, type: string) => {
         const content = dataset.templates?.[type];
         if (!content) return;
 
@@ -25,7 +25,7 @@ export default function TemplateDownloadModal({ isOpen, onClose }) {
 
     const importableDatasets = datasets.filter(d => d.import); // Only show templates for things we can import
 
-    const ModalContent = ({ TitleComponent, DescriptionComponent, FooterButtonComponent }) => (
+    const ModalContent = ({ TitleComponent, DescriptionComponent, FooterButtonComponent }: { TitleComponent?: any, DescriptionComponent?: any, FooterButtonComponent?: any }) => (
         <>
             {/* Header */}
             {TitleComponent && (
@@ -45,7 +45,7 @@ export default function TemplateDownloadModal({ isOpen, onClose }) {
                                 <h3 className="font-medium text-[var(--color-text-primary)]">{ds.label}</h3>
                                 <p className="text-xs text-[var(--color-text-secondary)] mt-1 max-w-sm">
                                     Headers: <span className="font-mono bg-[var(--color-surface-muted)] px-1 rounded">
-                                        {(ds.import.csvHeaders || []).join(', ')}
+                                        {(ds.import?.csvHeaders || []).join(', ')}
                                     </span>
                                 </p>
                             </div>
@@ -93,7 +93,7 @@ export default function TemplateDownloadModal({ isOpen, onClose }) {
                                     <div>
                                         <h3 className="font-medium text-[var(--color-text-primary)]">{ds.label}</h3>
                                         <p className="text-xs text-[var(--color-text-secondary)] mt-1 break-all">
-                                            Headers: {(ds.import.csvHeaders || []).join(', ')}
+                                            Headers: {(ds.import?.csvHeaders || []).join(', ')}
                                         </p>
                                     </div>
                                     <div className="flex gap-2">
@@ -137,7 +137,7 @@ export default function TemplateDownloadModal({ isOpen, onClose }) {
                                     <h3 className="font-medium text-[var(--color-text-primary)]">{ds.label}</h3>
                                     <p className="text-xs text-[var(--color-text-secondary)] mt-1 max-w-sm">
                                         Headers: <span className="font-mono bg-[var(--color-surface-muted)] px-1 rounded">
-                                            {(ds.import.csvHeaders || []).join(', ')}
+                                            {(ds.import?.csvHeaders || []).join(', ')}
                                         </span>
                                     </p>
                                 </div>

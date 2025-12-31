@@ -1,8 +1,8 @@
 /**
  * Helper para parsear CSV con punto y coma o coma como separador
  */
-export const parseCSV = (text) => {
-    const lines = text.split('\n').filter(line => line.trim());
+export const parseCSV = (text: string): Record<string, string>[] => {
+    const lines: string[] = text.split('\n').filter(line => line.trim());
     if (lines.length === 0) return [];
 
     // Detectar separador (punto y coma o coma)
@@ -13,13 +13,13 @@ export const parseCSV = (text) => {
     const headers = lines[0].split(separator).map(h => h.trim().replace(/^"|"$/g, ''));
 
     // Parsear filas
-    const rows = [];
+    const rows: Record<string, string>[] = [];
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
 
         // Parsear valores (manejar comillas correctamente)
-        const values = [];
+        const values: string[] = [];
         let current = '';
         let inQuotes = false;
 
@@ -40,7 +40,7 @@ export const parseCSV = (text) => {
         const cleanedValues = values.map(v => v.replace(/^"|"$/g, ''));
 
         if (cleanedValues.length === headers.length) {
-            const row = {};
+            const row: Record<string, string> = {};
             headers.forEach((header, idx) => {
                 row[header] = cleanedValues[idx];
             });
@@ -54,8 +54,8 @@ export const parseCSV = (text) => {
 /**
  * Helper para generar CSV
  */
-export const generateCSV = (headers, rows) => {
-    const escapeCSV = (value) => {
+export const generateCSV = (headers: string[], rows: Record<string, any>[]): string => {
+    const escapeCSV = (value: any): string => {
         if (value === null || value === undefined) return '';
         const str = String(value);
         if (str.includes(';') || str.includes('"') || str.includes('\n')) {

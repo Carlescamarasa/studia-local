@@ -255,7 +255,7 @@ export function useEstadisticas({
     const startStr = dStart ? formatLocalDate(dStart) : periodoInicio;
     const endStr = dEnd ? formatLocalDate(dEnd) : periodoFin;
 
-    const dailySeries = buildDailySeries(registrosFiltradosUnicos, startStr, endStr);
+    const dailySeries = buildDailySeries(registrosFiltradosUnicos, startStr || undefined, endStr || undefined);
 
     // 2. Agregar según granularidad seleccionada
     const aggregated = aggregateData(dailySeries, granularidad);

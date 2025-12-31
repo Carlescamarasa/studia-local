@@ -5,7 +5,7 @@ import { LucideIcon } from "lucide-react";
 /**
  * StatCard - Componente reutilizable para mostrar métricas estadísticas
  */
-export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface StatCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'prefix'> {
     value: string | number | null | undefined;
     label: string;
     icon?: LucideIcon;

@@ -13,7 +13,7 @@ import WizardModal from './WizardModal';
 import ImportReviewPanel from './ImportReviewPanel'; // Step 3 logic lives here
 
 // Sub-components for steps
-const UploadStep = ({ file, onDrop, onSelectFile, onClear, isProcessing, detectedType, onTypeChange, format }) => {
+const UploadStep = ({ file, onDrop, onSelectFile, onClear, isProcessing, detectedType, onTypeChange, format }: { file: any, onDrop: any, onSelectFile: any, onClear: any, isProcessing: boolean, detectedType: string, onTypeChange: any, format: string }) => {
     const importableDatasets = datasets.filter(d => d.import);
 
     return (
@@ -23,10 +23,10 @@ const UploadStep = ({ file, onDrop, onSelectFile, onClear, isProcessing, detecte
             {!file ? (
                 <div
                     onDrop={onDrop}
-                    onDragOver={(e) => e.preventDefault()}
+                    onDragOver={(e: React.DragEvent) => e.preventDefault()}
                     className="group border-2 border-dashed rounded-[var(--radius-card)] h-64 flex flex-col items-center justify-center text-center transition-all bg-[var(--color-surface-card)] hover:bg-[var(--color-surface-muted)] cursor-pointer"
                     style={{ borderColor: 'var(--color-border-default)' }}
-                    onClick={() => document.getElementById('file-upload').click()}
+                    onClick={() => document.getElementById('file-upload')?.click()}
                 >
                     <div className="h-16 w-16 mb-4 rounded-full bg-[var(--color-surface-elevated)] flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
                         <Upload className="w-8 h-8 text-[var(--color-primary)] opacity-50 group-hover:opacity-100" />
@@ -105,7 +105,7 @@ const UploadStep = ({ file, onDrop, onSelectFile, onClear, isProcessing, detecte
     );
 };
 
-const PreviewStep = ({ report, dataset, isLoading }) => {
+const PreviewStep = ({ report, dataset, isLoading }: { report: any, dataset: any, isLoading: boolean }) => {
     if (isLoading) {
         return (
             <div className="h-60 flex flex-col items-center justify-center text-[var(--color-text-secondary)]">
@@ -171,16 +171,16 @@ const PreviewStep = ({ report, dataset, isLoading }) => {
                         <thead className="bg-[var(--color-surface-muted)] border-b text-[var(--color-text-secondary)]">
                             <tr>
                                 <th className="p-3 w-10">#</th>
-                                {headers.slice(0, 5).map(h => (
+                                {headers.slice(0, 5).map((h: string) => (
                                     <th key={h} className="p-3 font-medium uppercase tracking-wider">{h}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody className="divide-y">
-                            {previewRows.map((row, i) => (
+                            {previewRows.map((row: any, i: number) => (
                                 <tr key={i} className="bg-[var(--color-surface-card)]">
                                     <td className="p-3 text-[var(--color-text-tertiary)]">{i + 1}</td>
-                                    {headers.slice(0, 5).map(h => (
+                                    {headers.slice(0, 5).map((h: string) => (
                                         <td key={h} className="p-3 max-w-[150px] truncate text-[var(--color-text-secondary)]">
                                             {String(row.original[h] || '-')}
                                         </td>
@@ -196,16 +196,16 @@ const PreviewStep = ({ report, dataset, isLoading }) => {
 };
 
 
-export default function UnifiedImportModal({ isOpen, onClose }) {
+export default function UnifiedImportModal({ isOpen, onClose }: { isOpen: boolean, onClose: (open: boolean) => void }) {
     // State
     const [step, setStep] = useState(1); // 1: Upload, 2: Preview, 3: Review, 4: Result
-    const [file, setFile] = useState(null);
-    const [fileContent, setFileContent] = useState(null);
+    const [file, setFile] = useState<File | null>(null);
+    const [fileContent, setFileContent] = useState<string | null>(null);
     const [format, setFormat] = useState('csv');
     const [detectedType, setDetectedType] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
-    const [report, setReport] = useState(null);
-    const [finalResult, setFinalResult] = useState(null);
+    const [report, setReport] = useState<any>(null);
+    const [finalResult, setFinalResult] = useState<any>(null);
 
     const queryClient = useQueryClient();
     const effectiveUser = useEffectiveUser();
@@ -220,18 +220,18 @@ export default function UnifiedImportModal({ isOpen, onClose }) {
         setStep(1);
     };
 
-    const handleFileDrop = useCallback((e) => {
+    const handleFileDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         const droppedFile = e.dataTransfer.files[0];
         processFile(droppedFile);
     }, []);
 
-    const processFile = (file) => {
+    const processFile = (file: File) => {
         if (!file) return;
         setFile(file);
 
         // Auto-detect format
-        const ext = file.name.split('.').pop().toLowerCase();
+        const ext = file?.name?.split('.').pop()?.toLowerCase();
         setFormat(ext === 'json' ? 'json' : 'csv');
 
         // Auto-detect dataset type (Heuristic)
@@ -244,7 +244,7 @@ export default function UnifiedImportModal({ isOpen, onClose }) {
 
         // Read Content
         const reader = new FileReader();
-        reader.onload = (e) => setFileContent(e.target.result);
+        reader.onload = (e: ProgressEvent<FileReader>) => setFileContent(e.target?.result as string);
         reader.readAsText(file);
     };
 
@@ -257,10 +257,10 @@ export default function UnifiedImportModal({ isOpen, onClose }) {
             // Run Pipeline for Preview
             setIsProcessing(true);
             try {
-                const r = await runImportPipeline(currentDataset, fileContent, format);
+                const r = await runImportPipeline(currentDataset, fileContent ?? '', format);
                 setReport(r);
                 setStep(2);
-            } catch (error) {
+            } catch (error: any) {
                 toast.error(`Error al procesar archivo: ${error.message}`);
             } finally {
                 setIsProcessing(false);
@@ -277,9 +277,10 @@ export default function UnifiedImportModal({ isOpen, onClose }) {
         if (step > 1) setStep(s => s - 1);
     };
 
-    const handleFinalImport = async (cleanedData) => {
+    const handleFinalImport = async (cleanedData: any) => {
         setIsProcessing(true);
         try {
+            if (!currentDataset?.import?.handler) throw new Error('Dataset no soporta importación');
             const res = await currentDataset.import.handler(cleanedData, 'json', effectiveUser);
             setFinalResult(res);
             setStep(4); // Result Step
@@ -287,7 +288,7 @@ export default function UnifiedImportModal({ isOpen, onClose }) {
             queryClient.invalidateQueries();
             if (res.errors.length === 0) toast.success('Importación completada');
             else toast.warning('Importación con errores');
-        } catch (error) {
+        } catch (error: any) {
             toast.error(`Fallo crítico: ${error.message}`);
         } finally {
             setIsProcessing(false);
@@ -302,7 +303,7 @@ export default function UnifiedImportModal({ isOpen, onClose }) {
                     <UploadStep
                         file={file}
                         onDrop={handleFileDrop}
-                        onSelectFile={(e) => processFile(e.target.files?.[0])}
+                        onSelectFile={(e: React.ChangeEvent<HTMLInputElement>) => processFile(e.target.files?.[0] as File)}
                         onClear={reset}
                         isProcessing={isProcessing}
                         detectedType={detectedType}
@@ -370,7 +371,7 @@ export default function UnifiedImportModal({ isOpen, onClose }) {
     return (
         <WizardModal
             isOpen={isOpen}
-            onClose={(op) => !op && onClose()} // Only close if not processing?
+            onClose={(op?: boolean) => !op && onClose(false)} // Only close if not processing?
             title={step === 4 ? "Resultado" : "Importar datos"}
             currentStep={step}
             totalSteps={4}

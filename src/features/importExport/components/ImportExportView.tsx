@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Upload, FileText, Settings, History, ArrowRightLeft } from 'lucide-react';
+import { Download, Upload, FileText, Settings, History } from 'lucide-react';
 import { Button } from '@/features/shared/components/ui/button';
 import { datasets } from '../registry';
 import { ActionCard } from './Dashboard/ActionCard';

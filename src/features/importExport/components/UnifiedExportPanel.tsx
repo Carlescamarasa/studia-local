@@ -10,19 +10,24 @@ import { toast } from 'sonner';
 import { useMobileStrict } from '@/hooks/useMobileStrict';
 import { datasets, CATEGORIES } from '../registry';
 
-export default function UnifiedExportPanel({ isOpen, onClose }) {
-    const [selectedIds, setSelectedIds] = useState([]);
+interface UnifiedExportPanelProps {
+    isOpen: boolean;
+    onClose: (open: boolean) => void;
+}
+
+export default function UnifiedExportPanel({ isOpen, onClose }: UnifiedExportPanelProps) {
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [format, setFormat] = useState('csv'); // 'csv' | 'json'
     const [isExporting, setIsExporting] = useState(false);
     const isMobile = useMobileStrict();
 
-    const toggleDataset = (id) => {
+    const toggleDataset = (id: string) => {
         setSelectedIds(prev =>
             prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
         );
     };
 
-    const toggleCategory = (catDatasets) => {
+    const toggleCategory = (catDatasets: string[]) => {
         const allSelected = catDatasets.every(d => selectedIds.includes(d));
         if (allSelected) {
             setSelectedIds(prev => prev.filter(id => !catDatasets.includes(id)));
@@ -33,7 +38,7 @@ export default function UnifiedExportPanel({ isOpen, onClose }) {
 
     // --- EXPORT HANDLERS ---
 
-    const downloadFile = (content, filename) => {
+    const downloadFile = (content: string, filename: string) => {
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -59,7 +64,7 @@ export default function UnifiedExportPanel({ isOpen, onClose }) {
             }
             toast.success(`Exportados ${count} archivos correctamente.`);
             onClose(false);
-        } catch (error) {
+        } catch (error: any) {
             toast.error(`Error al exportar: ${error.message}`);
         } finally {
             setIsExporting(false);
@@ -72,7 +77,7 @@ export default function UnifiedExportPanel({ isOpen, onClose }) {
 
         setIsExporting(true);
         try {
-            const backup = {
+            const backup: { meta: any; data: Record<string, any> } = {
                 meta: {
                     date: new Date().toISOString(),
                     version: "1.0"
@@ -100,7 +105,7 @@ export default function UnifiedExportPanel({ isOpen, onClose }) {
         }
     };
 
-    const PanelContent = ({ TitleComponent, DescriptionComponent, FooterComponent }) => (
+    const PanelContent = ({ TitleComponent, DescriptionComponent, FooterComponent }: { TitleComponent: any, DescriptionComponent: any, FooterComponent: any }) => (
         <>
             <div className="flex-1 overflow-y-auto py-6 space-y-8 pr-2">
                 {/* Format Selector */}

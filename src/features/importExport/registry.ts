@@ -6,7 +6,7 @@ import { ResolutionService } from './services/ResolutionService';
 // Helper date
 const getTodayISO = () => formatLocalDate(new Date());
 
-const startOfMonday = (date) => {
+const startOfMonday = (date: Date) => {
     const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const dow = d.getDay();
     const diff = dow === 0 ? -6 : 1 - dow;
@@ -28,15 +28,15 @@ export const datasets = [
             upsertKey: 'code',
             csvHeaders: ['code', 'nombre', 'tipo', 'duracion_objetivo_seg', 'instrucciones', 'indicadorLogro', 'mediaLinks'],
             editableFields: ['nombre', 'tipo', 'duracion_objetivo_seg', 'instrucciones', 'mediaLinks'],
-            handler: async (data, format, user) => {
-                const results = { created: 0, updated: 0, skipped: 0, errors: [] };
+            handler: async (data: any, format: string, user: any) => {
+                const results: { created: number; updated: number; skipped: number; errors: string[] } = { created: 0, updated: 0, skipped: 0, errors: [] };
                 const bloques = await localDataClient.entities.Bloque.list();
 
                 // Lógica generación de códigos (Legacy simplificado o mantenido)
                 // ... (Omitiendo complejidad de autogeneración por brevedad, asumiendo inputs válidos o lógica original si crítica)
                 // Mantenemos lógica original de ID generation por seguridad
                 const codigosGenerados = new Map();
-                const generateCodeConRastreo = (tipo) => {
+                const generateCodeConRastreo = (tipo: string) => {
                     const ejerciciosDeTipo = bloques.filter(e => e.code?.startsWith(`${tipo}-`));
                     // ... (Simplificación: en producción ideal usaríamos un servicio de ID generation real)
                     // Reutilizamos lógica básica
@@ -48,7 +48,7 @@ export const datasets = [
                     return `${tipo}-${String(maxNum + 1).padStart(4, '0')}`;
                 };
 
-                const rows = format === 'csv' ? parseCSV(data) : data;
+                const rows: any[] = format === 'csv' ? parseCSV(data) : data;
 
                 for (const row of rows) {
                     try {
@@ -93,7 +93,7 @@ export const datasets = [
                             });
                             results.created++;
                         }
-                    } catch (error) {
+                    } catch (error: any) {
                         results.errors.push(`${row.nombre || 'Fila desconocida'}: ${error.message}`);
                     }
                 }
@@ -101,7 +101,7 @@ export const datasets = [
             }
         },
         export: {
-            handler: async (format) => {
+            handler: async (format: string) => {
                 const bloques = await localDataClient.entities.Bloque.list();
                 if (format === 'json') return JSON.stringify(bloques, null, 2);
 
@@ -136,15 +136,15 @@ export const datasets = [
 
             // Usamos ResolutionService
             resolvers: {
-                'ejercicios': async (val) => ResolutionService.resolveExercises(val)
+                'ejercicios': async (val: string) => ResolutionService.resolveExercises(val)
             },
 
-            handler: async (data, format, user) => {
-                const results = { created: 0, updated: 0, skipped: 0, errors: [] };
+            handler: async (data: any, format: string, user: any) => {
+                const results: { created: number; updated: number; skipped: number; errors: string[] } = { created: 0, updated: 0, skipped: 0, errors: [] };
                 const piezas = await localDataClient.entities.Pieza.list();
 
                 // Si viene del pipeline, data ya es un array de objetos limpios
-                const rows = (format === 'csv' && typeof data === 'string') ? parseCSV(data) : data;
+                const rows: any[] = (format === 'csv' && typeof data === 'string') ? parseCSV(data) : data;
 
                 for (const row of rows) {
                     try {
@@ -188,7 +188,7 @@ export const datasets = [
                             });
                             results.created++;
                         }
-                    } catch (e) {
+                    } catch (e: any) {
                         results.errors.push(`${row.nombre}: ${e.message}`);
                     }
                 }
@@ -196,7 +196,7 @@ export const datasets = [
             }
         },
         export: {
-            handler: async (format) => {
+            handler: async (format: string) => {
                 const piezas = await localDataClient.entities.Pieza.list();
                 if (format === 'json') return JSON.stringify(piezas, null, 2);
 
@@ -204,7 +204,7 @@ export const datasets = [
                 const rows = piezas.map(p => ({
                     nombre: p.nombre,
                     nivel: p.nivel,
-                    ejercicios: (p.elementos || []).map(e => e.nombre || e.code).join(',') // Export names/codes
+                    ejercicios: (p.elementos || []).map((e: any) => e.nombre || e.code).join(',') // Export names/codes
                 }));
                 return generateCSV(headers, rows);
             }
@@ -223,11 +223,11 @@ export const datasets = [
             supportsUpdate: false,
             upsertKey: 'nombre',
             editableFields: ['nombre', 'focoGeneral'],
-            handler: async (data, format, user) => {
-                const results = { created: 0, updated: 0, skipped: 0, errors: [] };
+            handler: async (data: any, format: string, user: any) => {
+                const results: { created: number; updated: number; skipped: number; errors: string[] } = { created: 0, updated: 0, skipped: 0, errors: [] };
                 if (format !== 'json') throw new Error('Planes solo soporta JSON');
 
-                const rows = Array.isArray(data) ? data : [data];
+                const rows: any[] = Array.isArray(data) ? data : [data];
 
                 for (const item of rows) {
                     try {
@@ -245,8 +245,8 @@ export const datasets = [
                                 if (ses.bloques && ses.bloques.length > 0) {
                                     // Resolve blocks if they are strings (codes)
                                     // If already objects, keep them
-                                    const codesToResolve = ses.bloques.filter(b => typeof b === 'string');
-                                    const objectsToKeep = ses.bloques.filter(b => typeof b !== 'string');
+                                    const codesToResolve = ses.bloques.filter((b: any) => typeof b === 'string');
+                                    const objectsToKeep = ses.bloques.filter((b: any) => typeof b !== 'string');
 
                                     const resolved = await ResolutionService.resolveExercises(codesToResolve);
 
@@ -265,7 +265,7 @@ export const datasets = [
                             profesorId: user.id
                         });
                         results.created++;
-                    } catch (e) {
+                    } catch (e: any) {
                         results.errors.push(`${item.nombre}: ${e.message}`);
                     }
                 }
@@ -273,7 +273,7 @@ export const datasets = [
             }
         },
         export: {
-            handler: async (format) => {
+            handler: async (format: string) => {
                 const planes = await localDataClient.entities.Plan.list();
                 const piezas = await localDataClient.entities.Pieza.list();
                 const data = planes.map(p => ({
@@ -306,11 +306,11 @@ export const datasets = [
             dependencies: { 'profesor_email': 'usuarios' },
 
             resolvers: {
-                'profesor_email': async (val) => ResolutionService.resolveUser(val)
+                'profesor_email': async (val: string) => ResolutionService.resolveUser(val)
             },
 
-            handler: async (data, format, user) => {
-                const results = { created: 0, updated: 0, skipped: 0, errors: [] };
+            handler: async (data: any, format: string, user: any) => {
+                const results: { created: number; updated: number; skipped: number; errors: string[] } = { created: 0, updated: 0, skipped: 0, errors: [] };
                 const users = await localDataClient.entities.User.list();
 
                 const rows = format === 'csv' ? parseCSV(data) : data;
@@ -358,7 +358,7 @@ export const datasets = [
                             });
                             results.created++;
                         }
-                    } catch (e) {
+                    } catch (e: any) {
                         results.errors.push(`${row.email || 'Row'}: ${e.message}`);
                     }
                 }
@@ -366,7 +366,7 @@ export const datasets = [
             }
         },
         export: {
-            handler: async (format) => {
+            handler: async (format: string) => {
                 const usuarios = await localDataClient.entities.User.list();
                 const headers = ["ID", "Nombre", "Email", "Rol", "Profesor", "Nivel", "Telefono"];
                 const rows = usuarios.map(u => {
@@ -395,7 +395,7 @@ export const datasets = [
         formats: ['csv'],
         import: null,
         export: {
-            handler: async (format) => {
+            handler: async (format: string) => {
                 const asignaciones = await localDataClient.entities.Asignacion.list();
                 const usuarios = await localDataClient.entities.User.list();
 
@@ -424,7 +424,7 @@ export const datasets = [
         formats: ['csv'],
         import: null,
         export: {
-            handler: async (format) => {
+            handler: async (format: string) => {
                 const usuarios = await localDataClient.entities.User.list();
                 const asignaciones = await localDataClient.entities.Asignacion.list();
                 const hoy = new Date();
@@ -432,7 +432,7 @@ export const datasets = [
                 const semanaActualISO = formatLocalDate(lunes);
                 const estudiantes = usuarios.filter(u => u.rolPersonalizado === 'ESTU');
                 const headers = ["Alumno", "Email", "Pieza", "Plan", "Semana", "Sesiones", "Tiempo(min)"];
-                const rows = [];
+                const rows: any[] = [];
                 estudiantes.forEach(est => {
                     const asig = asignaciones.find(a =>
                         a.alumnoId === est.id &&
@@ -442,7 +442,7 @@ export const datasets = [
                         const offset = calcularOffsetSemanas(asig.semanaInicioISO, semanaActualISO);
                         const semanaPlan = asig.plan?.semanas?.[offset];
                         if (semanaPlan) {
-                            const tiempo = semanaPlan.sesiones?.reduce((acc, s) => acc + calcularTiempoSesion(s), 0) || 0;
+                            const tiempo = semanaPlan.sesiones?.reduce((acc: number, s: any) => acc + calcularTiempoSesion(s), 0) || 0;
                             rows.push({
                                 Alumno: displayName(est),
                                 Email: est.email || '',
@@ -484,7 +484,7 @@ export const datasets = [
     }
 ];
 
-export const getDataset = (id) => datasets.find(d => d.id === id);
+export const getDataset = (id: string) => datasets.find(d => d.id === id);
 
 // Categories for the export panel UI
 export const CATEGORIES = [

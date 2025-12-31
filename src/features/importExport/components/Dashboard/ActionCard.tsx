@@ -12,7 +12,15 @@ import { cn } from '@/lib/utils';
  * @param {Function} props.onClick
  * @param {string} props.className
  */
-export function ActionCard({ icon, title, description, onClick, className }) {
+interface ActionCardProps {
+    icon: React.ReactNode;
+    title: string;
+    description?: string;
+    onClick: () => void;
+    className?: string;
+}
+
+export function ActionCard({ icon, title, description, onClick, className }: ActionCardProps) {
     return (
         <button
             onClick={onClick}

@@ -19,6 +19,18 @@ import { cn } from '@/lib/utils';
  * @param {Function} props.onBack optional back handler
  * @param {React.ReactNode} props.children
  */
+interface WizardModalProps {
+    isOpen: boolean;
+    onClose: (open: boolean) => void;
+    title: string;
+    currentStep: number;
+    totalSteps: number;
+    stepLabel?: string;
+    onBack?: () => void;
+    children: React.ReactNode;
+    className?: string;
+}
+
 export default function WizardModal({
     isOpen,
     onClose,
@@ -29,11 +41,11 @@ export default function WizardModal({
     onBack,
     children,
     className
-}) {
+}: WizardModalProps) {
     const isMobile = useMobileStrict();
 
     // Shared Content Component to avoid duplication
-    const ModalInnerContent = ({ isDrawer }) => (
+    const ModalInnerContent = ({ isDrawer }: { isDrawer: boolean }) => (
         <>
             {/* Header */}
             <div className={cn(

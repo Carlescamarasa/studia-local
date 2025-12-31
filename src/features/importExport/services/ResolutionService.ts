@@ -3,7 +3,7 @@ import { localDataClient } from "@/api/localDataClient";
 /**
  * Normaliza texto para comparación (trim, lowercase)
  */
-function normalize(str) {
+function normalize(str: any): string {
     if (!str) return '';
     return String(str).trim().toLowerCase();
 }
@@ -16,10 +16,10 @@ export const ResolutionService = {
 
     // --- CACHING (Optional for per-session speedup) ---
     _cache: {
-        users: null,
-        piezas: null,
-        bloques: null,
-        planes: null
+        users: null as any[] | null,
+        piezas: null as any[] | null,
+        bloques: null as any[] | null,
+        planes: null as any[] | null
     },
 
     async _getUsers() {
@@ -40,13 +40,13 @@ export const ResolutionService = {
     /**
      * Resuelve ID de usuario por Email o Nombre aproximado
      */
-    async resolveUser(input) {
+    async resolveUser(input: string) {
         if (!input) return null;
         const search = normalize(input);
         const users = await this._getUsers();
 
         // 1. Exact email match
-        let found = users.find(u => normalize(u.email) === search);
+        const found = users?.find((u: any) => normalize(u.email) === search);
 
         // 2. Name approximation (if unique?) - Riskier, maybe skipping for now or return suggestions
         // For import strictness, usually Email is king.
@@ -57,12 +57,12 @@ export const ResolutionService = {
     /**
      * Resuelve ID de pieza por Nombre
      */
-    async resolvePiece(input) {
+    async resolvePiece(input: string) {
         if (!input) return null;
         const search = normalize(input);
         const piezas = await this._getPiezas();
 
-        const found = piezas.find(p => normalize(p.nombre) === search);
+        const found = piezas?.find((p: any) => normalize(p.nombre) === search);
         return found ? { id: found.id, label: found.nombre } : null;
     },
 
@@ -70,14 +70,14 @@ export const ResolutionService = {
      * Resuelve Bloques (Ejercicios) por Código o Nombre
      * Retorna objeto con { resolved: [], missing: [] } para listas
      */
-    async resolveExercises(inputs) {
+    async resolveExercises(inputs: string | string[]) {
         const codes = Array.isArray(inputs) ? inputs : [inputs];
-        const result = { resolved: [], missing: [] };
+        const result: { resolved: any[], missing: string[] } = { resolved: [], missing: [] };
         const bloques = await this._getBloques();
 
         for (const code of codes) {
             const search = normalize(code);
-            const found = bloques.find(b =>
+            const found = bloques?.find((b: any) =>
                 normalize(b.code) === search ||
                 normalize(b.nombre) === search // Fallback for lax inputs
             );

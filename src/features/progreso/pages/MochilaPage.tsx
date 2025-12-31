@@ -16,7 +16,7 @@ export default function MochilaPage() {
         };
     }, [backpackItems]);
 
-    const getStatusBadgeVariant = (status) => {
+    const getStatusBadgeVariant = (status: string) => {
         switch (status) {
             case 'dominado': return 'success';
             case 'en_progreso': return 'info'; // Assuming 'info' or 'primary' exists, checking DS usually default/outline/secondary/destructive. I'll use default or custom class if needed.
@@ -26,7 +26,7 @@ export default function MochilaPage() {
         }
     };
 
-    const getStatusLabel = (status) => {
+    const getStatusLabel = (status: string) => {
         switch (status) {
             case 'dominado': return 'Dominado';
             case 'en_progreso': return 'En Progreso';
@@ -57,7 +57,7 @@ export default function MochilaPage() {
         <div className="min-h-screen bg-gray-50/50 pb-12">
             <PageHeader
                 title="Mochila de Estudio"
-                description="Gestiona tu repertorio y progreso técnico a largo plazo."
+                subtitle="Gestiona tu repertorio y progreso técnico a largo plazo."
                 icon={Backpack}
             />
 

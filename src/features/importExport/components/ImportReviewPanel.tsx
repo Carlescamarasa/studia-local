@@ -8,7 +8,7 @@ import { Badge } from '@/features/shared/components/ds/Badge';
  * ImportReviewPanel
  * UI para revisar antes de importar y resolver conflictos.
  */
-export default function ImportReviewPanel({ report, dataset, onCancel, onConfirm }) {
+export default function ImportReviewPanel({ report, dataset, onCancel, onConfirm }: { report: any, dataset: any, onCancel: () => void, onConfirm: (data: any) => void }) {
     // Si quisieramos editar, clonaríamos report.rows a un state local
     // const [rows, setRows] = useState(report.rows);
 
@@ -19,8 +19,8 @@ export default function ImportReviewPanel({ report, dataset, onCancel, onConfirm
         // En una implementación avanzada, aquí enviaríamos las "rows" corregidas
         // Por ahora enviamos las "originales + procesadas" del reporte
         const dataToImport = report.rows
-            .filter(r => r.status !== 'error') // Filtramos errores bloqueantes
-            .map(r => r.data); // Extraemos la data limpia
+            .filter((r: any) => r.status !== 'error') // Filtramos errores bloqueantes
+            .map((r: any) => r.data); // Extraemos la data limpia
 
         onConfirm(dataToImport);
     };
@@ -58,7 +58,7 @@ export default function ImportReviewPanel({ report, dataset, onCancel, onConfirm
                 <div className="space-y-4 max-w-4xl mx-auto">
 
                     {/* Lista de Filas con problemas (Prioridad) */}
-                    {report.rows.filter(r => r.status !== 'valid').map((row, idx) => (
+                    {report.rows.filter((r: any) => r.status !== 'valid').map((row: any, idx: number) => (
                         <div
                             key={row.id}
                             className={`p-4 rounded-[var(--radius-card)] border flex flex-col gap-3
@@ -71,7 +71,7 @@ export default function ImportReviewPanel({ report, dataset, onCancel, onConfirm
                                         Fila {idx + 1}
                                     </Badge>
                                     <span className="font-mono text-xs text-[var(--color-text-secondary)]">
-                                        {Object.values(row.original)[0]} {/* Primary Identifier */}
+                                        {Object.values(row.original)[0] as React.ReactNode} {/* Primary Identifier */}
                                     </span>
                                 </div>
                                 <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
@@ -81,12 +81,12 @@ export default function ImportReviewPanel({ report, dataset, onCancel, onConfirm
 
                             {/* Mensajes de Error/Warning */}
                             <div className="space-y-1">
-                                {row.errors.map((err, i) => (
+                                {row.errors.map((err: string, i: number) => (
                                     <div key={i} className="text-sm text-red-600 flex items-center gap-2">
                                         <X className="w-4 h-4" /> {err}
                                     </div>
                                 ))}
-                                {row.warnings.map((warn, i) => (
+                                {row.warnings.map((warn: string, i: number) => (
                                     <div key={i} className="text-sm text-yellow-600 flex items-center gap-2">
                                         <AlertTriangle className="w-4 h-4" /> {warn}
                                     </div>
@@ -96,7 +96,7 @@ export default function ImportReviewPanel({ report, dataset, onCancel, onConfirm
                     ))}
 
                     {/* Mensaje si todo OK */}
-                    {report.rows.every(r => r.status === 'valid') && (
+                    {report.rows.every((r: any) => r.status === 'valid') && (
                         <div className="text-center py-12 text-[var(--color-text-secondary)]">
                             <Check className="w-12 h-12 mx-auto mb-4 text-green-500" />
                             <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Todo parece correcto</h3>
