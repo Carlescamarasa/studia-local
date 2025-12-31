@@ -9,21 +9,19 @@ import { Label } from "@/features/shared/components/ui/label";
 import { Input } from "@/features/shared/components/ui/input";
 import { Textarea } from "@/features/shared/components/ui/textarea";
 import {
-  Palette, Download, Upload, RotateCcw, Save, Trash2,
-  FileCode, CheckCircle, AlertTriangle, Play, Eye, Plus,
-  Scan, Sparkles, X, Copy, Settings, Shield, Undo2, ChevronDown, ChevronUp,
-  Sun, Moon, LayoutTemplate
+  Palette, Trash2,
+  FileCode,
+  Scan, Copy, ChevronDown, ChevronUp,
+  LayoutTemplate
 } from "lucide-react";
 import { toast } from "sonner";
 import RequireRole from "@/features/auth/components/RequireRole";
 import { PageHeader } from "@/features/shared/components/ds/PageHeader";
-import { runDesignAudit, QUICK_PROFILES, parseAuditSpec, runAudit } from "@/features/shared/utils/auditor";
 import { Tabs } from "@/features/shared/components/ds/Tabs";
-import { getAllPresets, saveCustomPreset, deleteCustomPreset, exportCustomPresets, importCustomPresets } from "@/features/design/components/DesignPresets";
+import { getAllPresets, deleteCustomPreset } from "@/features/design/components/DesignPresets";
 import LevelConfigView from "@/features/admin/components/LevelConfigView";
 import { DesignControls } from "@/features/design/components/DesignControls";
 import { DesignStatusBlock } from "@/features/design/components/DesignStatusBlock";
-import { QAVisualContent } from "@/features/qa/pages/QAVisualPage";
 
 // ... existing imports ...
 
@@ -45,18 +43,7 @@ interface PresetUI {
 }
 
 // ... existing interfaces ...
-interface LayoutValues {
-  maxWidth: string;
-  paddingX: string;
-  paddingY: string;
-  gapX: string;
-  gapY: string;
-}
 
-interface LabeledRowProps {
-  label: string;
-  children: React.ReactNode;
-}
 
 interface DiffAccordionProps {
   isOpen: boolean;
@@ -82,26 +69,7 @@ interface SelectedElement {
   };
 }
 
-interface DesignAuditReport {
-  summary: {
-    filesScanned: number;
-    totalIssues: number;
-    issues: Record<string, number>;
-  };
-  issues: Record<string, any[]>;
-  scannedFiles: Set<string>;
-  scannedAt: string;
-}
 
-interface AuditResults {
-  filesScanned: number;
-  matchesTotal: number;
-  perFile: any[];
-  durationMs: number;
-  compiled: any;
-  reason?: string;
-  summary?: string;
-}
 
 interface DesignPageContentProps {
   embedded?: boolean;
@@ -155,53 +123,7 @@ const componentStyles = {
   }
 };
 
-function LayoutValuesDebug() {
-  const [values, setValues] = useState<LayoutValues>({
-    maxWidth: '',
-    paddingX: '',
-    paddingY: '',
-    gapX: '',
-    gapY: '',
-  });
 
-  useEffect(() => {
-    const updateValues = () => {
-      const root = getComputedStyle(document.documentElement);
-      setValues({
-        maxWidth: root.getPropertyValue('--page-max-width').trim() || 'no definido',
-        paddingX: root.getPropertyValue('--page-padding-x').trim() || 'no definido',
-        paddingY: root.getPropertyValue('--page-padding-y').trim() || 'no definido',
-        gapX: root.getPropertyValue('--grid-gap-x').trim() || 'no definido',
-        gapY: root.getPropertyValue('--grid-gap-y').trim() || 'no definido',
-      });
-    };
-    updateValues();
-    const interval = setInterval(updateValues, 500);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="mt-4 p-3 bg-[var(--color-surface-muted)] rounded-lg text-xs">
-      <p className="font-semibold mb-2">Valores de Layout Actuales (CSS vars):</p>
-      <div className="space-y-1 font-mono">
-        <div>--page-max-width: <span className="text-[var(--color-primary)]">{values.maxWidth}</span></div>
-        <div>--page-padding-x: <span className="text-[var(--color-primary)]">{values.paddingX}</span></div>
-        <div>--page-padding-y: <span className="text-[var(--color-primary)]">{values.paddingY}</span></div>
-        <div>--grid-gap-x: <span className="text-[var(--color-primary)]">{values.gapX}</span></div>
-        <div>--grid-gap-y: <span className="text-[var(--color-primary)]">{values.gapY}</span></div>
-      </div>
-    </div>
-  );
-}
-
-function LabeledRow({ label, children }: LabeledRowProps) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-3 border-b border-[var(--color-border-default)] last:border-0">
-      <Label className="text-sm text-[var(--color-text-primary)] font-medium">{label}</Label>
-      <div>{children}</div>
-    </div>
-  );
-}
 
 // ... rest of PREVIEW BANNER ...
 
@@ -209,48 +131,6 @@ function LabeledRow({ label, children }: LabeledRowProps) {
 // ============================================================================
 // PREVIEW BANNER COMPONENT
 // ============================================================================
-function PreviewBanner() {
-  const { isPreviewActive, clearPreview, activeMode } = useDesign();
-  const { totalCount, counts } = useDesignDiff();
-
-  if (!isPreviewActive) return null;
-
-  return (
-    <div className="p-3  bg-[color-mix(in_srgb,var(--color-info)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-info)_30%,transparent)] flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Eye className="w-5 h-5 text-[var(--color-info)]" />
-          <div>
-            <span className="text-sm font-medium text-[var(--color-text-primary)]">
-              Vista previa activa — {totalCount} cambio{totalCount !== 1 ? 's' : ''}
-            </span>
-            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-              Modo: <strong className="capitalize">{activeMode}</strong>
-              {counts.common > 0 && <span className="ml-2">Comunes: {counts.common}</span>}
-              {counts.light > 0 && <span className="ml-2">Light: {counts.light}</span>}
-              {counts.dark > 0 && <span className="ml-2">Dark: {counts.dark}</span>}
-            </div>
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            clearPreview();
-            toast.success('✅ Cambios descartados');
-          }}
-          className="h-8 text-xs"
-        >
-          <X className="w-3 h-3 mr-1" />
-          Cancelar preview
-        </Button>
-      </div>
-      <p className="text-xs text-[var(--color-text-muted)]">
-        💡 Los cambios solo se aplican a tu sesión. Usa "Exportar" para guardar.
-      </p>
-    </div>
-  );
-}
 
 // ============================================================================
 // DIFF ACCORDION COMPONENT
@@ -260,199 +140,6 @@ interface DiffAccordionProps {
   onToggle: () => void;
 }
 
-function DiffAccordion({ isOpen, onToggle }: DiffAccordionProps) {
-  // const [isOpen, setIsOpen] = useState(false); // Controlled now
-  const [openSections, setOpenSections] = useState({ common: true, light: false, dark: false });
-  const {
-    diff,
-    hasChanges,
-    totalCount,
-    counts,
-    revertChange,
-    exportFull,
-    exportDiff,
-    exportFullAndDiff,
-    downloadExport,
-    generateReport,
-  } = useDesignDiff();
-
-  if (!hasChanges) return null;
-
-  const toggleSection = (section: 'common' | 'light' | 'dark') => {
-    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
-
-  const renderChangeList = (changes: any[], scope: string) => (
-    <div className="space-y-1">
-      {changes.map((change: any, idx: number) => (
-        <div
-          key={idx}
-          className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[var(--color-surface-elevated)] border border-[var(--color-border-muted)] text-xs"
-        >
-          <div className="flex-1 min-w-0">
-            <code className="text-[var(--color-primary)] font-mono truncate block">
-              {change.path}
-            </code>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-[var(--color-text-muted)] truncate" title={JSON.stringify(change.from)}>
-                {typeof change.from === 'string' ? change.from : JSON.stringify(change.from)}
-              </span>
-              <span className="text-[var(--color-text-muted)]">→</span>
-              <span className="text-[var(--color-success)] font-medium truncate" title={JSON.stringify(change.to)}>
-                {typeof change.to === 'string' ? change.to : JSON.stringify(change.to)}
-              </span>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              revertChange(change.path, scope);
-              toast.info(`↩️ Revertido: ${change.path}`);
-            }}
-            className="h-6 w-6 p-0 shrink-0"
-            title="Revertir este cambio"
-          >
-            <Undo2 className="w-3 h-3" />
-          </Button>
-        </div>
-      ))}
-    </div>
-  );
-
-  return (
-    <div className="mb-4">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between p-3  bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] hover:bg-[var(--color-surface)] transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Badge className="badge-primary text-xs">{totalCount}</Badge>
-          <span className="text-sm font-medium text-[var(--color-text-primary)]">
-            Cambios detectados
-          </span>
-          <span className="text-xs text-[var(--color-text-muted)]">
-            (C:{counts.common} L:{counts.light} D:{counts.dark})
-          </span>
-        </div>
-        {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-      </button>
-
-      {isOpen && (
-        <div className="mt-2 p-4  bg-[var(--color-surface-muted)] border border-[var(--color-border-default)]">
-          {/* Secciones particionadas */}
-          <div className="max-h-80 overflow-y-auto space-y-3 mb-4">
-            {/* Common */}
-            {diff.common.length > 0 && (
-              <div>
-                <button
-                  onClick={() => toggleSection('common')}
-                  className="w-full flex items-center justify-between p-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface-elevated)] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-xs">{counts.common}</Badge>
-                    <span className="text-sm font-medium">Comunes (ambos modos)</span>
-                  </div>
-                  {openSections.common ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {openSections.common && <div className="mt-2">{renderChangeList(diff.common, 'common')}</div>}
-              </div>
-            )}
-
-            {/* Light */}
-            {diff.light.length > 0 && (
-              <div>
-                <button
-                  onClick={() => toggleSection('light')}
-                  className="w-full flex items-center justify-between p-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface-elevated)] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 text-xs">{counts.light}</Badge>
-                    <span className="text-sm font-medium">Solo Light</span>
-                    <Sun className="w-3 h-3" />
-                  </div>
-                  {openSections.light ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {openSections.light && <div className="mt-2">{renderChangeList(diff.light, 'light')}</div>}
-              </div>
-            )}
-
-            {/* Dark */}
-            {diff.dark.length > 0 && (
-              <div>
-                <button
-                  onClick={() => toggleSection('dark')}
-                  className="w-full flex items-center justify-between p-2 rounded-lg bg-[var(--color-surface)] hover:bg-[var(--color-surface-elevated)] transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-gray-700 text-gray-200 dark:bg-gray-300 dark:text-gray-800 text-xs">{counts.dark}</Badge>
-                    <span className="text-sm font-medium">Solo Dark</span>
-                    <Moon className="w-3 h-3" />
-                  </div>
-                  {openSections.dark ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {openSections.dark && <div className="mt-2">{renderChangeList(diff.dark, 'dark')}</div>}
-              </div>
-            )}
-          </div>
-
-          {/* Botones de export */}
-          <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--color-border-default)]">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                downloadExport(exportFull(), 'design-full.json');
-                toast.success('✅ Base completo exportado');
-              }}
-              className="h-8 text-xs"
-            >
-              <Download className="w-3 h-3 mr-1" />
-              FULL (Base)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                downloadExport(exportDiff(), 'design-diff.json');
-                toast.success('✅ Solo cambios exportados');
-              }}
-              className="h-8 text-xs"
-            >
-              <Download className="w-3 h-3 mr-1" />
-              DIFF (Overlay)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                downloadExport(exportFullAndDiff(), 'design-full+diff.json');
-                toast.success('✅ FULL + DIFF exportado');
-              }}
-              className="h-8 text-xs"
-            >
-              <Download className="w-3 h-3 mr-1" />
-              FULL + DIFF
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const report = generateReport();
-                navigator.clipboard.writeText(report);
-                toast.success('📋 Reporte copiado al portapapeles');
-              }}
-              className="h-8 text-xs"
-            >
-              <Copy className="w-3 h-3 mr-1" />
-              Copiar Reporte
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 
 
@@ -774,28 +461,15 @@ function DiagnosticOverlay({ active }: { active: boolean }) {
 }
 
 function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPageContentProps) {
-  const { design, setDesign, setDesignPartial, resetDesign, exportDesign, importDesign, loadPreset, currentPresetId, setPresetId, basePresets, activeMode, setActiveMode } = useDesign();
+  const { design, setDesign, setDesignPartial, loadPreset, currentPresetId, setPresetId, basePresets } = useDesign();
   // Aliases para compatibilidad
   const config = design;
   const setConfig = setDesign;
-  const reset = resetDesign;
   const [activeSection, setActiveSection] = useState('controls');
-  const [qaTabsValue, setQaTabsValue] = useState<string>('one');
-  const [qaOutput, setQaOutput] = useState<AuditResults | null>(null);
-  const [qaRunning, setQaRunning] = useState(false);
-  const [auditReport, setAuditReport] = useState<DesignAuditReport | null>(null);
-  const [auditRunning, setAuditRunning] = useState(false);
-  const [auditProfile, setAuditProfile] = useState('full');
 
   const handleControlChange = (path: string, value: any, explicitScope?: 'light' | 'dark' | undefined) => {
     setDesignPartial(path, value, explicitScope);
   };
-  const [showSavePresetModal, setShowSavePresetModal] = useState(false);
-  const [presetName, setPresetName] = useState('');
-  const [presetDescription, setPresetDescription] = useState('');
-  const [showImportExportModal, setShowImportExportModal] = useState(false);
-  const [importPresetsJson, setImportPresetsJson] = useState('');
-  const [importError, setImportError] = useState('');
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(() => {
     try {
@@ -810,19 +484,6 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPa
     sessionStorage.setItem('studia_diagnostic_mode', String(checked));
   };
 
-  const LEGACY_HEX = useMemo(() => {
-    const parts = [
-      { name: "Legacy Orange Principal", p1: "#fd", p2: "9840" },
-      { name: "Legacy Orange Hover", p1: "#ff", p2: "7e1f" },
-      { name: "Legacy Brand 1", p1: "#f5", p2: "9e42" },
-      { name: "Legacy Brand 2", p1: "#f2", p2: "8a2e" },
-    ];
-    return parts.map(({ name, p1, p2 }) => ({
-      pattern: new RegExp((p1 + p2).replace("#", "\\#"), "gi"),
-      name,
-      displayHex: `${p1}${p2}`.replace("#", "# "),
-    }));
-  }, []);
 
   // Combinar presets base (desde BasePresets.ts) con presets personalizados
   const customPresets = useMemo(() => getAllPresets(), [config]);
@@ -856,31 +517,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPa
     }
   }, [config]);
 
-  const handleReset = useCallback(() => {
-    if (window.confirm('¿Restablecer diseño a valores por defecto?')) {
-      reset();
-      toast.success('✅ Diseño restablecido');
-    }
-  }, [reset]);
 
-  const handleSavePreset = useCallback(() => {
-    if (!presetName.trim()) {
-      toast.error('Ingresa un nombre para el preset');
-      return;
-    }
-
-    const presetId = `custom_${Date.now()}`;
-    const result = saveCustomPreset(presetId, presetName, presetDescription, config);
-
-    if (result.success) {
-      toast.success('✅ Preset guardado');
-      setShowSavePresetModal(false);
-      setPresetName('');
-      setPresetDescription('');
-    } else {
-      toast.error('❌ Error al guardar preset: ' + result.error);
-    }
-  }, [presetName, presetDescription, config]);
 
   const handleLoadPreset = useCallback((presetId: string) => {
     // Verificar si es un preset base
@@ -913,207 +550,11 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPa
     }
   }, [config, setConfig]);
 
-  const handleExportPresets = useCallback(() => {
-    try {
-      const json = exportCustomPresets();
-      navigator.clipboard.writeText(json);
-      toast.success('✅ Presets personalizados copiados al portapapeles');
-    } catch (err: any) {
-      toast.error('❌ Error al exportar: ' + err.message);
-    }
-  }, []);
 
-  const handleImportPresets = useCallback(() => {
-    setImportError('');
-    if (!importPresetsJson.trim()) {
-      setImportError('Por favor, pega el JSON de presets para importar.');
-      return;
-    }
-    try {
-      const result = importCustomPresets(importPresetsJson);
-      if (result.success) {
-        toast.success('✅ Presets importados con éxito');
-        setShowImportExportModal(false);
-        setImportPresetsJson('');
-        setConfig({ ...config });
-      } else {
-        setImportError('Error al importar: ' + result.error);
-        toast.error('❌ Error al importar presets');
-      }
-    } catch (e: any) {
-      setImportError('JSON inválido: ' + e.message);
-      toast.error('❌ JSON inválido');
-    }
-  }, [importPresetsJson, config, setConfig]);
 
-  const handleRunAudit = useCallback(async (profileKey: string) => {
-    setQaRunning(true);
-    try {
-      const profile = (QUICK_PROFILES as Record<string, any>)[profileKey];
-      const results = await runAudit(parseAuditSpec(profile.spec));
-      setQaOutput(results as AuditResults);
-    } catch (err: any) {
-      toast.error('❌ Error en auditoría: ' + err.message);
-    } finally {
-      setQaRunning(false);
-    }
-  }, []);
 
-  const handleCopyAudit = useCallback(() => {
-    if (!auditReport) return;
-    try {
-      navigator.clipboard.writeText(JSON.stringify(auditReport, null, 2));
-      toast.success('✅ Informe de auditoría copiado');
-    } catch (err: any) {
-      toast.error('❌ Error al copiar: ' + err.message);
-    }
-  }, [auditReport]);
 
-  const handleVisualSmoke = useCallback(() => {
-    setQaRunning(true);
-    setQaOutput({
-      filesScanned: 0,
-      matchesTotal: 0,
-      perFile: [],
-      durationMs: 0,
-      compiled: {},
-      summary: 'Ejecutando visual smoke...'
-    } as AuditResults);
 
-    setTimeout(() => {
-      const checks = [
-        { sel: '.icon-tile', name: 'Icon tiles' },
-        { sel: 'h1', name: 'H1 headings' },
-        { sel: '.app-card, .app-panel', name: 'Cards DS' },
-        { sel: '.page-header', name: 'PageHeader' },
-        { sel: 'button', name: 'Botones' },
-        { sel: '.btn-primary', name: 'Botones primary' },
-        { sel: '[data-testid="tabs-segmented"]', name: 'Tabs segmentadas' },
-        { sel: '[data-sidebar-abierto]', name: 'Sidebar state' },
-      ];
-
-      const results = checks.map(c => {
-        const found = document.querySelectorAll(c.sel).length;
-        const status = found > 0 ? '✅' : '⚠️';
-        return `${status} ${c.name}: ${found}`;
-      });
-
-      const bodyHTML = document.body.innerHTML;
-
-      results.push('');
-      results.push('Legacy Colors:');
-      LEGACY_HEX.forEach(({ pattern, name, displayHex }) => {
-        const matches = bodyHTML.match(pattern);
-        if (matches) {
-          results.push(`❌ ${name} (${displayHex}): ${matches.length} en DOM`);
-        } else {
-          results.push(`✅ ${name} (${displayHex}): OK`);
-        }
-      });
-
-      setQaOutput({
-        filesScanned: 0,
-        matchesTotal: 0,
-        perFile: [],
-        durationMs: 0,
-        compiled: {},
-        summary: `VISUAL SMOKE TEST\n${'='.repeat(50)}\n\n${results.join('\n')}`
-      } as AuditResults);
-      setQaRunning(false);
-      toast.success('✅ Visual smoke completado');
-    }, 600);
-  }, [LEGACY_HEX]);
-
-  const handleA11yQuick = useCallback(() => {
-    setQaRunning(true);
-    setQaOutput({
-      filesScanned: 0,
-      matchesTotal: 0,
-      perFile: [],
-      durationMs: 0,
-      compiled: {},
-      summary: 'Ejecutando a11y quick-check...'
-    } as AuditResults);
-
-    setTimeout(() => {
-      const results = [];
-
-      const h1Count = document.querySelectorAll('h1').length;
-      if (h1Count === 0) {
-        results.push('❌ Sin H1 en página');
-      } else if (h1Count === 1) {
-        results.push('✅ Exactamente 1 H1');
-      } else {
-        results.push(`⚠️ ${h1Count} H1s (se recomienda 1)`);
-      }
-
-      const buttons = Array.from(document.querySelectorAll('button, a[role="button"]'));
-      const unlabelledButtons = buttons.filter(el => {
-        const text = el.textContent?.trim();
-        const ariaLabel = el.getAttribute('aria-label');
-        const ariaLabelledBy = el.getAttribute('aria-labelledby');
-        const title = el.getAttribute('title');
-        return !text && !ariaLabel && !ariaLabelledBy && !title;
-      });
-      results.push(unlabelledButtons.length === 0
-        ? `✅ Todos los botones etiquetados (${buttons.length} total)`
-        : `❌ ${unlabelledButtons.length}/${buttons.length} botón(es) sin label`);
-
-      const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), textarea, select'));
-      const unlabelledInputs = inputs.filter(el => {
-        const id = el.getAttribute('id');
-        const ariaLabel = el.getAttribute('aria-label');
-        const ariaLabelledBy = el.getAttribute('aria-labelledby');
-        const hasLabel = id ? document.querySelector(`label[for="${id}"]`) : null;
-        return !hasLabel && !ariaLabel && !ariaLabelledBy;
-      });
-      results.push(unlabelledInputs.length === 0
-        ? `✅ Todos los inputs etiquetados (${inputs.length} total)`
-        : `⚠️ ${unlabelledInputs.length}/${inputs.length} input(s) sin label`);
-
-      const hasMain = !!document.querySelector('main');
-      const hasNav = !!document.querySelector('nav, [role="navigation"]');
-      const hasHeader = !!document.querySelector('header, [role="banner"]');
-
-      results.push('');
-      results.push('Landmarks:');
-      results.push(hasMain ? '✅ <main> presente' : '⚠️ Sin <main> landmark');
-      results.push(hasNav ? '✅ Nav presente' : 'ℹ️ Sin nav (puede ser OK)');
-      results.push(hasHeader ? '✅ Header presente' : 'ℹ️ Sin header');
-
-      results.push('');
-      results.push('Focus:');
-      const focusableElements = document.querySelectorAll('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])');
-      results.push(`ℹ️ ${focusableElements.length} elementos enfocables detectados`);
-      results.push(`ℹ️ Ring focus: brand (probar con Tab)`);
-
-      results.push('');
-      results.push('Contraste:');
-      results.push('ℹ️ Usar herramienta externa para análisis completo');
-      results.push('✅ Design System usa tokens con contraste WCAG AA+');
-
-      setQaOutput({
-        filesScanned: 0,
-        matchesTotal: 0,
-        perFile: [],
-        durationMs: 0,
-        compiled: {},
-        summary: `A11Y QUICK CHECK\n${'='.repeat(50)}\n\n${results.join('\n')}`
-      } as AuditResults);
-      setQaRunning(false);
-
-      const errors = results.filter(r => r.startsWith('❌')).length;
-      const warnings = results.filter(r => r.startsWith('⚠️')).length;
-
-      if (errors > 0) {
-        toast.error(`❌ ${errors} error(es) críticos`);
-      } else if (warnings > 0) {
-        toast.warning(`⚠️ ${warnings} advertencia(s)`);
-      } else {
-        toast.success('✅ A11y check completado sin errores');
-      }
-    }, 600);
-  }, []);
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-background"}>
@@ -1173,25 +614,6 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPa
                 <div className="p-4 border-t border-[var(--color-border-default)]">
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-sm font-medium text-[var(--color-text-secondary)]">Selecciona un punto de partida:</div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowImportExportModal(true)}
-                        size="sm"
-                        className="h-8 "
-                      >
-                        <FileCode className="w-4 h-4 mr-2" />
-                        Importar/Exportar
-                      </Button>
-                      <Button
-                        onClick={() => setShowSavePresetModal(true)}
-                        size="sm"
-                        className="btn-primary h-8 "
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Guardar Actual
-                      </Button>
-                    </div>
                   </div>
 
                   <div className={componentStyles.layout.grid2}>

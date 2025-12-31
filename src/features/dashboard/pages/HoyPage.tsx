@@ -1,42 +1,30 @@
-import React, { useState, useEffect, useRef } from "react";
-import { localDataClient } from "@/api/localDataClient";
-import { createRemoteDataAPI } from "@/api/remoteDataAPI";
+import React, { useState, useEffect } from "react";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 // Create remote API instance for fetching bloques with variations
-const remoteDataAPI = createRemoteDataAPI();
-import { useQuery } from "@tanstack/react-query";
 import { useBloques } from "@/features/dashboard/hooks/useBloques";
-import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
+import { Card, CardContent } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ds/Button";
 import { Badge } from "@/features/shared/components/ds";
-import { Alert, AlertDescription, AlertTitle } from "@/features/shared/components/ds";
 import {
   ChevronRight,
   ChevronDown,
   PlayCircle,
   User,
-  Calendar,
-  Layers,
-  CheckCircle,
-  XCircle,
   Clock,
-  Shuffle,
-  AlertTriangle,
   Backpack,
   Music,
-  Target
+  Target,
+  Shuffle
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { cn } from "@/lib/utils";
 import { toStudia } from "@/lib/routes";
 import { createPageUrl } from "@/utils";
 import {
   calcularLunesSemanaISO,
   calcularOffsetSemanas,
   calcularTiempoSesion,
-  aplanarSesion,
   getNombreVisible,
   formatLocalDate,
   parseLocalDate,
@@ -44,21 +32,11 @@ import {
 } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import PeriodHeader from "@/features/shared/components/common/PeriodHeader";
-import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/features/estudio/components/sessionSequence";
 import SessionContentView, { Sesion } from "@/features/shared/components/study/SessionContentView";
-import { toast } from "sonner";
-import { useSidebar } from "@/features/shared/components/ui/SidebarState";
 import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { componentStyles } from "@/design/componentStyles";
-import CustomAudioPlayer from "@/features/shared/components/media/AudioPlayer";
-import { MediaIcon, getMediaLabel } from "@/features/shared/components/media/MediaEmbed";
-import { resolveMedia, MediaKind } from "@/features/shared/utils/media";
-import { shouldIgnoreHotkey } from "@/utils/hotkeys";
-import { useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
-import { getValidVariations, pickRandomVariation } from "@/hooks/useExerciseVariations";
 
 import RequireRole from "@/features/auth/components/RequireRole";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/features/shared/components/ui/tooltip";
 
 // --- Helpers de fechas locales (para formateo de semana) ---
 const startOfMonday = (date: Date) => {
@@ -81,35 +59,6 @@ const adaptForView = (s: any): Sesion => {
   };
 };
 
-interface InfoSectionProps {
-  title: string;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}
-
-const InfoSection = ({ title, icon, children, defaultOpen = true }: InfoSectionProps) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  return (
-    <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4 last:border-b-0">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 w-full text-left mb-1.5 md:mb-2 group"
-      >
-        {isOpen ? <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" /> : <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />}
-        <span className={`${componentStyles.typography.sectionTitle} text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] transition-colors flex items-center gap-2`}>
-          {icon && <span>{icon}</span>}
-          {title}
-        </span>
-      </button>
-      {isOpen && (
-        <div className="pl-6 animate-in fade-in slide-in-from-top-1 duration-200">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-};
 
 export default function HoyPage() {
   return (
@@ -122,8 +71,6 @@ export default function HoyPage() {
 function HoyPageContent() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { closeSidebar, abierto, toggleSidebar } = useSidebar();
-  const { showHotkeysModal, setShowHotkeysModal } = useHotkeysModal();
 
   const focoLabels: Record<string, string> = {
     GEN: 'General',
@@ -176,7 +123,7 @@ function HoyPageContent() {
   const [sesionesConResumenExpandido, setSesionesConResumenExpandido] = useState(new Set());
 
   // Usar el nuevo provider de impersonación para obtener el usuario efectivo
-  const { effectiveUserId, effectiveEmail, isImpersonating } = useEffectiveUser();
+  const { effectiveUserId } = useEffectiveUser();
 
   // Usar hook optimizado para perfil actual (usa caché de useUsers)
   const { profile: alumnoActual } = useCurrentProfile();
@@ -236,7 +183,7 @@ function HoyPageContent() {
       const offset = calcularOffsetSemanas(a.semanaInicioISO, semanaActualISO);
       const tieneSemanaValida = offset >= 0 && offset < (a.plan?.semanas?.length || 0);
       return tieneSemanaValida;
-    } catch (error) {
+    } catch {
       return false;
     }
   });
@@ -266,7 +213,7 @@ function HoyPageContent() {
     try {
       semanaIdx = calcularOffsetSemanas(asignacionActiva.semanaInicioISO, semanaActualISO);
       semanaDelPlan = asignacionActiva.plan?.semanas?.[semanaIdx] || null;
-    } catch (error) {
+    } catch {
       semanaDelPlan = null;
     }
   }
@@ -387,7 +334,7 @@ function HoyPageContent() {
                             </span>
                           </div>
                           {semanaAsignacion.objetivo && (
-                            <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">"{semanaAsignacion.objetivo}"</p>
+                            <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">&quot;{semanaAsignacion.objetivo}&quot;</p>
                           )}
                         </div>
 
@@ -520,7 +467,7 @@ function HoyPageContent() {
                     </span>
                   </div>
                   {semanaDelPlan.objetivo && (
-                    <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">"{semanaDelPlan.objetivo}"</p>
+                    <p className="text-sm text-[var(--color-text-secondary)] italic mt-1">&quot;{semanaDelPlan.objetivo}&quot;</p>
                   )}
                 </div>
 

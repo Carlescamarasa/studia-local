@@ -127,7 +127,7 @@ function isInExcludedZone(element: Element) {
         if (['html', 'head', 'body', 'script', 'style', 'link', 'meta'].includes(tag)) {
             return true;
         }
-    } catch (_) { }
+    } catch (_) { /* Intentionally swallowed */ }
     return false;
 }
 
@@ -267,7 +267,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
     useEffect(() => {
         try {
             sessionStorage.setItem(STORAGE_KEY, isEnabled.toString());
-        } catch { }
+        } catch { /* Intentionally swallowed - sessionStorage may be blocked */ }
     }, [isEnabled]);
 
     // Auto-scan when enabled (initial scan)

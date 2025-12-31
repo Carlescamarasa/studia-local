@@ -118,7 +118,7 @@ function deriveAssetDisplayName(asset: MediaAsset) {
     if (!candidate) return "(Sin nombre)";
 
     // 2. Cleaning Steps
-    try { candidate = decodeURIComponent(candidate); } catch (e) { }
+    try { candidate = decodeURIComponent(candidate); } catch (e) { /* Intentionally swallowed */ }
 
     // Remove Supabase Timestamp prefix (10-14 digits + underscores)
     // Supports pattern: 1765679404599_lq6ece_filename.pdf -> filename.pdf

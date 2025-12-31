@@ -111,7 +111,7 @@ function isInExcludedZone(element: Element): boolean {
         if (['html', 'head', 'body', 'script', 'style', 'link', 'meta'].includes(tag)) {
             return true;
         }
-    } catch (_) { }
+    } catch (_) { /* Intentionally swallowed */ }
     return false;
 }
 

@@ -390,7 +390,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }: Piano
                     osc.disconnect();
                     gain.disconnect();
                 }, 200);
-            } catch (e) { }
+            } catch (e) { /* Intentionally swallowed */ }
         });
         activeNotes.current.clear();
         setPressedKeys(new Set()); // Reset visual state
@@ -402,7 +402,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }: Piano
 
         // Capture pointer if available to track release outside
         if (e && e.target && (e.target as Element).setPointerCapture) {
-            try { (e.target as Element).setPointerCapture(e.pointerId); } catch (err) { }
+            try { (e.target as Element).setPointerCapture(e.pointerId); } catch (err) { /* Intentionally swallowed */ }
         }
 
         if (!audioContextRef.current) return;

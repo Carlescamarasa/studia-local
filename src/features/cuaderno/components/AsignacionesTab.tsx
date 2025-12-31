@@ -524,8 +524,7 @@ export default function AsignacionesTab({
                                 i === offsetWeeks ? '●' : '○'
                             ).join(' ');
                         }
-                    } catch (error) {
-                    }
+                    } catch (error) { /* Intentionally swallowed */ }
                 }
 
                 return (

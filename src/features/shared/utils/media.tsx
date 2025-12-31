@@ -363,7 +363,7 @@ export async function getYouTubeTitle(url: string | null | undefined): Promise<s
         const cache = JSON.parse(raw);
         cache[url] = { title, timestamp: Date.now() };
         localStorage.setItem(YOUTUBE_TITLE_CACHE_KEY, JSON.stringify(cache));
-      } catch (e) { }
+      } catch (e) { /* Intentionally swallowed */ }
 
       return title;
     }

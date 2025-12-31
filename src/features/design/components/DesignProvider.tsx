@@ -105,7 +105,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_MODE);
       if (saved === 'light' || saved === 'dark') return saved;
-    } catch (_) { }
+    } catch (_) { /* Intentionally swallowed */ }
     return 'light';
   });
 
@@ -122,7 +122,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.BASE_PRESET_ID);
       if (saved && findPresetById(saved)) return saved;
-    } catch (_) { }
+    } catch (_) { /* Intentionally swallowed */ }
     return 'studia';
   });
 
@@ -181,7 +181,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
           return parsed;
         }
       }
-    } catch (_) { }
+    } catch (_) { /* Intentionally swallowed */ }
     return null;
   });
 

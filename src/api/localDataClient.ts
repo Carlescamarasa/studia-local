@@ -261,10 +261,10 @@ function createEntityAPI<T>(
     const apiKey = entityToAPIKey[entityName];
 
     const apiMap: Record<string, {
-        create?: Function;
-        update?: Function;
-        delete?: Function;
-        bulkCreate?: Function;
+        create?: (...args: any[]) => any;
+        update?: (...args: any[]) => any;
+        delete?: (...args: any[]) => any;
+        bulkCreate?: (...args: any[]) => any;
     }> = {
         'Asignacion': {
             create: AsignacionesAPI.createAsignacion,

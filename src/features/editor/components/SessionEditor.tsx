@@ -96,7 +96,11 @@ function SortableRonda({
           className="flex items-center gap-2 mb-2 cursor-pointer hover:bg-[var(--color-primary-soft)] rounded-[var(--radius-card)] p-1 -m-1 transition-colors"
           onClick={() => setExpandedRondas(prev => {
             const n = new Set(prev);
-            n.has(seqIndex) ? n.delete(seqIndex) : n.add(seqIndex);
+            if (n.has(seqIndex)) {
+              n.delete(seqIndex);
+            } else {
+              n.add(seqIndex);
+            }
             return n;
           })}
         >

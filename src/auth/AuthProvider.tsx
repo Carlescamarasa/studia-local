@@ -195,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         await supabase.auth.signOut();
-      } catch (signOutError) { }
+      } catch (signOutError) { /* Intentionally swallowed */ }
     }
   }, []);
 
@@ -283,7 +283,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!session && lastProfileUserIdRef.current) {
           await signOut();
         }
-      } catch (e) { }
+      } catch (e) { /* Intentionally swallowed */ }
     }, 10 * 60 * 1000);
 
     return () => {

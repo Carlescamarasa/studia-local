@@ -21,27 +21,16 @@ import { useUsers } from "@/features/shared/hooks/useUsers";
 import { useAsignaciones } from "@/features/asignaciones/hooks/useAsignaciones";
 import { resolveUserIdActual, displayName } from "@/features/shared/utils/helpers";
 import { toast } from "sonner";
-import { createManualSessionDraft } from '@/services/manualSessionService';
-import { updateBackpackFromSession } from '@/features/shared/services/backpackService';
-import { getDerivedBackpackStatus } from '@/features/shared/services/backpackDerivedStatus';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { formatLocalDate, parseLocalDate, startOfMonday, formatDuracionHM, formatDurationDDHHMM } from "../utils/progresoUtils";
+import { formatLocalDate, parseLocalDate } from "../utils/progresoUtils";
 import { chooseBucket } from "../utils/chartHelpers";
 import { useEstadisticas, safeNumber } from "../hooks/useEstadisticas";
-import { useStudentBackpack } from "@/hooks/useStudentBackpack";
-import { useHabilidadesStats, useHabilidadesStatsMultiple } from "../hooks/useHabilidadesStats";
 import {
-    useTotalXP,
-    totalXPToObject,
-    useLifetimePracticeXP,
-    useTotalXPMultiple,
-    useLifetimePracticeXPMultiple,
-    useAggregateLevelGoals,
-    useAllStudentXPTotals // [NEW] Centralized fetch
+    useAggregateLevelGoals
 } from "../hooks/useXP";
 
 // UI Components
-import { Card, CardContent, CardHeader, CardTitle, Badge, EmptyState, PageHeader } from "@/features/shared/components/ds";
+import { Card, EmptyState, PageHeader } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ds/Button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/features/shared/components/ui/tabs";
 import { componentStyles } from "@/design/componentStyles";
@@ -51,34 +40,18 @@ import {
     Select,
     SelectContent,
     SelectItem,
-    SelectTrigger,
-    SelectValue,
+    SelectTrigger
 } from "@/features/shared/components/ui/select";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/features/shared/components/ui/tooltip";
-
 // Tab Components (reutilizados)
 import HabilidadesView from "./HabilidadesView";
 import MochilaViewContent from "./MochilaViewContent";
-import LevelBadge from "@/features/shared/components/common/LevelBadge";
-import TabBoundary from "@/features/shared/components/common/TabBoundary";
-import UnifiedTable from "@/features/shared/components/tables/UnifiedTable";
 
 import {
     ComparativaEstudiantes,
     FeedbackUnificadoTab,
-    HeatmapFranjas,
-    KpiTile,
     ProgresoTab,
-    RatingStarsMetric,
     ResumenTab,
-    StatTile,
     StatsDateHeader,
-    StreakMetric,
     TiposBloquesTab,
     TopEjerciciosTab,
 } from "./index";
@@ -86,9 +59,8 @@ import {
 import ModalFeedbackSemanal from "@/features/shared/components/feedback/ModalFeedbackSemanal";
 import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 
-import { StudiaUser, RegistroSesion, RegistroBloque, FeedbackSemanal, StudentBackpackItem } from "@/features/shared/types/domain";
+import { RegistroSesion, FeedbackSemanal } from "@/features/shared/types/domain";
 import RequireRole from "@/features/auth/components/RequireRole";
-import { toStudia } from "@/lib/routes";
 import { es } from "date-fns/locale";
 import { startOfWeek, format } from "date-fns";
 import {
@@ -99,33 +71,16 @@ import {
     Backpack,
     Users,
     TrendingUp,
-    CalendarRange,
     PieChart,
     Trophy,
-    Timer,
-    Repeat,
-    PlayCircle,
-    Clock,
-    List,
-    Info,
-    CheckCircle2,
     Plus
 } from "lucide-react";
 
 import { useFeedbacksSemanal } from "@/features/progreso/hooks/useFeedbacksSemanal";
 import { useEvaluacionesTecnicas } from "@/features/progreso/hooks/useEvaluacionesTecnicas";
-import { useIsMobile } from "@/hooks/use-mobile.jsx";
 
 // Cast internal JSX components to any to avoid TS errors
 const CardAny: any = Card;
-const CardContentAny: any = CardContent;
-const CardHeaderAny: any = CardHeader;
-const CardTitleAny: any = CardTitle;
-const StatTileAny: any = StatTile;
-const RatingStarsMetricAny: any = RatingStarsMetric;
-const StreakMetricAny: any = StreakMetric;
-const KpiTileAny: any = KpiTile;
-const UnifiedTableAny: any = UnifiedTable;
 const MultiSelectAny: any = MultiSelect;
 const StatsDateHeaderAny: any = StatsDateHeader;
 const HabilidadesViewAny: any = HabilidadesView;
@@ -135,10 +90,8 @@ const ResumenTabAny: any = ResumenTab;
 const FeedbackUnificadoTabAny: any = FeedbackUnificadoTab;
 const ModalFeedbackSemanalAny: any = ModalFeedbackSemanal;
 const MediaPreviewModalAny: any = MediaPreviewModal;
-const HeatmapFranjasAny: any = HeatmapFranjas;
 const TiposBloquesTabAny: any = TiposBloquesTab;
 const TopEjerciciosTabAny: any = TopEjerciciosTab;
-const ComparativaEstudiantesAny: any = ComparativaEstudiantes;
 
 
 const TabsAny: any = Tabs;
@@ -173,7 +126,6 @@ function ProgresoPageContent() {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const isMobile = useIsMobile();
 
     // Tab state from URL with fallback to 'resumen' (Bloque 1)
     const [tabActiva, setTabActiva] = useState(() => {
@@ -182,7 +134,7 @@ function ProgresoPageContent() {
     });
 
     // User and role detection - use effectiveRole from new provider for impersonation
-    const { effectiveUserId, effectiveEmail, effectiveRole, isImpersonating } = useEffectiveUser();
+    const { effectiveUserId, effectiveEmail, effectiveRole } = useEffectiveUser();
     // Objeto para compatibilidad con código existente
     const effectiveUser = { id: effectiveUserId, email: effectiveEmail, rolPersonalizado: effectiveRole };
     const isAdmin = effectiveRole === 'ADMIN';
@@ -190,7 +142,7 @@ function ProgresoPageContent() {
     const isEstu = effectiveRole === 'ESTU';
 
     // Date range state
-    const [rangoPreset, setRangoPreset] = useState('4-semanas');
+    const [, setRangoPreset] = useState('4-semanas');
     const [periodoInicio, setPeriodoInicio] = useState(() => {
         const stored = searchParams.get('inicio');
         if (stored) return stored;
@@ -282,7 +234,6 @@ function ProgresoPageContent() {
     });
 
     const {
-        xpTotals = [],
         registrosSesion: registros = []
     } = progressSummary || {};
 
@@ -448,50 +399,7 @@ function ProgresoPageContent() {
     // Feedback filtering
     // ============================================================================
 
-    const feedbackProfesor = useMemo(() => {
-        const targetId = effectiveStudentId || userIdActual;
-        if (!targetId) return [];
-
-        const filtrados = feedbacksSemanal.filter((f: FeedbackSemanal) => { // Type function parameters
-            if (f.alumnoId !== targetId) return false;
-
-            const createdAt = f.created_at;
-            const updatedAt = f.updated_at || createdAt;
-
-            if (!createdAt) return false;
-
-            // Use the most recent date (updated if different, otherwise created)
-            const fechaRelevante = updatedAt && updatedAt !== createdAt ? updatedAt : createdAt;
-            if (!fechaRelevante) return false;
-
-            // Apply same filtering logic as sessions
-            const feedbackDate = new Date(fechaRelevante);
-            const feedbackDateOnly = new Date(feedbackDate.getFullYear(), feedbackDate.getMonth(), feedbackDate.getDate());
-
-            if (periodoInicio) {
-                const inicioDate = parseLocalDate(periodoInicio);
-                if (feedbackDateOnly < inicioDate) {
-                    return false;
-                }
-            }
-
-            if (periodoFin) {
-                const finDate = parseLocalDate(periodoFin);
-                finDate.setHours(23, 59, 59, 999);
-                if (feedbackDate > finDate) {
-                    return false;
-                }
-            }
-
-            return true;
-        });
-
-        return filtrados.sort((a: FeedbackSemanal, b: FeedbackSemanal) => { // Type function parameters
-            const aUpdated = a.updated_at || a.created_at || '';
-            const bUpdated = b.updated_at || b.created_at || '';
-            return bUpdated.localeCompare(aUpdated);
-        });
-    }, [feedbacksSemanal, effectiveStudentId, userIdActual, periodoInicio, periodoFin]);
+    /* Unused feedbackProfesor removed */
 
     const feedbacksParaProfAdmin = useMemo(() => {
         if (isEstu) return [];
@@ -718,47 +626,6 @@ function ProgresoPageContent() {
         setSearchParams(params, { replace: true });
     }, [tabActiva, periodoInicio, periodoFin, selectedStudentIds, isEstu, setSearchParams]);
 
-    // ============================================================================
-    // Preset Application
-    // ============================================================================
-
-    const aplicarPreset = (preset: string) => {
-        const hoy = new Date();
-        let inicio, fin;
-
-        switch (preset) {
-            case 'esta-semana':
-                inicio = startOfMonday(hoy);
-                fin = hoy;
-                break;
-            case '4-semanas':
-                inicio = new Date(hoy);
-                inicio.setDate(inicio.getDate() - 28);
-                fin = hoy;
-                break;
-            case 'este-mes':
-                inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-                fin = hoy;
-                break;
-            case '3-meses':
-                inicio = new Date(hoy);
-                inicio.setMonth(inicio.getMonth() - 3);
-                fin = hoy;
-                break;
-            case 'todo':
-                inicio = null;
-                fin = null;
-                break;
-            default:
-                inicio = null;
-                fin = null;
-                break;
-        }
-
-        setPeriodoInicio(inicio ? formatLocalDate(inicio) : '');
-        setPeriodoFin(fin ? formatLocalDate(fin) : '');
-        setRangoPreset(preset);
-    };
 
     // ============================================================================
     // Tab config
@@ -789,12 +656,9 @@ function ProgresoPageContent() {
     // Render
     // ============================================================================
 
-    // ============================================================================
-    // Modal Feedback Logic
-    // ============================================================================
     const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
     const [selectedFeedback, setSelectedFeedback] = useState(null);
-    const [feedbackWeekInfo, setFeedbackWeekInfo] = useState({ startISO: '', label: '' });
+    const [, setFeedbackWeekInfo] = useState({ startISO: '', label: '' });
 
     // Media Preview State
 
