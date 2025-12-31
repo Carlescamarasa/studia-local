@@ -35,7 +35,7 @@ export default function ReportsLink({
 
       try {
         const { localDataClient } = await import('@/api/localDataClient');
-        // @ts-ignore - getSession may not exist on this type
+        // @ts-expect-error - getSession may not exist on this type
         const { data: { session } } = await localDataClient.auth.getSession();
         if (!session?.access_token) {
           return { nuevos: 0, enRevision: 0 };

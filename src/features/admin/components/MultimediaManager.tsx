@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+ 
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { remoteDataAPI, fetchBloquesPreview, fetchPiezasPreview, fetchFeedbacksSemanales, fetchRegistrosSesionMultimedia, fetchSupportMensajes } from "@/api/remoteDataAPI";
@@ -266,6 +266,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                         });
                         addedCount++;
                     } catch {
+                        // Ignore individual external link failures
                     }
                 }
             };

@@ -7,12 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/features/shared/components/ui/button";
 import { Input } from "@/features/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
-import {
-  Flame, Backpack, Check, Clock, Play, Zap, Repeat,
-  Activity, Music, Plus, Trash2, ChevronRight,
-  BookOpen, ListMusic, History, Layout as LayoutIcon,
-  BarChart3, Calendar, Users, Eye, Search
-} from 'lucide-react';
+import { Play, Plus, Trash2, Layout as LayoutIcon } from 'lucide-react';
 import { componentStyles } from "@/design/componentStyles";
 import ExerciseEditor from "./ExerciseEditor";
 
@@ -44,8 +39,7 @@ export default function EjerciciosTab() {
   const [showEditor, setShowEditor] = useState(false);
   const [ejercicioActual, setEjercicioActual] = useState<any | null>(null);
 
-  // --- Data Loading with centralized hook ---
-  const { data: bloques = [], isLoading: loading, refetch } = useBloques();
+  const { data: bloques = [], isLoading: loading } = useBloques();
 
   // Transform bloques to localExercises format (memoized)
   const localExercises = useMemo(() => {

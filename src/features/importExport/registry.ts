@@ -52,7 +52,8 @@ export const datasets = [
 
                 for (const row of rows) {
                     try {
-                        let { code, nombre, tipo, duracion_objetivo_seg, instrucciones, indicadorLogro, mediaLinks, duracionSeg } = row;
+                        const { code, nombre, tipo, duracion_objetivo_seg: rawDur, instrucciones, indicadorLogro, mediaLinks, duracionSeg } = row;
+                        let duracion_objetivo_seg = rawDur;
                         if (!duracion_objetivo_seg && duracionSeg) duracion_objetivo_seg = duracionSeg;
 
                         if (!nombre || !tipo) throw new Error('Faltan campos obligatorios (nombre, tipo)');

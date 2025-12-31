@@ -7,13 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/comp
 import { Button } from '@/features/shared/components/ds/Button';
 import { Input } from '@/features/shared/components/ui/input';
 import { Label } from '@/features/shared/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/features/shared/components/ui/tabs';
+import { Tabs } from '@/features/shared/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/features/shared/components/ui/table';
 import UnifiedTable from '@/features/shared/components/tables/UnifiedTable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/features/shared/components/ui/select';
 import { Switch } from '@/features/shared/components/ui/switch';
 import { toast } from 'sonner';
-import { Loader2, Plus, Trash2, Save, ArrowRight, Copy, Check, AlertCircle, X, ArrowLeftRight, Download } from 'lucide-react';
+import { Plus, Trash2, Save, ArrowRight, AlertCircle, X, ArrowLeftRight, Download } from 'lucide-react';
 import { Badge } from '@/features/shared/components/ds/Badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/features/shared/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose } from '@/features/shared/components/ui/drawer';
@@ -21,17 +21,12 @@ import { ToggleGroup, ToggleGroupItem } from '@/features/shared/components/ui/to
 import { Checkbox } from '@/features/shared/components/ui/checkbox';
 import { ScrollArea } from '@/features/shared/components/ui/scroll-area';
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/features/shared/components/ui/collapsible"
-import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "@/features/shared/components/ui/tooltip"
-import { Info, ChevronDown, Pencil } from "lucide-react"
+import { Info, Pencil } from "lucide-react"
 
 interface LevelConfig {
     level: number;
@@ -58,7 +53,6 @@ interface Criterion {
 }
 
 export default function LevelConfigView() {
-    const [loading, setLoading] = useState(true);
     const [levels, setLevels] = useState<LevelConfig[]>([]);
     const [criteria, setCriteria] = useState<Criterion[]>([]);
     const [activeLevel, setActiveLevel] = useState('1');
@@ -68,7 +62,7 @@ export default function LevelConfigView() {
     const [selectedImportIds, setSelectedImportIds] = useState<string[]>([]);
 
     const queryClient = useQueryClient();
-    const { data: levelsData, isLoading: levelsLoading } = useLevelsConfig();
+    const { data: levelsData } = useLevelsConfig();
 
     // Sync hook data to local state
     useEffect(() => {
@@ -117,7 +111,6 @@ export default function LevelConfigView() {
     }, []);
 
     const loadData = async () => {
-        setLoading(true);
         try {
             // Only fetch criteria manually now, levels come from hook
             const criteriaData = await localDataClient.entities.LevelKeyCriteria.list();
@@ -125,10 +118,8 @@ export default function LevelConfigView() {
         } catch (error) {
             console.error('Error loading level config:', error);
             toast.error('Error al cargar la configuración');
-        } finally {
-            setLoading(false);
         }
-    };
+    }
 
     const handleLevelChange = (level: number, field: string, value: any) => {
         setLevels(prev => prev.map(l =>
@@ -175,7 +166,7 @@ export default function LevelConfigView() {
             const created = await localDataClient.entities.LevelKeyCriteria.create(newCriteria as any);
             setCriteria(prev => [...prev, created]);
             toast.success('Criterio añadido');
-        } catch (error) {
+        } catch (_error) {
             toast.error('Error al crear criterio');
         }
     };
@@ -184,7 +175,7 @@ export default function LevelConfigView() {
         try {
             const updated = await localDataClient.entities.LevelKeyCriteria.update(id, updates);
             setCriteria(prev => prev.map(c => c.id === id ? updated : c));
-        } catch (error) {
+        } catch (_error) {
             toast.error('Error al actualizar criterio');
         }
     };
@@ -195,7 +186,7 @@ export default function LevelConfigView() {
             await localDataClient.entities.LevelKeyCriteria.delete(id);
             setCriteria(prev => prev.filter(c => c.id !== id));
             toast.success('Criterio eliminado');
-        } catch (error) {
+        } catch (_error) {
             toast.error('Error al eliminar');
         }
     };
@@ -367,7 +358,7 @@ export default function LevelConfigView() {
             }
 
             const promises = toImport.map(item => {
-                const { id, created_at, ...rest } = item;
+                const { id: _id, created_at: _created_at, ...rest } = item;
                 // Create new copy for current level
                 return localDataClient.entities.LevelKeyCriteria.create({
                     ...rest,
@@ -403,10 +394,6 @@ export default function LevelConfigView() {
     const isLastLevel = currentLevelNum >= 10;
 
     // For text display: if last level, we talk about "Completing Level 10" instead of "Ascending to 11"
-    const requirementLabel = isLastLevel
-        ? `Requisitos para COMPLETAR el Nivel ${currentLevelNum}`
-        : `Requisitos para pasar de Nivel ${currentLevelNum} → Nivel ${nextLevelNum}`;
-
     const objectiveLabel = isLastLevel
         ? `Objetivo: Completar Estudios`
         : `Objetivo: Nivel ${nextLevelNum}`;

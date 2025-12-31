@@ -143,7 +143,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Bloques con piezaId inexistente (si tienen referencia)
     const bloquesPiezaInvalida = bloques.filter(b => {
-      // @ts-ignore
+      // @ts-expect-error
       const piezaId = b.piezaRefId;
       return piezaId && !piezasById.has(piezaId);
     });
@@ -272,7 +272,7 @@ export function printValidationReport(autoFix = false) {
 }
 
 // Auto-ejecutar si se importa directamente (útil para desarrollo)
-// @ts-ignore
+// @ts-expect-error
 if (import.meta.hot) {
   // Solo en desarrollo, opt-in mediante localStorage
   try {

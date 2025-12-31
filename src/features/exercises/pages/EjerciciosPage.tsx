@@ -1,19 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { getCachedAuthUser } from "@/auth/authUserCache";
-import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import {
-  Flame, Backpack, Check, Clock, Play, Zap, Repeat,
-  Activity, Music, Plus, Trash2, ChevronRight,
-  BookOpen, ListMusic, History, Layout as LayoutIcon,
-  BarChart3, Calendar, Users, Eye
+  Backpack, Check, Play, Zap, Repeat, Plus, Trash2, BookOpen, ListMusic, History, Calendar
 } from 'lucide-react';
 import { PageHeader } from "@/features/shared/components/ds/PageHeader";
-import { componentStyles } from "@/design/componentStyles";
 import {
   useExercisesList,
   usePlanesPreview,
-  useRecentSessions,
   useExerciseMutations
 } from "@/features/exercises/hooks/useExercisesData";
 
@@ -63,10 +57,9 @@ export default function EjerciciosPage() {
   // Hooks
   const { data: bloques, isLoading: loadingBloques } = useExercisesList();
   const { data: realPlanes = [], isLoading: loadingPlanes } = usePlanesPreview();
-  const { data: realSessions = [], isLoading: loadingSessions } = useRecentSessions();
   const { createExercise, updateExercise, deleteExercise } = useExerciseMutations();
 
-  const loading = loadingBloques || loadingPlanes || loadingSessions;
+  const loading = loadingBloques || loadingPlanes;
 
   // Process Bloques -> localExercises
   const localExercises = React.useMemo(() => {
@@ -129,13 +122,13 @@ export default function EjerciciosPage() {
     if (!formData.nombre) return toast.error("El nombre es obligatorio");
     // setLoading(true); // Handled by mutation status if needed, but we rely on global loading or toast
 
-    const tempId = editingId || `temp_${Date.now()}`;
+    // const tempId = editingId || `temp_${Date.now()}`;
 
     try {
       const user = await getCachedAuthUser();
       const payload = {
         nombre: formData.nombre,
-        tipo: formData.tipo,
+        tipo: formData.tipo as any,
         duracion_seg: formData.duracion * 60,
         profesor_id: user?.id
       };
@@ -161,13 +154,13 @@ export default function EjerciciosPage() {
     try {
       await deleteExercise.mutateAsync(id);
       toast.success("Ejercicio eliminado");
-    } catch (e) {
+    } catch (_e) {
       toast.error("Error al eliminar");
     }
   };
 
   // Placeholder actions for Kanban (Mock persistence not supported in refactor without backend fields)
-  const approveMastery = (id: string) => {
+  const approveMastery = (_id: string) => {
     toast.info("Funcionalidad de dominio simulada (necesita backend)");
   };
 

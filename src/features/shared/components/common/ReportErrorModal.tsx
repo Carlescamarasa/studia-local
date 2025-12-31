@@ -205,7 +205,7 @@ export default function ReportErrorModal({ open, onOpenChange, initialError = nu
 
           // Excluir overlays y modales
           try {
-            // @ts-ignore
+            // @ts-expect-error
             const style = window.getComputedStyle(node);
             const zIndex = parseInt(style.zIndex);
             const isHighZIndex = zIndex >= 50;

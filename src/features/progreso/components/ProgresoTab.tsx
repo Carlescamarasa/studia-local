@@ -21,11 +21,12 @@ export interface ProgresoTabProps {
     granularidad: string;
     onGranularidadChange?: (g: string) => void;
     tiempoRealVsObjetivo: {
-        porcentajeCumplimiento: string;
+        porcentajeCumplimiento: number;
         totalReal: number;
-        porcentajeSesionesCumplen: string;
+        porcentajeSesionesCumplen: number;
         sesionesCumplenObjetivo: number;
         totalSesiones: number;
+        diferencia: number;
     };
     kpis: {
         ratioCompletado: number;
@@ -47,11 +48,12 @@ export default function ProgresoTab({
     granularidad,
     onGranularidadChange,
     tiempoRealVsObjetivo = {
-        porcentajeCumplimiento: '0',
+        porcentajeCumplimiento: 0,
         totalReal: 0,
-        porcentajeSesionesCumplen: '0',
+        porcentajeSesionesCumplen: 0,
         sesionesCumplenObjetivo: 0,
-        totalSesiones: 0
+        totalSesiones: 0,
+        diferencia: 0
     },
     kpis,
     tiposBloque = [],
@@ -126,7 +128,7 @@ export default function ProgresoTab({
                 <div className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pb-4">
                     <KpiTile icon={CheckCircle} label="Ratio completado" value={`${kpis.ratioCompletado}%`} valueClassName="text-[var(--color-success)]" subtext={`${kpis.totalCompletados} compl. · ${kpis.totalOmitidos} omit.`} />
                     <KpiTile icon={CheckCircle} label="Sesiones sin omitir" value={`${kpis.porcentajeCompletadas}%`} valueClassName="text-[var(--color-success)]" subtext={`${kpis.sesionesCompletadas}/${kpis.numSesiones || 0} sesiones`} />
-                    <KpiTile icon={Clock} label="Cumplimiento objetivo" value={`${tiempoRealVsObjetivo.porcentajeCumplimiento}%`} valueClassName={parseFloat(tiempoRealVsObjetivo.porcentajeCumplimiento) >= 90 ? "text-[var(--color-success)]" : "text-orange-500"} subtext={`Real: ${formatDuracionHM(tiempoRealVsObjetivo.totalReal)}`} />
+                    <KpiTile icon={Clock} label="Cumplimiento objetivo" value={`${tiempoRealVsObjetivo.porcentajeCumplimiento}%`} valueClassName={tiempoRealVsObjetivo.porcentajeCumplimiento >= 90 ? "text-[var(--color-success)]" : "text-orange-500"} subtext={`Real: ${formatDuracionHM(tiempoRealVsObjetivo.totalReal)}`} />
                     <KpiTile icon={Target} label="Sesiones cumplen" value={`${tiempoRealVsObjetivo.porcentajeSesionesCumplen}%`} valueClassName="text-[var(--color-primary)]" subtext={`${tiempoRealVsObjetivo.sesionesCumplenObjetivo}/${tiempoRealVsObjetivo.totalSesiones} sesiones`} />
                 </div>
 

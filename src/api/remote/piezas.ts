@@ -3,6 +3,16 @@ import { snakeToCamel, camelToSnake, toSnakeCase } from './utils';
 import { generateId } from './id';
 import type { Pieza } from '@/features/shared/types/domain';
 
+interface DbPieza {
+    id: string;
+    titulo: string;
+    autor: string;
+    dificultad: number;
+    orden: number;
+    // Add other known db fields if necessary, or use unknown for flexibility
+    [key: string]: unknown;
+}
+
 /**
  * Obtiene todas las piezas (para migración de multimedia)
  */
@@ -17,7 +27,7 @@ export async function fetchPiezasPreview(): Promise<Pieza[]> {
         throw error;
     }
 
-    return ((data as any[]) || []).map((p: any) => snakeToCamel<Pieza>(p));
+    return ((data as DbPieza[]) || []).map((p: DbPieza) => snakeToCamel<Pieza>(p));
 }
 
 export async function fetchPiezasList(sort?: string): Promise<Pieza[]> {
@@ -32,7 +42,7 @@ export async function fetchPiezasList(sort?: string): Promise<Pieza[]> {
 
     const { data, error } = await query;
     if (error) throw error;
-    return (data || []).map((p: any) => snakeToCamel<Pieza>(p));
+    return (data || []).map((p: any) => snakeToCamel<Pieza>(p as DbPieza));
 }
 
 export async function fetchPieza(id: string): Promise<Pieza | null> {
@@ -46,7 +56,7 @@ export async function fetchPieza(id: string): Promise<Pieza | null> {
         if (error.code === 'PGRST116') return null;
         throw error;
     }
-    return snakeToCamel<Pieza>(data);
+    return snakeToCamel<Pieza>(data as DbPieza);
 }
 
 export async function fetchPiezasByFilter(filters: Record<string, any>, limit?: number | null): Promise<Pieza[]> {
@@ -63,11 +73,11 @@ export async function fetchPiezasByFilter(filters: Record<string, any>, limit?: 
 
     const { data, error } = await query;
     if (error) throw error;
-    return (data || []).map((p: any) => snakeToCamel<Pieza>(p));
+    return (data || []).map((p: any) => snakeToCamel<Pieza>(p as DbPieza));
 }
 
 export async function createPieza(data: Partial<Pieza>): Promise<Pieza> {
-    const snakeData = camelToSnake({
+    const snakeData = camelToSnake<Partial<DbPieza>>({
         ...data,
         id: data.id || generateId('pieza'),
     });
@@ -78,11 +88,11 @@ export async function createPieza(data: Partial<Pieza>): Promise<Pieza> {
         .single();
 
     if (error) throw error;
-    return snakeToCamel<Pieza>(result);
+    return snakeToCamel<Pieza>(result as DbPieza);
 }
 
 export async function updatePieza(id: string, updates: Partial<Pieza>): Promise<Pieza> {
-    const snakeUpdates = camelToSnake(updates);
+    const snakeUpdates = camelToSnake<Partial<DbPieza>>(updates);
     const { data, error } = await supabase
         .from('piezas')
         .update(snakeUpdates)
@@ -91,7 +101,7 @@ export async function updatePieza(id: string, updates: Partial<Pieza>): Promise<
         .single();
 
     if (error) throw error;
-    return snakeToCamel<Pieza>(data);
+    return snakeToCamel<Pieza>(data as DbPieza);
 }
 
 export async function deletePieza(id: string): Promise<{ success: boolean }> {

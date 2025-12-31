@@ -1,9 +1,22 @@
 import { supabase, withAuthErrorHandling } from './client';
+import { snakeToCamel, camelToSnake } from './utils';
+import type { FeedbackSemanal } from '@/features/shared/types/domain';
 
+interface DbFeedbackSemanal {
+    id: string;
+    semana_inicio_iso: string;
+    reflexion?: string;
+    objetivos_cumplidos?: boolean;
+    dificultad_global?: number;
+    created_at?: string;
+    updated_at?: string;
+    alumno_id: string;
+    [key: string]: unknown;
+}
 /**
  * Obtiene el listado de todos los feedbacks semanales
  */
-export async function fetchFeedbacksSemanalList(sort: string = '-created_at'): Promise<any[]> {
+export async function fetchFeedbacksSemanalList(sort: string = '-created_at'): Promise<FeedbackSemanal[]> {
     let query = supabase.from('feedbacks_semanal').select('*');
 
     if (sort) {
@@ -40,14 +53,14 @@ export async function fetchFeedbacksSemanalList(sort: string = '-created_at'): P
         throw error;
     }
 
-    return (data as any[]) || [];
+    return ((data as DbFeedbackSemanal[]) || []).map(f => snakeToCamel<FeedbackSemanal>(f));
 }
 
 
 /**
  * Obtiene un feedback por ID
  */
-export async function fetchFeedbackSemanal(id: string): Promise<any> {
+export async function fetchFeedbackSemanal(id: string): Promise<FeedbackSemanal | null> {
     const { data, error } = await withAuthErrorHandling(
         supabase
             .from('feedbacks_semanal')
@@ -55,19 +68,14 @@ export async function fetchFeedbackSemanal(id: string): Promise<any> {
             .eq('id', id)
             .single()
     );
-
-    if (error) {
-        if (error.code === 'PGRST116') return null; // No encontrado
-        throw error;
-    }
-
-    return data;
+    if (!data) return null;
+    return snakeToCamel<FeedbackSemanal>(data as unknown as DbFeedbackSemanal);
 }
 
 /**
  * Filtra feedbacks
  */
-export async function fetchFeedbacksSemanalByFilter(filters: Record<string, any>, limit?: number | null): Promise<any[]> {
+export async function fetchFeedbacksSemanalByFilter(filters: Record<string, any>, limit?: number | null): Promise<FeedbackSemanal[]> {
     let query = supabase.from('feedbacks_semanal').select('*');
 
     for (const [key, value] of Object.entries(filters)) {
@@ -87,17 +95,17 @@ export async function fetchFeedbacksSemanalByFilter(filters: Record<string, any>
         throw error;
     }
 
-    return (data as any[]) || [];
+    return ((data as DbFeedbackSemanal[]) || []).map(f => snakeToCamel<FeedbackSemanal>(f));
 }
 
 /**
  * Crea un feedback
  */
-export async function createFeedbackSemanal(payload: any): Promise<any> {
+export async function createFeedbackSemanal(payload: Partial<FeedbackSemanal>): Promise<FeedbackSemanal> {
     const { data, error } = await withAuthErrorHandling(
         supabase
             .from('feedbacks_semanal')
-            .insert(payload)
+            .insert(camelToSnake(payload))
             .select() // Esto es importante para que devuelva el registro creado
             .single()
     );
@@ -106,17 +114,17 @@ export async function createFeedbackSemanal(payload: any): Promise<any> {
         throw error;
     }
 
-    return data;
+    return snakeToCamel<FeedbackSemanal>(data as unknown as DbFeedbackSemanal);
 }
 
 /**
  * Actualiza un feedback
  */
-export async function updateFeedbackSemanal(id: string, payload: any): Promise<any> {
+export async function updateFeedbackSemanal(id: string, payload: Partial<FeedbackSemanal>): Promise<FeedbackSemanal> {
     const { data, error } = await withAuthErrorHandling(
         supabase
             .from('feedbacks_semanal')
-            .update(payload)
+            .update(camelToSnake(payload))
             .eq('id', id)
             .select()
             .single()
@@ -126,7 +134,7 @@ export async function updateFeedbackSemanal(id: string, payload: any): Promise<a
         throw error;
     }
 
-    return data;
+    return snakeToCamel<FeedbackSemanal>(data as unknown as DbFeedbackSemanal);
 }
 
 /**

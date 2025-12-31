@@ -3,6 +3,31 @@ import { snakeToCamel, camelToSnake, toSnakeCase, normalizeISOFields } from './u
 import { generateId } from './id';
 import type { RegistroSesion, RegistroBloque } from '@/features/shared/types/domain';
 
+interface DbRegistroSesion {
+    id: string;
+    alumno_id: string;
+    inicio_iso: string;
+    fin_iso?: string;
+    duracion_real_seg: number;
+    calificacion?: number;
+    comentarios?: string;
+    bloques_completados?: number;
+    bloques_omitidos?: number;
+    created_at?: string;
+    updated_at?: string;
+    // Add other fields as strict as possible
+    [key: string]: unknown;
+}
+
+interface DbRegistroBloque {
+    id: string;
+    registro_sesion_id: string;
+    bloque_id: string;
+    completado: boolean;
+    duracion_real_seg: number;
+    [key: string]: unknown;
+}
+
 /**
  * Obtiene una vista previa de los registros de sesión (limitado a 20)
  */
@@ -19,7 +44,7 @@ export async function fetchRegistrosSesionPreview(): Promise<any[]> {
         throw error;
     }
 
-    return (data as any[]) || [];
+    return ((data as DbRegistroSesion[]) || []);
 }
 
 /**
@@ -36,7 +61,7 @@ export async function fetchRegistrosSesionMultimedia(): Promise<any[]> {
         throw error;
     }
 
-    return (data as any[]) || [];
+    return ((data as DbRegistroSesion[]) || []);
 }
 
 /**
@@ -55,7 +80,7 @@ export async function fetchRecentRegistrosSesion(): Promise<any[]> {
         throw error;
     }
 
-    return (data as any[]) || [];
+    return ((data as DbRegistroSesion[]) || []);
 }
 
 export async function fetchRegistrosSesionList(sort?: string, options: { includeBlocks?: boolean } = { includeBlocks: true }): Promise<RegistroSesion[]> {
@@ -73,7 +98,7 @@ export async function fetchRegistrosSesionList(sort?: string, options: { include
         throw sessionsError;
     }
 
-    const sessions: RegistroSesion[] = (sessionsData || []).map((r: any) => {
+    const sessions: RegistroSesion[] = ((sessionsData as DbRegistroSesion[]) || []).map((r: DbRegistroSesion) => {
         const camel = snakeToCamel<RegistroSesion>(r);
         return normalizeISOFields<RegistroSesion>(camel);
     });
@@ -103,7 +128,7 @@ export async function fetchRegistrosSesionList(sort?: string, options: { include
         }
     }
 
-    const blocks = allBlocks.map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
+    const blocks = (allBlocks as DbRegistroBloque[]).map((b: DbRegistroBloque) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
 
     // Join blocks to sessions
     return sessions.map(session => ({
@@ -124,7 +149,7 @@ export async function fetchRegistroSesion(id: string): Promise<RegistroSesion | 
         throw sessionError;
     }
 
-    const camel = snakeToCamel<RegistroSesion>(sessionData);
+    const camel = snakeToCamel<RegistroSesion>(sessionData as DbRegistroSesion);
     const session = normalizeISOFields<RegistroSesion>(camel);
 
     // Fetch associated blocks
@@ -138,7 +163,7 @@ export async function fetchRegistroSesion(id: string): Promise<RegistroSesion | 
         return session;
     }
 
-    const blocks = (blocksData || []).map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
+    const blocks = ((blocksData as DbRegistroBloque[]) || []).map((b: DbRegistroBloque) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
 
     return {
         ...session,
@@ -161,7 +186,7 @@ export async function fetchRegistrosSesionByFilter(filters: Record<string, any>,
     const { data: sessionsData, error: sessionsError } = await query;
     if (sessionsError) throw sessionsError;
 
-    const sessions: RegistroSesion[] = (sessionsData || []).map((r: any) => {
+    const sessions: RegistroSesion[] = ((sessionsData as DbRegistroSesion[]) || []).map((r: DbRegistroSesion) => {
         const camel = snakeToCamel<RegistroSesion>(r);
         return normalizeISOFields<RegistroSesion>(camel);
     });
@@ -191,7 +216,7 @@ export async function fetchRegistrosSesionByFilter(filters: Record<string, any>,
         }
     }
 
-    const blocks = allBlocks.map((b: any) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
+    const blocks = (allBlocks as DbRegistroBloque[]).map((b: DbRegistroBloque) => normalizeISOFields<RegistroBloque>(snakeToCamel<RegistroBloque>(b)));
 
     // Join blocks to sessions
     return sessions.map(session => ({
@@ -201,7 +226,7 @@ export async function fetchRegistrosSesionByFilter(filters: Record<string, any>,
 }
 
 export async function createRegistroSesion(data: Partial<RegistroSesion>): Promise<RegistroSesion> {
-    const snakeData = camelToSnake({
+    const snakeData = camelToSnake<Partial<DbRegistroSesion>>({
         ...data,
         id: data.id || generateId('registroSesion'),
     });
@@ -212,11 +237,11 @@ export async function createRegistroSesion(data: Partial<RegistroSesion>): Promi
         .single();
 
     if (error) throw error;
-    return normalizeISOFields(snakeToCamel<RegistroSesion>(result));
+    return normalizeISOFields(snakeToCamel<RegistroSesion>(result as DbRegistroSesion));
 }
 
 export async function updateRegistroSesion(id: string, updates: Partial<RegistroSesion>): Promise<RegistroSesion> {
-    const snakeUpdates = camelToSnake(updates);
+    const snakeUpdates = camelToSnake<Partial<DbRegistroSesion>>(updates);
     const { data, error } = await supabase
         .from('registros_sesion')
         .update(snakeUpdates)
@@ -225,7 +250,7 @@ export async function updateRegistroSesion(id: string, updates: Partial<Registro
         .single();
 
     if (error) throw error;
-    return normalizeISOFields(snakeToCamel<RegistroSesion>(data));
+    return normalizeISOFields(snakeToCamel<RegistroSesion>(data as DbRegistroSesion));
 }
 
 export async function deleteRegistroSesion(id: string): Promise<{ success: boolean }> {

@@ -43,7 +43,6 @@ import logoLTS from "@/assets/Logo_LTS.svg";
 import RoleBootstrap from "@/features/auth/components/RoleBootstrap";
 import { useAuth } from "@/auth/AuthProvider";
 import { isAuthError } from "@/lib/authHelpers";
-import { StudiaUser } from "@/features/shared/types/domain";
 import { UserEntity } from "@/features/shared/hooks/useUsers";
 import { SidebarProvider, useSidebar } from "@/features/shared/components/ui/SidebarState";
 import {
@@ -57,7 +56,6 @@ import { componentStyles } from "@/design/componentStyles";
 import { Outlet } from "react-router-dom";
 import { displayName } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import PerfilModal from "@/features/shared/components/common/PerfilModal";
 import { useDesign } from "@/features/design/components/DesignProvider";
 import ReportErrorButton from "@/features/shared/components/common/ReportErrorButton";
@@ -65,7 +63,7 @@ import { useQuery } from "@tanstack/react-query";
 import { listErrorReports } from "@/api/errorReportsAPI";
 import { Badge } from "@/features/shared/components/ds";
 import { SupportTicketsBadge } from "@/features/shared/components/common/SupportTicketsBadge";
-import { shouldIgnoreHotkey, matchesHotkey, getHotkeyById, HOTKEYS_CONFIG, isMac } from "@/utils/hotkeys";
+import { shouldIgnoreHotkey, matchesHotkey, HOTKEYS_CONFIG } from "@/utils/hotkeys";
 import HotkeysModal from "@/features/shared/components/common/HotkeysModal";
 import { HotkeysModalProvider, useHotkeysModal } from "@/hooks/useHotkeysModal.jsx";
 import { useAppVersion } from "@/hooks/useAppVersion";
@@ -105,12 +103,6 @@ const navigationByRole = {
   ],
 };
 
-const mainPageByRole = {
-  ADMIN: "/usuarios",
-  PROF: "/cuaderno",
-  ESTU: "/hoy",
-};
-
 const ROLE_LABEL = { ADMIN: "Administrador", PROF: "Profesor", ESTU: "Estudiante" };
 // PHASE 1 FIX: Use CSS var for sidebar width instead of hardcoded value
 // The actual value comes from --sidebar-width emitted by designConfig.ts
@@ -120,7 +112,6 @@ function LayoutContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
-  const { usuarios } = useLocalData();
   const { signOut, user, loading: authLoading, checkSession } = useAuth();
   const { setShowHotkeysModal, showHotkeysModal } = useHotkeysModal();
 
@@ -128,8 +119,6 @@ function LayoutContent() {
   // 3-tier viewport: 'mobile' | 'tablet' | 'desktop'
   const [viewport, setViewport] = useState('desktop');
   const isMobile = viewport === 'mobile';
-  const isTablet = viewport === 'tablet';
-  const isDesktop = viewport === 'desktop';
   const toggleLockRef = useRef(0);
   const headerToggleButtonRef = useRef<HTMLButtonElement>(null);
   const { design, setDesignPartial, activeMode, setActiveMode } = useDesign();
@@ -159,19 +148,11 @@ function LayoutContent() {
     toggleSidebar();
   }, [toggleSidebar]);
 
-  const handleHeaderClick = (e: React.MouseEvent) => {
-    const el = (e.target as HTMLElement).closest('button, a, input, select, textarea');
-    if (el) {
-      return;
-    }
-    safeToggle();
-  };
-
   /* Usuario actual - usar useEffectiveUser() del provider */
   const { effectiveRole, realRole, effectiveUserName, effectiveUserId, effectiveEmail, isImpersonating, stopImpersonation } = useEffectiveUser();
   // Objeto para compatibilidad con displayName()
   const effectiveUserDisplay = { full_name: effectiveUserName, email: effectiveEmail, id: effectiveUserId };
-  const { profile, refetch: refetchProfile } = useCurrentProfile();
+  const { profile } = useCurrentProfile();
 
   // NOTE: Removed forced refetch - useCurrentProfile has 5min staleTime
   // which is sufficient. Forcing refetch on every mount causes unnecessary requests.
@@ -187,7 +168,6 @@ function LayoutContent() {
   // console.log('DEBUG: Layout nivelTecnico:', displayUser?.nivelTecnico);
   // console.log('DEBUG: Layout nivel (label):', displayUser?.nivel);
 
-  const isAdmin = realRole === 'ADMIN';
   const isLoading = false; // No hay loading en local
 
   /* Detector viewport: mobile < 640, tablet 640-1024, desktop >= 1024 */
@@ -609,7 +589,7 @@ function LayoutContent() {
           <div
             className={`fixed inset-0 bg-black/30 z-[190] transition-opacity duration-200 ${abierto ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
               }`}
-            onClick={(e) => {
+            onClick={() => {
               closeSidebar();
             }}
             aria-hidden="true"

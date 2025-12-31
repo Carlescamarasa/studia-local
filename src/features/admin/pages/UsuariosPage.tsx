@@ -255,7 +255,7 @@ export default function UsuariosPage() {
                                 }))}
                                 onImpersonate={(u) => {
                                     const name = getNombreVisible(u);
-                                    // @ts-ignore - useEffectiveUser return type mismatch in TS
+                                    // @ts-expect-error - useEffectiveUser return type mismatch in TS
                                     startImpersonation(u.id, u.role || 'ESTU', name, u.email);
                                     toast.success(`Ahora ves como ${name}`);
                                 }}
@@ -289,7 +289,7 @@ export default function UsuariosPage() {
                 </div>
 
                 {/* Modals */}
-                {/* @ts-ignore */}
+                {/* @ts-expect-error */}
                 <PerfilModal
                     open={isPerfilModalOpen}
                     onOpenChange={setIsPerfilModalOpen}

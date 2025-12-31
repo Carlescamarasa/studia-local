@@ -31,7 +31,7 @@ interface Hotkey {
  */
 export default function HotkeysModal({ open, onOpenChange }: HotkeysModalProps) {
   const effectiveUser = useEffectiveUser();
-  // @ts-ignore - rolPersonalizado may not be in the type but exists at runtime
+  // @ts-expect-error - rolPersonalizado may not be in the type but exists at runtime
   const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
   const navigate = useNavigate();
 

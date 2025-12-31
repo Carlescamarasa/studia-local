@@ -28,10 +28,18 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/jsx-no-target-blank': 'off',
+      'react/prop-types': 'off',
+      'react/no-unknown-property': ['error', { ignore: ['cmdk-input-wrapper'] }],
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
       ],
+      '@typescript-eslint/ban-ts-comment': ['error', {
+        'ts-expect-error': false,
+        'ts-ignore': true,
+        'ts-nocheck': true,
+        'ts-check': false,
+      }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'no-undef': 'off', // TypeScript handles this better

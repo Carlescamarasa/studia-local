@@ -73,9 +73,9 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
     const [isAssignProfesorDialogOpen, setIsAssignProfesorDialogOpen] = useState(false);
     const [profesorSeleccionado, setProfesorSeleccionado] = useState(user?.profesorAsignadoId || '');
 
-    // @ts-ignore - rolPersonalizado may not be in EffectiveUserContextValue type but exists at runtime
+    // @ts-expect-error - rolPersonalizado may not be in EffectiveUserContextValue type but exists at runtime
     const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
-    // @ts-ignore - rolPersonalizado may not be in EffectiveUserContextValue type but exists at runtime
+    // @ts-expect-error - rolPersonalizado may not be in EffectiveUserContextValue type but exists at runtime
     const isProf = effectiveUser?.rolPersonalizado === 'PROF';
     const isStudent = user?.rolPersonalizado === 'ESTU';
     const isActive = user?.isActive !== false && user?.is_active !== false;

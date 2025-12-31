@@ -115,10 +115,10 @@ function calcularCalidadPromedio(registrosFiltrados: RegistroSesion[]) {
     const cal = safeNumber(r.calificacion);
     return cal > 0 && cal <= 4;
   });
-  if (conCalificacion.length === 0) return '0.0';
+  if (conCalificacion.length === 0) return null;
   const suma = conCalificacion.reduce((acc, r) => acc + safeNumber(r.calificacion), 0);
   const promedio = suma / conCalificacion.length;
-  return promedio.toFixed(1);
+  return Number(promedio.toFixed(1));
 }
 
 export interface UseEstadisticasProps {
@@ -180,7 +180,7 @@ export function useEstadisticas({
       (r.bloquesOmitidos || 0) === 0 && (r.bloquesCompletados || 0) > 0
     ).length;
     const porcentajeCompletadas = numSesiones > 0
-      ? ((sesionesCompletadas / numSesiones) * 100).toFixed(1)
+      ? Number(((sesionesCompletadas / numSesiones) * 100).toFixed(1))
       : 0;
 
     // Calcular bloques completados y omitidos desde registros_sesion
@@ -210,7 +210,7 @@ export function useEstadisticas({
     }
 
     const ratioCompletado = (totalCompletados + totalOmitidos) > 0
-      ? ((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1)
+      ? Number(((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1))
       : 0;
 
     return {
@@ -421,12 +421,12 @@ export function useEstadisticas({
       totalObjetivo: normalizeAggregate(totalObjetivo),
       diferencia: normalizeAggregate(totalReal - totalObjetivo),
       porcentajeCumplimiento: totalObjetivo > 0
-        ? ((totalReal / totalObjetivo) * 100).toFixed(1)
+        ? Number(((totalReal / totalObjetivo) * 100).toFixed(1))
         : 0,
       sesionesCumplenObjetivo,
       totalSesiones: sesionesConObjetivo.length,
       porcentajeSesionesCumplen: sesionesConObjetivo.length > 0
-        ? ((sesionesCumplenObjetivo / sesionesConObjetivo.length) * 100).toFixed(1)
+        ? Number(((sesionesCumplenObjetivo / sesionesConObjetivo.length) * 100).toFixed(1))
         : 0,
     };
   }, [registrosFiltradosUnicos]);

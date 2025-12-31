@@ -83,11 +83,11 @@ const DesignContext = createContext({
   deleteDesignPreset: () => { },
   isBuiltInPreset: (id: any) => false as boolean,
   currentPresetId: 'studia',
-  setPresetId: (id: any) => { },
+  setPresetId: (_id: any) => { },
   basePresets: DESIGN_PRESETS,
   // Deprecated - removed commitPreview
   previewDesign: null as any,
-  setPreviewDesign: (d: any) => { },
+  setPreviewDesign: (_d: any) => { },
   getDesignDiff: () => [] as any[],
 });
 
@@ -103,7 +103,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_MODE);
       if (saved === 'light' || saved === 'dark') return saved;
-    } catch (_) { /* Intentionally swallowed */ }
+    } catch (_error) { /* Intentionally swallowed */ }
     return 'light';
   });
 
@@ -120,7 +120,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.BASE_PRESET_ID);
       if (saved && findPresetById(saved)) return saved;
-    } catch (_) { /* Intentionally swallowed */ }
+    } catch (_error) { /* Intentionally swallowed */ }
     return 'studia';
   });
 
@@ -179,7 +179,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
           return parsed;
         }
       }
-    } catch (_) { /* Intentionally swallowed */ }
+    } catch (_error) { /* Intentionally swallowed */ }
     return null;
   });
 

@@ -213,7 +213,7 @@ export function LocalDataProvider({ children }: { children: React.ReactNode }) {
 
         // Si hubo cambios, guardar de vuelta en localStorage
         if (needsUpdate && stored) {
-          // @ts-ignore
+          // @ts-expect-error
           saveToStorage({ usuarios: normalizedUsuarios });
         }
 

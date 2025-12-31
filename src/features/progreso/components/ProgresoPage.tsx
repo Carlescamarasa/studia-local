@@ -59,7 +59,7 @@ import {
 import ModalFeedbackSemanal from "@/features/shared/components/feedback/ModalFeedbackSemanal";
 import MediaPreviewModal from "@/features/shared/components/media/MediaPreviewModal";
 
-import { RegistroSesion, FeedbackSemanal } from "@/features/shared/types/domain";
+import { RegistroSesion, FeedbackSemanal, UserRole, StudiaUser, Bloque, RegistroBloque } from "@/features/shared/types/domain";
 import RequireRole from "@/features/auth/components/RequireRole";
 import { es } from "date-fns/locale";
 import { startOfWeek, format } from "date-fns";
@@ -79,30 +79,6 @@ import {
 import { useFeedbacksSemanal } from "@/features/progreso/hooks/useFeedbacksSemanal";
 import { useEvaluacionesTecnicas } from "@/features/progreso/hooks/useEvaluacionesTecnicas";
 
-// Cast internal JSX components to any to avoid TS errors
-const CardAny: any = Card;
-const MultiSelectAny: any = MultiSelect;
-const StatsDateHeaderAny: any = StatsDateHeader;
-const HabilidadesViewAny: any = HabilidadesView;
-const ProgresoTabAny: any = ProgresoTab;
-const PageHeaderAny: any = PageHeader;
-const ResumenTabAny: any = ResumenTab;
-const FeedbackUnificadoTabAny: any = FeedbackUnificadoTab;
-const ModalFeedbackSemanalAny: any = ModalFeedbackSemanal;
-const MediaPreviewModalAny: any = MediaPreviewModal;
-const TiposBloquesTabAny: any = TiposBloquesTab;
-const TopEjerciciosTabAny: any = TopEjerciciosTab;
-
-
-const TabsAny: any = Tabs;
-const TabsListAny: any = TabsList;
-const TabsTriggerAny: any = TabsTrigger;
-const TabsContentAny: any = TabsContent;
-const SelectAny: any = Select;
-const SelectTriggerAny: any = SelectTrigger;
-const SelectContentAny: any = SelectContent;
-const SelectItemAny: any = SelectItem;
-
 // Valid tabs for normalization
 const VALID_TABS = ['resumen', 'habilidades', 'estadisticas', 'mochila', 'feedback', 'comparar'];
 
@@ -111,7 +87,7 @@ const VALID_TABS = ['resumen', 'habilidades', 'estadisticas', 'mochila', 'feedba
 // ============================================================================
 
 export default function ProgresoPage() {
-    const anyOfRoles: any = ['ESTU', 'PROF', 'ADMIN'];
+    const anyOfRoles: UserRole[] = ['ESTU', 'PROF', 'ADMIN'];
 
     return (
         <div className="min-h-screen bg-transparent animate-in fade-in duration-500">
@@ -265,7 +241,7 @@ function ProgresoPageContent() {
     };
 
     const registrosSesionValidos = useMemo(
-        () => registros.filter((r: any) => r.calificacion != null),
+        () => registros.filter((r: RegistroSesion) => r.calificacion != null),
         [registros]
     );
 
@@ -293,16 +269,16 @@ function ProgresoPageContent() {
         const targetId = effectiveStudentId || userIdActual;
 
         if (isEstu) {
-            filtered = filtered.filter((r: any) => r.alumnoId === targetId);
+            filtered = filtered.filter((r: RegistroSesion) => r.alumnoId === targetId);
         } else if (isProf) {
             if (alumnosSeleccionados.length > 0) {
-                filtered = filtered.filter((r: any) => alumnosSeleccionados.includes(r.alumnoId));
+                filtered = filtered.filter((r: RegistroSesion) => alumnosSeleccionados.includes(r.alumnoId));
             } else {
-                filtered = filtered.filter((r: any) => estudiantesDelProfesor.includes(r.alumnoId));
+                filtered = filtered.filter((r: RegistroSesion) => estudiantesDelProfesor.includes(r.alumnoId));
             }
         } else if (isAdmin) {
             if (alumnosSeleccionados.length > 0) {
-                filtered = filtered.filter((r: any) => alumnosSeleccionados.includes(r.alumnoId));
+                filtered = filtered.filter((r: RegistroSesion) => alumnosSeleccionados.includes(r.alumnoId));
             }
         }
 
@@ -319,7 +295,7 @@ function ProgresoPageContent() {
         if (periodoFin) {
             const finDate = parseLocalDate(periodoFin);
             finDate.setHours(23, 59, 59, 999);
-            filtered = filtered.filter((r: any) => {
+            filtered = filtered.filter((r: RegistroSesion) => {
                 if (!r.inicioISO) return false;
                 const registroDate = new Date(r.inicioISO);
                 return registroDate <= finDate;
@@ -332,8 +308,8 @@ function ProgresoPageContent() {
 
     // Unique registros
     const registrosFiltradosUnicos = useMemo(() => {
-        const map = new Map<string, any>();
-        registrosFiltrados.forEach((r: any) => {
+        const map = new Map<string, RegistroSesion>();
+        registrosFiltrados.forEach((r: RegistroSesion) => {
             if (!r || !r.id) return;
             if (!map.has(r.id)) {
                 map.set(r.id, r);
@@ -365,9 +341,9 @@ function ProgresoPageContent() {
     }, [periodoInicio, periodoFin, registrosFiltradosUnicos]);
 
     const bloquesFiltrados = useMemo(() => {
-        return registrosFiltradosUnicos.flatMap((r: any) => {
+        return registrosFiltradosUnicos.flatMap((r: RegistroSesion) => {
             const bloques = r.registrosBloque || [];
-            return bloques.map((b: any) => ({ // Changed from filter to map to transform each block
+            return bloques.map((b: RegistroBloque) => ({ // Changed from filter to map to transform each block
                 ...b,
                 duracionRealSeg: safeNumber(b.duracionRealSeg),
                 duracionObjetivoSeg: safeNumber(b.duracionObjetivoSeg),
@@ -415,11 +391,13 @@ function ProgresoPageContent() {
         if (periodoInicio || periodoFin) {
             resultado = resultado.filter((f: FeedbackSemanal) => {
                 // Check multiple possible date field names (snake_case and camelCase)
-                const createdAt = (f as any).created_at || (f as any).createdAt;
-                const updatedAt = (f as any).updated_at || (f as any).updatedAt || createdAt;
+                // Usar casting seguro para propiedades runtime que pueden no estar en la interfaz
+                const rawF = f as unknown as Record<string, unknown>;
+                const createdAt = f.created_at || (rawF.createdAt as string);
+                const updatedAt = f.updated_at || (rawF.updatedAt as string) || createdAt;
 
                 // Use semanaInicioISO as fallback date reference
-                const semanaInicio = (f as any).semanaInicioISO;
+                const semanaInicio = f.semanaInicioISO;
 
                 // Determine the best date to use for filtering
                 const fechaRelevante = updatedAt || createdAt || semanaInicio;
@@ -474,15 +452,15 @@ function ProgresoPageContent() {
 
 
     const usuariosMap = useMemo(() => {
-        const map: Record<string, any> = {};
+        const map: Record<string, StudiaUser> = {};
         usuarios.forEach(u => { map[u.id] = u; });
         return map;
     }, [usuarios]);
 
     // Helper function to calculate streak (reutilized from estadisticas.jsx)
-    const calcularRacha = (registros: any[], alumnoId: string | null = null) => {
+    const calcularRacha = (registros: RegistroSesion[], alumnoId: string | null = null) => {
         const targetRegistros = registros
-            .filter((r: any) => (!alumnoId || r.alumnoId === alumnoId) && (r.duracionRealSeg || 0) >= 60);
+            .filter((r: RegistroSesion) => (!alumnoId || r.alumnoId === alumnoId) && (r.duracionRealSeg || 0) >= 60);
 
         if (targetRegistros.length === 0) return { actual: 0, maxima: 0 };
 
@@ -558,14 +536,14 @@ function ProgresoPageContent() {
             ? alumnosSeleccionados
             : (isProf && estudiantesDelProfesor.length > 0)
                 ? estudiantesDelProfesor
-                : (estudiantes || []).map((e: any) => e.id);
+                : (estudiantes || []).map((e: StudiaUser) => e.id);
 
         return estudiantesIds.map(alumnoId => {
             const registrosEstudiante = registrosFiltradosUnicos.filter(r => r.alumnoId === alumnoId);
 
             // Calculate metrics for each student
-            const tiempoTotal = registrosEstudiante.reduce((sum, r) => {
-                const duracion = safeNumber((r as any).duracionRealSeg);
+            const tiempoTotal = registrosEstudiante.reduce((sum: number, r: RegistroSesion) => {
+                const duracion = safeNumber(r.duracionRealSeg);
                 return sum + (duracion > 0 && duracion <= 43200 ? duracion : 0);
             }, 0);
 
@@ -581,24 +559,24 @@ function ProgresoPageContent() {
             }
 
             const conCalificacion = registrosEstudiante.filter(r => {
-                const cal = safeNumber((r as any).calificacion);
+                const cal = safeNumber(r.calificacion);
                 return cal > 0 && cal <= 4;
             });
             const calificacionPromedio = conCalificacion.length > 0
-                ? (conCalificacion.reduce((acc, r) => acc + safeNumber((r as any).calificacion), 0) / conCalificacion.length).toFixed(1)
-                : '0.0';
+                ? Number((conCalificacion.reduce((acc, r) => acc + safeNumber(r.calificacion), 0) / conCalificacion.length).toFixed(1))
+                : null;
 
             const totalCompletados = registrosEstudiante.reduce((sum, r) =>
-                sum + safeNumber((r as any).bloquesCompletados), 0
+                sum + safeNumber(r.bloquesCompletados), 0
             );
             const totalOmitidos = registrosEstudiante.reduce((sum, r) =>
-                sum + safeNumber((r as any).bloquesOmitidos), 0
+                sum + safeNumber(r.bloquesOmitidos), 0
             );
             const ratioCompletado = (totalCompletados + totalOmitidos) > 0
                 ? Number(((totalCompletados / (totalCompletados + totalOmitidos)) * 100).toFixed(1))
                 : 0;
 
-            const racha = (calcularRacha as any)(registrosEstudiante, null);
+            const racha = calcularRacha(registrosEstudiante, null);
 
             return {
                 id: alumnoId,
@@ -618,7 +596,7 @@ function ProgresoPageContent() {
     // ============================================================================
 
     useEffect(() => {
-        const params: any = {};
+        const params: Record<string, string> = {};
         if (tabActiva !== 'resumen') params.tab = tabActiva;
         if (periodoInicio) params.inicio = periodoInicio;
         if (periodoFin) params.fin = periodoFin;
@@ -657,8 +635,8 @@ function ProgresoPageContent() {
     // ============================================================================
 
     const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
-    const [selectedFeedback, setSelectedFeedback] = useState(null);
-    const [, setFeedbackWeekInfo] = useState({ startISO: '', label: '' });
+    const [selectedFeedback, setSelectedFeedback] = useState<FeedbackSemanal | null>(null);
+    const [feedbackWeekInfo, setFeedbackWeekInfo] = useState({ startISO: '', label: '' });
 
     // Media Preview State
 
@@ -677,7 +655,7 @@ function ProgresoPageContent() {
         setFeedbackModalOpen(true);
     };
 
-    const handleEditFeedback = (feedback: any) => {
+    const handleEditFeedback = (feedback: FeedbackSemanal) => {
         const mondayISO = feedback.semanaInicioISO;
         const monday = parseLocalDate(mondayISO);
         const endWeek = new Date(monday);
@@ -695,9 +673,9 @@ function ProgresoPageContent() {
 
     const [mediaModalOpen, setMediaModalOpen] = useState(false);
     const [mediaModalIndex, setMediaModalIndex] = useState(0);
-    const [mediaModalLinks, setMediaModalLinks] = useState<any[]>([]);
+    const [mediaModalLinks, setMediaModalLinks] = useState<string[]>([]);
 
-    const handleMediaClick = (mediaLinks: any[], initialIndex = 0) => {
+    const handleMediaClick = (mediaLinks: string[], initialIndex = 0) => {
         setMediaModalLinks(mediaLinks);
         setMediaModalIndex(initialIndex);
         setMediaModalOpen(true);
@@ -710,14 +688,14 @@ function ProgresoPageContent() {
     return (
         <div className="space-y-6 pb-20 md:pb-0">
             {/* Header: Using PageHeader for consistency */}
-            <PageHeaderAny
+            <PageHeader
                 icon={Activity}
                 title="Progreso"
                 subtitle="Seguimiento detallado de tu evolución musical"
                 actions={
                     <div className="flex flex-wrap items-center gap-2">
                         {/* Date Range Picker */}
-                        <StatsDateHeaderAny
+                        <StatsDateHeader
                             startDate={periodoInicio}
                             endDate={periodoFin}
                             onDateChange={({ from, to }: { from: string | null; to: string | null }) => {
@@ -729,13 +707,14 @@ function ProgresoPageContent() {
                         />
                         {/* Student Selector - Only for PROF/ADMIN */}
                         {(isProf || isAdmin) && (
-                            <MultiSelectAny
-                                items={estudiantesDisponibles.map((e: any) => ({ value: e.id, label: displayName(e) }))}
-                                value={selectedStudentIds}
-                                onChange={setSelectedStudentIds}
-                                label="Alumnos"
-                                className="w-full md:w-[220px]"
-                            />
+                            <div className="w-full md:w-[220px]">
+                                <MultiSelect
+                                    items={estudiantesDisponibles.map((e: StudiaUser) => ({ value: e.id, label: displayName(e) }))}
+                                    value={selectedStudentIds}
+                                    onChange={setSelectedStudentIds}
+                                    label="Alumnos"
+                                />
+                            </div>
                         )}
                     </div>
                 }
@@ -745,8 +724,8 @@ function ProgresoPageContent() {
             <div className="studia-section">
                 {/* Mobile Tab Select */}
                 <div className="md:hidden w-full mb-4">
-                    <SelectAny value={tabActiva} onValueChange={setTabActiva} >
-                        <SelectTriggerAny className="w-full">
+                    <Select value={tabActiva} onValueChange={setTabActiva} >
+                        <SelectTrigger className="w-full">
                             <div className="flex items-center gap-2">
                                 {(() => {
                                     const activeItem = tabItems.find(t => t.value === tabActiva);
@@ -759,21 +738,21 @@ function ProgresoPageContent() {
                                     );
                                 })()}
                             </div>
-                        </SelectTriggerAny>
-                        <SelectContentAny className="w-[var(--radix-select-content-width)]">
+                        </SelectTrigger>
+                        <SelectContent className="w-[var(--radix-select-content-width)]">
                             {tabItems.map((item) => {
                                 const Icon = item.icon;
                                 return (
-                                    <SelectItemAny key={item.value} value={item.value}>
+                                    <SelectItem key={item.value} value={item.value}>
                                         <div className="flex items-center gap-2">
                                             <Icon className="w-4 h-4 text-[var(--color-text-secondary)]" />
                                             <span>{item.label}</span>
                                         </div>
-                                    </SelectItemAny>
+                                    </SelectItem>
                                 );
                             })}
-                        </SelectContentAny>
-                    </SelectAny>
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 {/* Desktop/Tablet Tabs List - Using design system styles */}
@@ -805,15 +784,8 @@ function ProgresoPageContent() {
                 {/* 1. RESUMEN TAB */}
                 {tabActiva === 'resumen' && (
                     <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
-                        <ResumenTabAny
+                        <ResumenTab
                             kpis={kpis}
-                            datosLinea={datosLinea}
-                            heatmapData={estadisticas.heatmapData}
-                            periodoInicio={periodoInicio}
-                            periodoFin={periodoFin}
-                            registrosFiltrados={registrosFiltradosUnicos}
-                            user={(isEstu && userIdActual) ? usuariosMap[userIdActual] : null}
-                            aggregateLevelGoals={aggregateLevelGoals}
                             // Props for HabilidadesView
                             alumnosSeleccionados={effectiveIds}
                             allStudentIds={estudiantes.map(e => e.id)}
@@ -831,7 +803,7 @@ function ProgresoPageContent() {
                 {/* 2. HABILIDADES TAB */}
                 {tabActiva === 'habilidades' && (
                     <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
-                        <HabilidadesViewAny
+                        <HabilidadesView
                             alumnosSeleccionados={effectiveIds}
                             userIdActual={userIdActual}
                             xpData={registrosFiltradosUnicos}
@@ -847,8 +819,8 @@ function ProgresoPageContent() {
                 {tabActiva === 'estadisticas' && (
                     <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
                         {/* Subtabs for Estadisticas */}
-                        <TabsAny defaultValue="progreso" className="w-full">
-                            <TabsListAny className="justify-start bg-[var(--color-surface-muted)] p-1 rounded-lg w-full sm:w-auto mb-6 overflow-x-auto h-auto">
+                        <Tabs defaultValue="progreso" className="w-full">
+                            <TabsList className="justify-start bg-[var(--color-surface-muted)] p-1 rounded-lg w-full sm:w-auto mb-6 overflow-x-auto h-auto">
                                 {[
                                     { id: 'progreso', label: 'Evolución', icon: TrendingUp },
                                     { id: 'tipos', label: 'Distribución', icon: PieChart },
@@ -856,42 +828,42 @@ function ProgresoPageContent() {
                                 ].map((tab) => {
                                     const Icon = tab.icon;
                                     return (
-                                        <TabsTriggerAny
+                                        <TabsTrigger
                                             key={tab.id}
                                             value={tab.id}
                                             className="px-3 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 whitespace-nowrap text-[var(--color-text-secondary)] data-[state=active]:bg-[var(--color-surface-elevated)] data-[state=active]:text-[var(--color-text-primary)] data-[state=active]:shadow-sm transition-all"
                                         >
                                             <Icon className="w-3.5 h-3.5" />
                                             {tab.label}
-                                        </TabsTriggerAny>
+                                        </TabsTrigger>
                                     );
                                 })}
-                            </TabsListAny>
+                            </TabsList>
 
-                            <TabsContentAny value="progreso" className="space-y-6">
-                                <ProgresoTabAny
+                            <TabsContent value="progreso" className="space-y-6">
+                                <ProgresoTab
                                     datosLinea={datosLinea}
                                     registrosFiltrados={registrosFiltradosUnicos}
                                     periodoInicio={periodoInicio}
                                     periodoFin={periodoFin}
                                     granularidad={granularidad}
                                     kpis={kpis}
-                                />
-                            </TabsContentAny>
-
-                            <TabsContentAny value="tipos" className="space-y-6">
-                                <TiposBloquesTabAny
-                                    tiposBloques={tiposBloques}
                                     tiempoRealVsObjetivo={tiempoRealVsObjetivo}
                                 />
-                            </TabsContentAny>
-                            <TabsContentAny value="ejercicios" className="space-y-6">
-                                <TopEjerciciosTabAny
+                            </TabsContent>
+
+                            <TabsContent value="tipos" className="space-y-6">
+                                <TiposBloquesTab
+                                    tiposBloques={tiposBloques}
+                                />
+                            </TabsContent>
+                            <TabsContent value="ejercicios" className="space-y-6">
+                                <TopEjerciciosTab
                                     topEjercicios={topEjercicios}
                                 />
-                            </TabsContentAny>
+                            </TabsContent>
 
-                        </TabsAny>
+                        </Tabs>
                     </div>
                 )}
 
@@ -900,7 +872,7 @@ function ProgresoPageContent() {
                     <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
                         {/* Require single student selection */}
                         {!effectiveStudentId ? (
-                            <CardAny className={componentStyles.components.cardBase}>
+                            <Card className={componentStyles.components.cardBase}>
                                 <EmptyState
                                     icon={<Backpack className="w-12 h-12 text-muted-foreground" />}
                                     title="Selecciona un Estudiante"
@@ -909,7 +881,7 @@ function ProgresoPageContent() {
                                         : "Selecciona un estudiante arriba para ver su mochila de práctica."
                                     }
                                 />
-                            </CardAny>
+                            </Card>
                         ) : (
                             <MochilaViewContent
                                 studentId={effectiveStudentId}
@@ -922,7 +894,7 @@ function ProgresoPageContent() {
                 {/* 5. FEEDBACK TAB */}
                 {tabActiva === 'feedback' && (
                     <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
-                        <FeedbackUnificadoTabAny
+                        <FeedbackUnificadoTab
                             feedbacks={isEstu ? feedbacksSemanal : feedbacksParaProfAdmin}
                             evaluaciones={[]} // Legacy support
                             registros={registrosFiltradosUnicos.filter(r => r.calificacion)} // Sessions with rating
@@ -933,7 +905,7 @@ function ProgresoPageContent() {
                             onEditFeedback={handleEditFeedback}
                             onDeleteFeedback={handleDeleteFeedback}
                             userIdActual={userIdActual}
-                            userRole={effectiveRole}
+                            userRole={effectiveRole || undefined}
                             actionButton={
                                 (isProf || isAdmin) ? (
                                     <Button size="sm" onClick={handleCreateFeedback}>
@@ -959,19 +931,22 @@ function ProgresoPageContent() {
             </div>
 
             {/* Global Media Modal */}
-            <MediaPreviewModalAny
-                isOpen={mediaModalOpen}
+            <MediaPreviewModal
+                open={mediaModalOpen}
                 onClose={() => setMediaModalOpen(false)}
-                mediaLinks={mediaModalLinks}
+                urls={mediaModalLinks}
                 initialIndex={mediaModalIndex}
             />
 
             {/* Modal para Crear/Editar Feedback Semanal (Controlado) */}
             {(isProf || isAdmin) && (
-                <ModalFeedbackSemanalAny
+                <ModalFeedbackSemanal
                     open={feedbackModalOpen}
                     onOpenChange={setFeedbackModalOpen}
                     feedback={selectedFeedback}
+                    studentId={selectedFeedback?.alumnoId || alumnosSeleccionados[0] || ''}
+                    weekStartISO={feedbackWeekInfo.startISO}
+                    weekLabel={feedbackWeekInfo.label}
                     usuarios={usuarios}
                     userIdActual={userIdActual}
                     userRole={effectiveRole}

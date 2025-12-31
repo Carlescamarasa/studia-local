@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+ 
 import React from 'react';
 
 export const NoteQuarter = ({ className = "w-4 h-4" }) => (

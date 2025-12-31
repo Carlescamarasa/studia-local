@@ -1,6 +1,21 @@
 import { supabase, withAuthErrorHandling } from './client';
 import { snakeToCamel } from './utils';
-import type { Plan } from '@/features/shared/types/domain';
+import type { Plan, Asignacion } from '@/features/shared/types/domain';
+
+interface DbPlan {
+    id: string;
+    titulo: string;
+    contenido?: any;
+    [key: string]: unknown;
+}
+
+// Minimal interface for asignacion structure needed here
+interface AsignacionWithPlan {
+    planId?: string;
+    planAdaptado?: Plan;
+    plan?: Plan;
+    [key: string]: any;
+}
 
 /**
  * Resuelve el plan para una asignación usando la arquitectura híbrida:
@@ -9,7 +24,7 @@ import type { Plan } from '@/features/shared/types/domain';
  * - Si no, y plan existe (legacy) → usar plan (compatibilidad)
  */
 export async function resolvePlanForAsignacion(
-    asignacion: any,
+    asignacion: AsignacionWithPlan,
     planesList?: Plan[]
 ): Promise<Plan | null> {
     // Prioridad 1: plan_adaptado (snapshot adaptado)
@@ -38,7 +53,7 @@ export async function resolvePlanForAsignacion(
                 throw error;
             }
 
-            return snakeToCamel<Plan>(data);
+            return snakeToCamel<Plan>(data as DbPlan);
         } catch (error) {
             console.warn('[resolvePlanForAsignacion] Error al cargar plan por ID:', error);
             return null;
@@ -65,7 +80,7 @@ export async function fetchPlanesPreview(): Promise<any[]> {
         throw error;
     }
 
-    return (data as any[]) || [];
+    return ((data as DbPlan[]) || []).map(p => snakeToCamel<Plan>(p));
 }
 
 /**
@@ -80,5 +95,5 @@ export async function fetchPlanesPreviewEjercicios(): Promise<any[]> {
         throw error;
     }
 
-    return (data as any[]) || [];
+    return ((data as DbPlan[]) || []).map(p => snakeToCamel<Plan>(p));
 }

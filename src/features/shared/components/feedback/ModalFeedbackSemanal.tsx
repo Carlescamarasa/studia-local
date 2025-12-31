@@ -6,6 +6,7 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/features/shared/components/ui/dialog";
+import { HabilidadesMaestras } from "@/features/shared/types/domain";
 import {
     Drawer,
     DrawerContent,
@@ -39,11 +40,10 @@ import { uploadVideoToYouTube } from "@/utils/uploadVideoToYouTube";
 interface FeedbackData {
     id?: string;
     notaProfesor?: string;
-    sonido?: number;
-    cognicion?: number;
-    habilidades?: Record<string, unknown>;
+    sonido?: number | null;
+    cognicion?: number | null;
+    habilidades?: HabilidadesMaestras | Record<string, unknown>;
     mediaLinks?: unknown[];
-    [key: string]: unknown;
 }
 
 interface ModalFeedbackSemanalProps {
@@ -57,6 +57,9 @@ interface ModalFeedbackSemanalProps {
     onMediaClick?: (mediaLinks: unknown[], index: number) => void;
     usuarios?: any[];
     userIdActual?: string;
+    userRole?: string;
+    onFeedbackSaved?: () => void;
+    defaultStudentId?: string;
 }
 
 /**

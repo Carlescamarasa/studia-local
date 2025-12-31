@@ -1,5 +1,25 @@
 import { supabase, withAuthErrorHandling } from './client';
+import { snakeToCamel, camelToSnake } from './utils';
+import type { Bloque } from '@/features/shared/types/domain';
 
+interface DbBloque {
+    id: string;
+    nombre: string;
+    code: string;
+    tipo: string;
+    duracion_seg: number;
+    instrucciones?: string;
+    indicador_logro?: string;
+    materiales_requeridos?: string[];
+    media_links?: string[];
+    elementos_ordenados?: any[];
+    pieza_ref_id?: string;
+    profesor_id: string;
+    skill_tags?: string[];
+    target_ppms?: number[];
+    content?: any;
+    [key: string]: unknown;
+}
 /**
  * Elimina un bloque por ID
  */
@@ -30,17 +50,17 @@ export async function fetchBloquesPreview(): Promise<any[]> {
         throw error;
     }
 
-    return (data as any[]) || [];
+    return ((data as DbBloque[]) || []).map(b => snakeToCamel<Bloque>(b));
 }
 
 /**
  * Actualiza un bloque existente
  */
-export async function updateBloque(id: string, payload: any): Promise<void> {
+export async function updateBloque(id: string, payload: Partial<Bloque>): Promise<void> {
     const { error } = await withAuthErrorHandling(
         supabase
             .from('bloques')
-            .update(payload)
+            .update(camelToSnake(payload))
             .eq('id', id)
     );
 
@@ -52,11 +72,11 @@ export async function updateBloque(id: string, payload: any): Promise<void> {
 /**
  * Crea un nuevo bloque
  */
-export async function createBloque(payload: any): Promise<any[]> {
+export async function createBloque(payload: Partial<Bloque>): Promise<Bloque[]> {
     const { data, error } = await withAuthErrorHandling(
         supabase
             .from('bloques')
-            .insert([payload])
+            .insert([camelToSnake(payload)])
             .select()
     );
 
@@ -64,7 +84,7 @@ export async function createBloque(payload: any): Promise<any[]> {
         throw error;
     }
 
-    return (data as any[]) || [];
+    return ((data as DbBloque[]) || []).map(b => snakeToCamel<Bloque>(b));
 }
 
 /**
@@ -83,5 +103,5 @@ export async function fetchBloquesListado(): Promise<any[]> {
         throw error;
     }
 
-    return (data as any[]) || [];
+    return ((data as DbBloque[]) || []).map(b => snakeToCamel<Bloque>(b));
 }

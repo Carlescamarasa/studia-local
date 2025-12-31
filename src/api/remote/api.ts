@@ -923,7 +923,7 @@ export function createRemoteDataAPI(): AppDataAPI {
 
         for (const [key, value] of Object.entries(updates)) {
           if (allowedFields.has(key)) {
-            // @ts-ignore - Valid field check done via allowedFields set
+            // @ts-expect-error - Valid field check done via allowedFields set
             filteredUpdates[key] = value;
           } else {
             // Silently log non-DB fields (don't spam console with warnings)

@@ -327,7 +327,7 @@ export default function UnifiedTable<T>({
                   return (
                     <TableRow
                       key={itemKey}
-                      //@ts-ignore - clickable is a valid prop in our table.tsx
+                      //@ts-expect-error - clickable is a valid prop in our table.tsx
                       clickable={!!(onRowClick || (hasOnlyOneAction && actions.length === 1))}
                       selected={isSelected}
                       className="group hover:bg-[var(--color-surface-muted)]/50 transition-colors"

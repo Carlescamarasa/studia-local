@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+ 
 import React, { useMemo, useState, useEffect } from "react";
 import { Card, CardContent } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ds/Button";

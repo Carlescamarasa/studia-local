@@ -9,7 +9,7 @@ const Checkbox = React.forwardRef<
     React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
 >(({ className, ...props }, ref) => {
     // Filter out 'indeterminate' prop to prevent React warning when passed to the underlying button element
-    // @ts-ignore
+    // @ts-expect-error
     const { indeterminate, ...rest } = props;
 
     return (

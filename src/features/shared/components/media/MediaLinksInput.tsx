@@ -4,27 +4,15 @@ import { Textarea } from "@/features/shared/components/ui/textarea";
 import { Badge } from "@/features/shared/components/ds/Badge";
 import { Button } from "@/features/shared/components/ui/button";
 import { Input } from "@/features/shared/components/ui/input";
-import { X, Eye, AlertCircle, Upload, HelpCircle, FileText, Image, Music, Loader2, Link as LinkIcon, Video } from "lucide-react";
+import { X, Eye, AlertCircle, Upload, FileText, Loader2, Link as LinkIcon, Video } from "lucide-react";
 import { toast } from "sonner";
 import { MediaIcon, getMediaLabel } from "./MediaEmbed";
 import { isValidUrl, extractUrlsFromText, normalizeMediaLinks } from "@/features/shared/utils/media";
-import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
-import { uploadFile, getAcceptedMimeTypes, detectFileType, ACCEPTED_FILE_TYPES } from "@/lib/storageUpload";
+import { uploadFile, getAcceptedMimeTypes, detectFileType } from "@/lib/storageUpload";
 import { remoteDataAPI } from "@/api/remoteDataAPI";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/features/shared/components/ui/tooltip";
 
 const MAX_LINKS = 10;
-
-/**
- * Hook para obtener el título de una URL
- * Usa un proxy CORS para evitar problemas de CORS
- */
 /**
  * Extrae el ID del archivo de una URL de Google Drive
  */
@@ -96,7 +84,7 @@ function usePageTitle(url: string | null) {
       const driveId = extractGoogleDriveId(url);
       if (driveId) {
         // Usar un nombre descriptivo basado en el ID
-        setTitle(`Archivo de Google Drive (${driveId.substring(0, 8)}...)`);
+        setTitle(`Archivo de Google Drive(${driveId.substring(0, 8)}...)`);
         setIsLoading(false);
 
         // Intentar obtener el título real en segundo plano (sin bloquear)
@@ -217,7 +205,7 @@ function usePageTitle(url: string | null) {
   return { title, isLoading };
 }
 
-import { ArrowUp, ArrowDown, Pencil, Check, GripVertical, ExternalLink } from 'lucide-react';
+import { ArrowUp, ArrowDown, Pencil, Check, ExternalLink } from 'lucide-react';
 
 
 /**
@@ -486,7 +474,7 @@ export default function MediaLinksInput({
   value = [],
   onChange,
   onPreview,
-  showFileUpload = false,
+  showFileUpload: _showFileUpload = false,
   videoFile = null,
   onVideoFileChange = null,
   uploadingVideo = false,
@@ -494,10 +482,10 @@ export default function MediaLinksInput({
   originType = null,
   originId = null,
   originLabel = null,
-  initialMedia = [],
+  initialMedia: _initialMedia = [],
   onUpdate,
   disabled = false,
-  videoId = "video-upload"
+  videoId: _videoId = "video-upload"
 }: MediaLinksInputProps) {
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

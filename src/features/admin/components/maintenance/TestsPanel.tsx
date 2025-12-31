@@ -4,7 +4,7 @@ import { Button } from '@/features/shared/components/ds/Button';
 import { componentStyles } from '@/design/componentStyles';
 import { supabase } from '@/lib/supabaseClient';
 import { localDataClient } from '@/api/localDataClient';
-// @ts-ignore - Assuming registry is available
+// @ts-expect-error - Assuming registry is available
 import { runAllTests, runTest, getCriticalIssues, ALL_TESTS, getTestsByCategory } from '@/utils/testRegistry';
 import CriticalIssues from './CriticalIssues';
 import TestCategory from './TestCategory';

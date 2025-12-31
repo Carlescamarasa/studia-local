@@ -1,5 +1,5 @@
 import React from "react";
-// @ts-ignore
+// @ts-expect-error
 import RequireRole from "@/features/auth/components/RequireRole";
 import CuadernoContent from "../components/CuadernoContent";
 

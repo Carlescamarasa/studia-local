@@ -9,7 +9,7 @@ import { localDataClient } from './api/localDataClient';
 import { RegistrosBloqueAPI } from './data/registrosBloqueClient';
 import { Bloque, RegistroBloque } from './features/shared/types/domain';
 
-// @ts-ignore
+// @ts-expect-error
 window.migrateSkills = async function () {
   console.log("Starting Migration: Skills to RegistrosBloque...");
   try {

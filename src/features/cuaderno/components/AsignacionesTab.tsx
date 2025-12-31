@@ -9,7 +9,7 @@ import { Button } from "@/features/shared/components/ui/button";
 import { Badge } from "@/features/shared/components/ds";
 import { Input } from "@/features/shared/components/ui/input";
 import {
-    Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, ChevronUp, ChevronDown, Check, Clock, Circle, FileText, Send, CheckCircle, AlertCircle, LayoutList, User, Users, XCircle
+    Target, Eye, Edit, Copy, Trash2, FileDown, Search, X, Plus, RotateCcw, ChevronUp, ChevronDown, Check, Clock, Circle, FileText, Send, CheckCircle, LayoutList, User, Users, XCircle
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -17,11 +17,10 @@ import { toast } from "sonner";
 import UnifiedTable, { TableAction } from "@/features/shared/components/tables/UnifiedTable";
 import FormularioRapido from "@/features/asignaciones/components/FormularioRapido";
 import StudentSearchBar from "@/features/asignaciones/components/StudentSearchBar";
-import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, calcularLunesSemanaISO, calcularOffsetSemanas, isoWeekNumberLocal } from "@/features/shared/utils/helpers";
+import { getNombreVisible, displayNameById, formatLocalDate, parseLocalDate, resolveUserIdActual, startOfMonday, isoWeekNumberLocal } from "@/features/shared/utils/helpers";
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import MultiSelect from "@/features/shared/components/ui/MultiSelect";
-import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import PeriodHeader from "@/features/shared/components/common/PeriodHeader";
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
@@ -34,7 +33,7 @@ import {
     DialogFooter,
 } from "@/features/shared/components/ui/dialog";
 import { Label } from "@/features/shared/components/ui/label";
-import { Asignacion, PlanSnapshot, PiezaSnapshot } from "@/types/data.types";
+import { Asignacion } from "@/types/data.types";
 
 // ============================================================================
 // Type Definitions
@@ -58,12 +57,11 @@ type TipoAsignacion = 'profesor' | 'estudiante' | null;
 export default function AsignacionesTab({
     externalSearchTerm = null,
     externalSemanaISO = null,
-    hideTitle = false,
     hideSearchAndWeek = false
 }: AsignacionesTabProps) {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const [internalSearchTerm, setInternalSearchTerm] = useState<string>('');
     const [estadoFilter, setEstadoFilter] = useState<EstadoFilter>('all');
     const [profesoresFilter, setProfesoresFilter] = useState<string[]>([]);
@@ -92,7 +90,7 @@ export default function AsignacionesTab({
     const semanaSeleccionadaISO = externalSemanaISO || internalSemanaISO;
 
     // Helper para convertir ISO a Date (compatibilidad con código existente)
-    const semanaSeleccionada = parseLocalDate(semanaSeleccionadaISO);
+    // const semanaSeleccionada = parseLocalDate(semanaSeleccionadaISO);
 
     const cambiarSemana = (direccion: number): void => {
         if (externalSemanaISO) return; // Controlled externally
@@ -314,7 +312,7 @@ export default function AsignacionesTab({
         }
     };
 
-    const exportarCSV = () => {
+    /* const exportarCSV = () => {
         const headers = ['Estudiante', 'Profesor', 'Pieza', 'Plan', 'Inicio', 'Estado', 'Semanas'];
         const rows = asignacionesFinales.map(a => {
             const alumno = usuarios.find(u => u.id === a.alumnoId);
@@ -338,7 +336,7 @@ export default function AsignacionesTab({
         link.download = `asignaciones_${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
         URL.revokeObjectURL(url);
-    };
+    }; */
 
     // Todos los profesores pueden ver todas las asignaciones (no se filtra por profesor)
     // Solo se filtran por estado y búsqueda
@@ -398,7 +396,7 @@ export default function AsignacionesTab({
                 const offsetWeeks = Math.floor(diffDays / 7);
 
                 return offsetWeeks >= 0 && offsetWeeks < numSemanas;
-            } catch (error) {
+            } catch (_error) {
                 return false;
             }
         });
@@ -524,7 +522,7 @@ export default function AsignacionesTab({
                                 i === offsetWeeks ? '●' : '○'
                             ).join(' ');
                         }
-                    } catch (error) { /* Intentionally swallowed */ }
+                    } catch (_error) { /* Intentionally swallowed */ }
                 }
 
                 return (
@@ -559,7 +557,7 @@ export default function AsignacionesTab({
                 }
                 try {
                     return <p className="text-sm">{parseLocalDate(a.semanaInicioISO).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</p>;
-                } catch (error) {
+                } catch (_error) {
                     return <p className="text-sm text-ui/60">-</p>;
                 }
             },

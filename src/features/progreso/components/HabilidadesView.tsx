@@ -29,6 +29,7 @@ import { useLevelConfig } from '@/features/admin/hooks/useLevelsConfig';
 import { cn } from '@/lib/utils';
 import { computeKeyCriteriaStatus, CriteriaStatusResult } from '@/utils/levelLogic';
 import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
+import { StudiaUser, RegistroSesion, RegistroBloque, FeedbackSemanal } from '@/features/shared/types/domain';
 
 interface HabilidadesViewProps {
     alumnosSeleccionados?: string[];
@@ -44,10 +45,10 @@ interface HabilidadesViewProps {
     customTitle?: string;
 
     // Data props for deduplication
-    xpData?: any[];
-    evaluations?: any[];
-    feedbacks?: any[];
-    users?: any[]; // Full user objects
+    xpData?: RegistroSesion[];
+    evaluations?: any[]; // EvaluacionTecnica not imported yet or in domain?
+    feedbacks?: FeedbackSemanal[];
+    users?: StudiaUser[]; // Full user objects
 }
 
 export default function HabilidadesView({
@@ -159,8 +160,8 @@ export default function HabilidadesView({
 
         // Use UNIFIED logic for Sonido/Cognicion (Stateful Latest)
         // This ensures mismatch between Radar and Card is impossible.
-        const unifiedSonido = radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Sonido')?.original || 0;
-        const unifiedCognicion = radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Cognición')?.original || 0;
+        const unifiedSonido = radarStatsRaw?.combinedData?.find((d: { subject: string }) => d.subject === 'Sonido')?.original || 0;
+        const unifiedCognicion = radarStatsRaw?.combinedData?.find((d: { subject: string }) => d.subject === 'Cognición')?.original || 0;
 
         return {
             // Use MAX to pick the best representation of ability
@@ -190,9 +191,9 @@ export default function HabilidadesView({
 
         console.log('[HabilidadesView] Rango Debug: xpData length', xpData.length);
 
-        xpData.forEach((session: any) => {
+        xpData.forEach((session: RegistroSesion) => {
             if (session.registrosBloque) {
-                session.registrosBloque.forEach((block: any) => {
+                session.registrosBloque.forEach((block: RegistroBloque) => {
                     const breakdown = calculateXPFromBlock(block);
 
                     acc.motricidad.earned += breakdown.motricidad.earned;
@@ -219,8 +220,8 @@ export default function HabilidadesView({
         };
 
         // B. Evaluation XP - Use the centralized hook logic via radarStatsRaw
-        const maxSonido = radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Sonido')?.original || 0;
-        const maxCognicion = radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Cognición')?.original || 0;
+        const maxSonido = radarStatsRaw?.combinedData?.find((d: { subject: string }) => d.subject === 'Sonido')?.original || 0;
+        const maxCognicion = radarStatsRaw?.combinedData?.find((d: { subject: string }) => d.subject === 'Cognición')?.original || 0;
 
         return {
             ...practiceResult,
@@ -274,7 +275,7 @@ export default function HabilidadesView({
         if (users && users.length > 0) {
             return users.find(u => u.id === singleId) || null;
         }
-        return usersFromHook.find((u: any) => u.id === singleId) || null;
+        return usersFromHook.find((u: StudiaUser) => u.id === singleId) || null;
     }, [isMultiple, singleId, users, usersFromHook]);
 
     // Profiles for multiple students (for level grouping)
@@ -289,7 +290,7 @@ export default function HabilidadesView({
     const fetchedMultipleProfiles = useMemo(() => {
         if (users && users.length > 0) return [];
         if (!isMultiple || effectiveIds.length === 0) return [];
-        return usersFromHook.filter((u: any) => effectiveIds.includes(u.id));
+        return usersFromHook.filter((u: StudiaUser) => effectiveIds.includes(u.id));
     }, [isMultiple, effectiveIds, usersFromHook, users]);
 
     const activeMultipleProfiles = (users && users.length > 0) ? multipleStudentProfiles : fetchedMultipleProfiles;
@@ -300,13 +301,13 @@ export default function HabilidadesView({
 
         const groups: Record<number, { level: number; label: string; students: { id: string; name: string }[] }> = {};
 
-        activeMultipleProfiles.forEach((profile: any) => {
+        activeMultipleProfiles.forEach((profile: StudiaUser) => {
             const level = profile.nivelTecnico || 1;
             if (!groups[level]) {
                 const label = level >= 10 ? "Profesional" : level >= 7 ? "Avanzado" : level >= 4 ? "Intermedio" : "Principiante";
                 groups[level] = { level, label, students: [] };
             }
-            const name = profile.fullName || profile.email?.split('@')[0] || 'Sin nombre';
+            const name = profile.full_name || profile.email?.split('@')[0] || 'Sin nombre';
             groups[level].students.push({ id: profile.id, name });
         });
 
@@ -451,11 +452,11 @@ export default function HabilidadesView({
     };
 
     const getSonidoValue = () => {
-        return radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Sonido')?.original ?? 0;
+        return radarStatsRaw?.combinedData?.find((d: { subject: string }) => d.subject === 'Sonido')?.original ?? 0;
     };
 
     const getCognicionValue = () => {
-        return radarStatsRaw?.combinedData?.find((d: any) => d.subject === 'Cognición')?.original ?? 0;
+        return radarStatsRaw?.combinedData?.find((d: { subject: string }) => d.subject === 'Cognición')?.original ?? 0;
     };
 
     // =========================================================================
@@ -675,7 +676,7 @@ export default function HabilidadesView({
                                             Nivel {currentLevel}
                                         </span>
                                         <span className="text-sm font-bold text-[var(--color-text-primary)]">
-                                            {studentProfile?.fullName || studentProfile?.email?.split('@')[0] || 'Estudiante'}
+                                            {studentProfile?.full_name || studentProfile?.email?.split('@')[0] || 'Estudiante'}
                                         </span>
                                     </>
                                 ) : (

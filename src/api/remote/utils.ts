@@ -140,13 +140,13 @@ export function snakeToCamel<T>(obj: any): T {
 /**
  * Convierte un objeto de camelCase a snake_case recursivamente
  */
-export function camelToSnake(obj: any): any {
+export function camelToSnake<T = any>(obj: any): T {
     if (obj === null || obj === undefined) {
         return obj;
     }
 
     if (Array.isArray(obj)) {
-        return obj.map(item => camelToSnake(item));
+        return obj.map(item => camelToSnake(item)) as unknown as T;
     }
 
     if (typeof obj !== 'object') {
@@ -160,7 +160,7 @@ export function camelToSnake(obj: any): any {
             result[snakeKey] = camelToSnake(obj[key]);
         }
     }
-    return result;
+    return result as T;
 }
 
 
