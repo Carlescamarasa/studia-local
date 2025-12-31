@@ -366,7 +366,7 @@ export default function ModalFeedbackSemanal({
 
         setIsSubmitting(true);
         try {
-            let finalMediaLinks = [...mediaLinks];
+            const finalMediaLinks = [...mediaLinks];
 
             // Handle Video Upload
             if (videoFile) {

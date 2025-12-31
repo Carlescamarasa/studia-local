@@ -337,7 +337,7 @@ export async function rebuildAllLocalData(options: RebuildOptions = {}) {
     }
 
     // 3. Crear pieza base si no existe
-    let piezas: Pieza[] = JSON.parse(localStorage.getItem('local_piezas') || '[]');
+    const piezas: Pieza[] = JSON.parse(localStorage.getItem('local_piezas') || '[]');
     let piezaBase = piezas.find(p => p.nombre === 'Seed – Estudio base');
 
     if (!piezaBase) {
@@ -362,7 +362,7 @@ export async function rebuildAllLocalData(options: RebuildOptions = {}) {
     }
 
     // 4. Crear bloques base si no existen
-    let bloques: Bloque[] = JSON.parse(localStorage.getItem('local_bloques') || '[]');
+    const bloques: Bloque[] = JSON.parse(localStorage.getItem('local_bloques') || '[]');
     const tiposRequeridos = ['CA', 'CB', 'TC', 'TM', 'FM', 'VC', 'AD'];
     const ejerciciosBase: Record<string, Bloque> = {};
 
@@ -407,7 +407,7 @@ export async function rebuildAllLocalData(options: RebuildOptions = {}) {
     console.log('✅ Bloques base creados');
 
     // 5. Crear plan base si no existe
-    let planes: Plan[] = JSON.parse(localStorage.getItem('local_planes') || '[]');
+    const planes: Plan[] = JSON.parse(localStorage.getItem('local_planes') || '[]');
     let planBase = planes.find(p => p.nombre === 'Seed – Plan Base');
 
     if (!planBase) {
@@ -512,10 +512,10 @@ export async function rebuildAllLocalData(options: RebuildOptions = {}) {
     // 6. Generar asignaciones y registros
     const hoy = new Date();
     const lunesActual = startOfMonday(hoy);
-    let asignaciones: Asignacion[] = JSON.parse(localStorage.getItem('local_asignaciones') || '[]');
-    let registrosSesion: RegistroSesion[] = JSON.parse(localStorage.getItem('local_registrosSesion') || '[]');
-    let registrosBloque: RegistroBloque[] = JSON.parse(localStorage.getItem('local_registrosBloque') || '[]');
-    let feedbacksSemanal: FeedbackSemanal[] = JSON.parse(localStorage.getItem('local_feedbacksSemanal') || '[]');
+    const asignaciones: Asignacion[] = JSON.parse(localStorage.getItem('local_asignaciones') || '[]');
+    const registrosSesion: RegistroSesion[] = JSON.parse(localStorage.getItem('local_registrosSesion') || '[]');
+    const registrosBloque: RegistroBloque[] = JSON.parse(localStorage.getItem('local_registrosBloque') || '[]');
+    const feedbacksSemanal: FeedbackSemanal[] = JSON.parse(localStorage.getItem('local_feedbacksSemanal') || '[]');
 
     let totalAsignaciones = 0;
     let totalSesiones = 0;

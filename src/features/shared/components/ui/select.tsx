@@ -17,13 +17,8 @@ const SelectTrigger = React.forwardRef<
     React.ElementRef<typeof SelectPrimitive.Trigger>,
     SelectTriggerProps
 >(({ className, children, ...props }, ref) => {
-    let tokens;
-    try {
-        tokens = useClassTokens();
-    } catch (error) {
-        // Si hay error, usar valores por defecto
-        tokens = null;
-    }
+    // Always call hooks unconditionally
+    const tokens = useClassTokens();
     const control = tokens?.control || 'ctrl-field';
 
     return (

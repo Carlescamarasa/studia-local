@@ -127,7 +127,7 @@ function QAVisualContent({ embedded = false }: QAVisualContentProps) {
       { pattern: /bg-orange-\d{3}/g, name: 'bg-orange-*' },
       { pattern: /text-orange-\d{3}/g, name: 'text-orange-*' },
       { pattern: /rounded-\[[\d.]+px\]/g, name: 'rounded-[*px]' },
-      { pattern: /bg-\#[0-9a-fA-F]{6}/g, name: 'bg-[#hex]' },
+      { pattern: /bg-#[0-9a-fA-F]{6}/g, name: 'bg-[#hex]' },
     ];
 
     bannedPatterns.forEach(({ pattern, name }) => {

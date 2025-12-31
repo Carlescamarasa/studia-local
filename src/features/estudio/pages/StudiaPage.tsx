@@ -189,6 +189,16 @@ function StudiaPageContent() {
         }
     }, [mostrarPiano, syncNow]);
 
+    // Try mode: navigate back when session finishes
+    useEffect(() => {
+        if (sesionFinalizada && isTryMode) {
+            const timer = setTimeout(() => {
+                navigate(-1);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [sesionFinalizada, isTryMode, navigate]);
+
     // Timing state
     const [registroSesionId, setRegistroSesionId] = useState<string | null>(null);
     const [timestampInicio, setTimestampInicio] = useState<number | null>(null);
@@ -852,14 +862,7 @@ function StudiaPageContent() {
     if (sesionFinalizada) {
         // In try mode, skip feedback modal and navigate back directly
         if (isTryMode) {
-            // Use effect to navigate back after state settles
-            React.useEffect(() => {
-                const timer = setTimeout(() => {
-                    navigate(-1);
-                }, 100);
-                return () => clearTimeout(timer);
-            }, []);
-
+            // Navigation is handled by useEffect below
             return (
                 <div className="min-h-screen bg-background flex items-center justify-center">
                     <LoadingSpinner size="xl" text="Finalizando modo prueba..." />

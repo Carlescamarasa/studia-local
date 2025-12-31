@@ -207,7 +207,7 @@ export function LocalDataProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Normalizar usuarios asegurando que todos tengan nombreCompleto
-        let usuarios = (stored.usuarios?.length ? stored.usuarios : localUsers) as any[];
+        const usuarios = (stored.usuarios?.length ? stored.usuarios : localUsers) as any[];
         const { usuarios: normalizedUsuarios, needsUpdate } = migrateUsers(usuarios);
 
         // Si hubo cambios, guardar de vuelta en localStorage

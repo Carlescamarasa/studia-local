@@ -90,6 +90,34 @@ export default function SessionContentView({
     expandedRondas = null,
     onToggleRonda = undefined
 }: SessionContentViewProps) {
+    // Internal state for uncontrolled mode - must be declared before any returns
+    const [internalExpanded, setInternalExpanded] = useState<Record<string, boolean>>(() => {
+        if (!sesion || expandedRondas) return {};
+        const expandedMap: Record<string, boolean> = {};
+        const seq = getSecuencia(ensureRondaIds(sesion)) as SequenceItem[];
+        seq.forEach((item) => {
+            if (item.kind === "RONDA" && item.id) {
+                expandedMap[item.id] = true;
+            }
+        });
+        return expandedMap;
+    });
+
+    // Sync internal state if session changes and not controlled
+    useEffect(() => {
+        if (!sesion || expandedRondas) return;
+        const S = ensureRondaIds(sesion);
+        const seq = getSecuencia(S) as SequenceItem[];
+        const expandedMap: Record<string, boolean> = {};
+        seq.forEach((item) => {
+            if (item.kind === "RONDA" && item.id) {
+                expandedMap[item.id] = true;
+            }
+        });
+        setInternalExpanded(expandedMap);
+    }, [sesion, expandedRondas]);
+
+    // Early return after hooks
     if (!sesion) return null;
 
     const S = ensureRondaIds(sesion);
@@ -103,33 +131,6 @@ export default function SessionContentView({
         const duracionSeg = dbBloque?.duracionSeg || dbBloque?.duracion_seg || b.duracionSeg || 0;
         bloquesMap.set(b.code, { ...b, variations, duracionSeg });
     });
-
-    // Internal state for uncontrolled mode
-    const [internalExpanded, setInternalExpanded] = useState<Record<string, boolean>>(() => {
-        if (expandedRondas) return {};
-        const expandedMap: Record<string, boolean> = {};
-        const seq = getSecuencia(ensureRondaIds(sesion)) as SequenceItem[];
-        seq.forEach((item) => {
-            if (item.kind === "RONDA" && item.id) {
-                expandedMap[item.id] = true;
-            }
-        });
-        return expandedMap;
-    });
-
-    // Sync internal state if session changes and not controlled
-    useEffect(() => {
-        if (expandedRondas) return;
-        const S = ensureRondaIds(sesion);
-        const seq = getSecuencia(S) as SequenceItem[];
-        const expandedMap: Record<string, boolean> = {};
-        seq.forEach((item) => {
-            if (item.kind === "RONDA" && item.id) {
-                expandedMap[item.id] = true;
-            }
-        });
-        setInternalExpanded(expandedMap);
-    }, [sesion, expandedRondas]);
 
     const isControlled = expandedRondas !== null;
     const currentExpanded = isControlled ? expandedRondas : internalExpanded;

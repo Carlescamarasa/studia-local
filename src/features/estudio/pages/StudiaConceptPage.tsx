@@ -372,7 +372,7 @@ export default function StudiaConceptPage() {
         // Shuffle Review
         const shuffled = [...reviewPool].sort(() => 0.5 - Math.random());
 
-        for (let item of shuffled) {
+        for (const item of shuffled) {
             if (currentMin + item.dur <= dailyBudget) {
                 reviewSelected.push(item);
                 currentMin += item.dur;

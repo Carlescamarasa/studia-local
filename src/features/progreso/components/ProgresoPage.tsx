@@ -814,7 +814,7 @@ function ProgresoPageContent() {
     };
 
     const handleEditFeedback = (feedback: any) => {
-        let mondayISO = feedback.semanaInicioISO;
+        const mondayISO = feedback.semanaInicioISO;
         const monday = parseLocalDate(mondayISO);
         const endWeek = new Date(monday);
         endWeek.setDate(endWeek.getDate() + 6);

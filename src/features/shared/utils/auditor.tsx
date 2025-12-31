@@ -10,7 +10,7 @@ const BANNED_TW_ORANGE = [
   "from-orange-", "to-orange-", "via-orange-", "ring-orange-",
   "fill-orange-", "stroke-orange-", "hover:bg-orange-", "hover:text-orange-"
 ];
-const BANNED_GRADIENT_HEX = /from-\[\#?[0-9A-Fa-f]{3,6}\]|to-\[\#?[0-9A-Fa-f]{3,6}\]|via-\[\#?[0-9A-Fa-f]{3,6}\]/g;
+const BANNED_GRADIENT_HEX = /from-\[#?[0-9A-Fa-f]{3,6}\]|to-\[#?[0-9A-Fa-f]{3,6}\]|via-\[#?[0-9A-Fa-f]{3,6}\]/g;
 
 // Radios permitidos: lg, xl, 2xl, full + variantes direccionales
 const ALLOWED_RADIUS_PATTERN = /^rounded(-([trbl]|t[lr]|b[lr]))?(-(lg|xl|2xl|full))?$/;
@@ -127,7 +127,7 @@ export async function runDesignAudit(): Promise<AuditReport> {
     // 4) Radios - ahora con patrón
     lines.forEach((ln, i) => {
       if (ln.includes("rounded-")) {
-        const classes = ln.match(/rounded(-([trbl]|t[lr]|b[lr]))?(-([\w\[\]-]+))?/g) || [];
+        const classes = ln.match(/rounded(-([trbl]|t[lr]|b[lr]))?(-([\w[\]-]+))?/g) || [];
         classes.forEach((c) => {
           if (!ALLOWED_RADIUS_PATTERN.test(c) && !c.includes('[')) {
             add("radiusInconsistent", path, i + 1, ln.trim(), { value: c });

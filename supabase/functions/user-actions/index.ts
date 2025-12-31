@@ -121,14 +121,14 @@ serve(async (req) => {
         .select('id, email')
         .eq('email', email)
         .maybeSingle();
-      
+
       if (profileError || !profiles) {
         return new Response(
           JSON.stringify({ error: 'Usuario no encontrado' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
+
       // Obtener el usuario de auth por ID del perfil
       const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(profiles.id);
       if (userError || !userData?.user) {
@@ -178,7 +178,7 @@ serve(async (req) => {
 
     // Ejecutar la acción solicitada
     switch (action) {
-      case 'magic_link':
+      case 'magic_link': {
         // Enviar enlace mágico (OTP)
         // Usar signInWithOtp del cliente normal con service role (envía email automáticamente)
         const { error: magicLinkError } = await adminClient.auth.signInWithOtp({
@@ -191,8 +191,9 @@ serve(async (req) => {
           error = magicLinkError;
         }
         break;
+      }
 
-      case 'reset_password':
+      case 'reset_password': {
         // Enviar email de recuperación de contraseña
         // Usar el cliente normal con service role para resetPasswordForEmail (envía email automáticamente)
         const { error: resetError } = await adminClient.auth.resetPasswordForEmail(targetUser.email!, {
@@ -202,8 +203,9 @@ serve(async (req) => {
           error = resetError;
         }
         break;
+      }
 
-      case 'resend_invitation':
+      case 'resend_invitation': {
         // Reenviar invitación usando inviteUserByEmail (envía email automáticamente)
         // Usar URL de invitación en lugar de reset-password
         const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
@@ -216,6 +218,7 @@ serve(async (req) => {
           error = inviteError;
         }
         break;
+      }
 
       default:
         return new Response(

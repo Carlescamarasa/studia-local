@@ -5,7 +5,7 @@ import * as path from 'path';
 
 // Manual .env.local parsing since dotenv is not available
 const envPath = path.resolve(process.cwd(), '.env.local');
-let envConfig: Record<string, string> = {};
+const envConfig: Record<string, string> = {};
 
 if (fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf-8');

@@ -223,7 +223,7 @@ function SoporteProfPageContent() {
     setUploadingVideo(true);
 
     try {
-      let finalMediaLinks = [...mediaLinks]; // Incluir enlaces multimedia manuales
+      const finalMediaLinks = [...mediaLinks]; // Incluir enlaces multimedia manuales
 
       // Si hay vídeo, subirlo primero
       if (videoFile) {

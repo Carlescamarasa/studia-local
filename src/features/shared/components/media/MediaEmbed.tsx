@@ -150,7 +150,7 @@ export default function MediaEmbed({ url, className = '', open = false }: MediaE
                 </>
             );
 
-        case MediaKind.PDF:
+        case MediaKind.PDF: {
             // Add parameters to hide native PDF viewer toolbar
             const pdfUrlWithParams = `${media.embedUrl}#toolbar=0&navpanes=0&scrollbar=1`;
             return (
@@ -197,6 +197,7 @@ export default function MediaEmbed({ url, className = '', open = false }: MediaE
                     />
                 </>
             );
+        }
 
         case MediaKind.UNKNOWN:
         default:

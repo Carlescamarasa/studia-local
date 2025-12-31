@@ -501,6 +501,9 @@ function LayoutContent() {
 
   // Debug: verificar el rol calculado (desactivado)
 
+  // Modal state - must be declared before any early returns
+  const [perfilModalOpen, setPerfilModalOpen] = useState(false);
+
   if (isLoading) {
     return (
       <LoadingSpinner
@@ -580,8 +583,6 @@ function LayoutContent() {
     // Redirigir a login siempre
     navigate("/login", { replace: true });
   };
-
-  const [perfilModalOpen, setPerfilModalOpen] = useState(false);
 
   const goProfile = () => {
     if (isMobile) closeSidebar();
@@ -1159,37 +1160,7 @@ function LayoutContent() {
               For mobile, we still need a trigger if the header doesn't have one.
               Assuming existing header has one.
            */}
-          {/* Legacy floating button removed for desktop as we have rail. Keeping logic just in case but commenting out or creating conditional */}
-          {false && !isMobile && !abierto && (
-            <div
-              className="fixed z-[95] transition-all duration-200"
-              style={{
-                left: 0,
-                top: 88,
-              }}
-            >
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={safeToggle}
-                      className="rounded-xl rounded-l-none border-l-0 shadow-card bg-card hover:bg-[var(--color-surface-muted)] h-12 w-8 px-0"
-                      aria-label="Mostrar menú (Ctrl/⌘+M)"
-                      aria-controls="sidebar"
-                      aria-expanded={false}
-                    >
-                      <PanelLeft className="w-4 h-4 text-[var(--color-text-primary)]" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>Mostrar menú (Ctrl/⌘+M)</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          )}
+          {/* Legacy floating button for desktop removed - sidebar always visible in rail mode */}
 
           {/* Área de contenido - full-width container, pages handle their own padding */}
           <div className="flex-1">

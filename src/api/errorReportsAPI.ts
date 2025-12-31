@@ -123,7 +123,7 @@ export async function listErrorReports(filters?: {
 
   // OPTIMIZACIÓN: Obtener todos los perfiles de autores en una sola query
   const createdByIds = [...new Set((data || []).map(r => r.created_by).filter(Boolean))];
-  let profilesMap = new Map<string, { full_name: string }>();
+  const profilesMap = new Map<string, { full_name: string }>();
 
   if (createdByIds.length > 0) {
     const { data: profilesData, error: profilesError } = await supabase
@@ -172,7 +172,7 @@ export async function getErrorReport(id: string): Promise<ErrorReport | null> {
   }
 
   // OPTIMIZACIÓN: Intentar obtener el perfil desde la caché de usuarios primero
-  let reportWithName = { ...data, created_by_profile: null };
+  const reportWithName = { ...data, created_by_profile: null };
   if (data?.created_by) {
     try {
       // Intentar obtener desde localDataClient (que usa la caché de remoteDataAPI)

@@ -163,7 +163,7 @@ async function getEmailsForUsers(userIds: string[]): Promise<Map<string, string>
 
 // Caché en memoria para usuarios ya cargados
 // Esto evita queries individuales cuando se llama a User.get() después de User.list()
-let usersCache: Map<string, any> = new Map();
+const usersCache: Map<string, any> = new Map();
 let usersCacheTimestamp: number = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
@@ -273,7 +273,7 @@ export function createRemoteDataAPI(): AppDataAPI {
         });
 
         // Si hay profesores asignados que no están en la lista, obtenerlos en una sola query
-        let profesoresMap = new Map<string, any>();
+        const profesoresMap = new Map<string, any>();
         if (profesorIdsSet.size > 0) {
           try {
             const profesorIdsArray = Array.from(profesorIdsSet);

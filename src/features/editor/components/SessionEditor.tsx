@@ -785,11 +785,11 @@ export default function SessionEditor({ sesion, pieza, piezaSnapshot, alumnoId, 
   };
 
   const calcularTiempoTotal = () => {
-    let tiempoEjercicios = formData.bloques
+    const tiempoEjercicios = formData.bloques
       .filter(b => b.tipo !== 'AD')
       .reduce((total, b) => total + (b.duracionSeg || 0), 0);
 
-    let tiempoRondas = formData.rondas.reduce((total, ronda) => {
+    const tiempoRondas = formData.rondas.reduce((total, ronda) => {
       const tiempoRonda = ronda.bloques.reduce((sum, code) => {
         const bloque = formData.bloques.find(b => b.code === code);
         if (bloque && bloque.tipo !== 'AD') {

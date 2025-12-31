@@ -155,7 +155,7 @@ export const datasets = [
                         // Logic below handles "elementos" as the resolved array of objects { nombre, mediaLinks }
 
                         const nivelNormalizado = (nivel || 'principiante').toLowerCase();
-                        let existente = piezas.find(p => p.nombre === nombre);
+                        const existente = piezas.find(p => p.nombre === nombre);
 
                         // Si 'elementos' viene del resolver, tendrá { resolved: [...], missing: [...] } OJO
                         // El pipeline pone en row['ejercicios'] el resultado del resolver.

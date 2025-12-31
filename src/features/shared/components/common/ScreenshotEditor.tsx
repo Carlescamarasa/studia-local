@@ -160,7 +160,7 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }: Screens
         ctx.stroke();
         break;
 
-      case TOOLS.ARROW:
+      case TOOLS.ARROW: {
         const dx = end.x - start.x;
         const dy = end.y - start.y;
         const angle = Math.atan2(dy, dx);
@@ -174,13 +174,15 @@ export default function ScreenshotEditor({ imageUrl, onSave, onCancel }: Screens
         ctx.lineTo(end.x - headlen * Math.cos(angle + Math.PI / 6), end.y - headlen * Math.sin(angle + Math.PI / 6));
         ctx.stroke();
         break;
+      }
 
-      case TOOLS.CIRCLE:
+      case TOOLS.CIRCLE: {
         const radius = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
         ctx.beginPath();
         ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
         ctx.stroke();
         break;
+      }
 
       case TOOLS.RECT:
         ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
