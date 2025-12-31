@@ -1,22 +1,27 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, RefObject } from 'react';
+
+interface UseDockToFooterOffsetOptions {
+    anchorRef: RefObject<HTMLElement>;
+    cssVarName?: string;
+    enabled?: boolean;
+}
 
 /**
  * Hook to synchronize a CSS custom property with the distance from 
  * viewport bottom to an anchor element's top edge.
  * 
  * Uses requestAnimationFrame for frame-by-frame tracking during transitions.
- * 
- * @param {Object} options
- * @param {React.RefObject} options.anchorRef - Ref to the anchor element (chevron/footer top bar)
- * @param {string} [options.cssVarName='--footer-offset'] - CSS variable name to update
- * @param {boolean} [options.enabled=true] - Whether to enable the hook
  */
-export function useDockToFooterOffset({ anchorRef, cssVarName = '--footer-offset', enabled = true }) {
-    const rafIdRef = useRef(null);
+export function useDockToFooterOffset({
+    anchorRef,
+    cssVarName = '--footer-offset',
+    enabled = true
+}: UseDockToFooterOffsetOptions) {
+    const rafIdRef = useRef<number | null>(null);
     const isTrackingRef = useRef(false);
 
     // Calculate offset from viewport bottom to anchor's top
-    const calculateOffset = useCallback(() => {
+    const calculateOffset = useCallback((): number => {
         if (!anchorRef?.current) return 0;
 
         const anchorRect = anchorRef.current.getBoundingClientRect();
@@ -30,24 +35,24 @@ export function useDockToFooterOffset({ anchorRef, cssVarName = '--footer-offset
     }, [anchorRef]);
 
     // Update the CSS custom property
-    const updateCSSVar = useCallback((offset) => {
+    const updateCSSVar = useCallback((offset: number): void => {
         document.documentElement.style.setProperty(cssVarName, `${offset}px`);
     }, [cssVarName]);
 
     // Single sync - calculate and update immediately
-    const syncNow = useCallback(() => {
-        if (!enabled) return;
+    const syncNow = useCallback((): number => {
+        if (!enabled) return 0;
         const offset = calculateOffset();
         updateCSSVar(offset);
         return offset;
     }, [enabled, calculateOffset, updateCSSVar]);
 
     // Start rAF loop for frame-by-frame tracking during transitions
-    const startTracking = useCallback(() => {
+    const startTracking = useCallback((): void => {
         if (isTrackingRef.current) return;
         isTrackingRef.current = true;
 
-        const tick = () => {
+        const tick = (): void => {
             if (!isTrackingRef.current) return;
 
             const offset = calculateOffset();
@@ -60,7 +65,7 @@ export function useDockToFooterOffset({ anchorRef, cssVarName = '--footer-offset
     }, [calculateOffset, updateCSSVar]);
 
     // Stop the rAF loop
-    const stopTracking = useCallback(() => {
+    const stopTracking = useCallback((): void => {
         isTrackingRef.current = false;
         if (rafIdRef.current) {
             cancelAnimationFrame(rafIdRef.current);
@@ -71,14 +76,14 @@ export function useDockToFooterOffset({ anchorRef, cssVarName = '--footer-offset
     }, [syncNow]);
 
     // Attach transition listeners to the footer element
-    const attachTransitionListeners = useCallback((footerElement) => {
+    const attachTransitionListeners = useCallback((footerElement: HTMLElement | null): (() => void) => {
         if (!footerElement) return () => { };
 
-        const handleTransitionStart = () => {
+        const handleTransitionStart = (): void => {
             startTracking();
         };
 
-        const handleTransitionEnd = (e) => {
+        const handleTransitionEnd = (e: TransitionEvent): void => {
             // Only stop if the transition is on a relevant property
             if (e.propertyName === 'height' || e.propertyName === 'max-height' || e.propertyName === 'transform') {
                 stopTracking();
@@ -107,7 +112,7 @@ export function useDockToFooterOffset({ anchorRef, cssVarName = '--footer-offset
     useEffect(() => {
         if (!enabled) return;
 
-        const handleResize = () => {
+        const handleResize = (): void => {
             syncNow();
         };
 

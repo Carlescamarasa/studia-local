@@ -111,7 +111,8 @@ export async function listErrorReports(filters?: {
 
   if (error) {
     // No loguear errores CORS o de autenticación (son esperados si la sesión expiró)
-    if (error.code !== 'PGRST301' && error.status !== 401 && error.status !== 403) {
+    const errorWithStatus = error as { status?: number; code?: string; message?: string };
+    if (error.code !== 'PGRST301' && errorWithStatus.status !== 401 && errorWithStatus.status !== 403) {
       console.error('[errorReportsAPI] Error listando reportes:', {
         error: error?.message || error,
         code: error?.code,

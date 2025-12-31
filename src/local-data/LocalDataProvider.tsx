@@ -1,30 +1,41 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { localUsers } from './localUsers';
 import { setLocalDataRef } from '@/api/localDataClient';
-import { loadFromStorage, bootstrapFromSnapshot, saveToStorage } from '@/data/localStorageClient';
+import { loadFromStorage, bootstrapFromSnapshot, saveToStorage, StorageData } from '@/data/localStorageClient';
 import { rebuildAllLocalData } from './rebuildLocalData';
 import { supabase } from '@/lib/supabaseClient';
+import {
+  Asignacion,
+  Bloque,
+  FeedbackSemanal,
+  Pieza,
+  Plan,
+  RegistroBloque,
+  RegistroSesion,
+  EventoCalendario,
+  Usuario
+} from '@/types/data.types';
 
 interface LocalDataContextType {
-  asignaciones: any[];
-  bloques: any[];
-  feedbacksSemanal: any[];
-  piezas: any[];
-  planes: any[];
-  registrosBloque: any[];
-  registrosSesion: any[];
-  eventosCalendario: any[];
-  usuarios: any[];
+  asignaciones: Asignacion[];
+  bloques: Bloque[];
+  feedbacksSemanal: FeedbackSemanal[];
+  piezas: Pieza[];
+  planes: Plan[];
+  registrosBloque: RegistroBloque[];
+  registrosSesion: RegistroSesion[];
+  eventosCalendario: EventoCalendario[];
+  usuarios: Usuario[];
   loading: boolean;
-  getUsuarioById: (id: string) => any;
-  getAsignaciones: () => any[];
-  getBloques: () => any[];
-  getFeedbacksSemanal: () => any[];
-  getPiezas: () => any[];
-  getPlanes: () => any[];
-  getRegistrosBloque: () => any[];
-  getRegistrosSesion: () => any[];
-  getUsuarios: () => any[];
+  getUsuarioById: (id: string) => Usuario | undefined;
+  getAsignaciones: () => Asignacion[];
+  getBloques: () => Bloque[];
+  getFeedbacksSemanal: () => FeedbackSemanal[];
+  getPiezas: () => Pieza[];
+  getPlanes: () => Plan[];
+  getRegistrosBloque: () => RegistroBloque[];
+  getRegistrosSesion: () => RegistroSesion[];
+  getUsuarios: () => Usuario[];
 }
 
 const LocalDataContext = createContext<LocalDataContextType | null>(null);
@@ -32,12 +43,12 @@ const LocalDataContext = createContext<LocalDataContextType | null>(null);
 /**
  * Normaliza un usuario asegurando que tenga nombreCompleto
  */
-function normalizeUser(user: any) {
+function normalizeUser(user: any): Usuario {
   if (!user) return user;
 
   // Si ya tiene nombreCompleto, retornar tal cual
   if (user.nombreCompleto && user.nombreCompleto.trim()) {
-    return user;
+    return user as Usuario;
   }
 
   // Intentar generar nombreCompleto desde otros campos
@@ -78,7 +89,7 @@ function normalizeUser(user: any) {
     ...user,
     nombreCompleto: nombreCompleto,
     full_name: finalFullName, // full_name es la fuente de verdad
-  };
+  } as Usuario;
 }
 
 /**
@@ -86,7 +97,7 @@ function normalizeUser(user: any) {
  */
 function migrateUsers(usuarios: any[]) {
   if (!Array.isArray(usuarios)) {
-    return { usuarios: usuarios || [], needsUpdate: false };
+    return { usuarios: (usuarios || []) as Usuario[], needsUpdate: false };
   }
 
   const normalized = usuarios.map(normalizeUser);
@@ -102,7 +113,7 @@ function migrateUsers(usuarios: any[]) {
 export function LocalDataProvider({ children }: { children: React.ReactNode }) {
   const disableLocalData = import.meta.env.VITE_DISABLE_LOCAL_DATA === 'true';
 
-  const [data, setData] = useState({
+  const [data, setData] = useState<Omit<LocalDataContextType, 'getUsuarioById' | 'getAsignaciones' | 'getBloques' | 'getFeedbacksSemanal' | 'getPiezas' | 'getPlanes' | 'getRegistrosBloque' | 'getRegistrosSesion' | 'getUsuarios'>>({
     asignaciones: [],
     bloques: [],
     feedbacksSemanal: [],
@@ -111,7 +122,7 @@ export function LocalDataProvider({ children }: { children: React.ReactNode }) {
     registrosBloque: [],
     registrosSesion: [],
     eventosCalendario: [],
-    usuarios: disableLocalData ? [] : localUsers,
+    usuarios: disableLocalData ? [] : (localUsers as unknown as Usuario[]),
     loading: !disableLocalData,
   });
 
@@ -142,7 +153,7 @@ export function LocalDataProvider({ children }: { children: React.ReactNode }) {
         const hasSupabaseSession = !!session;
 
         // 1. Intentar cargar desde la nueva estructura unificada en localStorage
-        let stored = loadFromStorage();
+        let stored: StorageData | null = loadFromStorage();
 
         // 2. Si no existe STORAGE_KEY y NO hay sesión de Supabase, inicializar usando rebuildLocalData como seed
         // (Solo en modo local, no cuando hay autenticación de Supabase)
@@ -165,6 +176,7 @@ export function LocalDataProvider({ children }: { children: React.ReactNode }) {
         } else if (!stored && hasSupabaseSession) {
           // Si hay sesión de Supabase pero no hay datos locales, usar estructura vacía
           stored = {
+            version: 1, // Default version
             asignaciones: [],
             bloques: [],
             feedbacksSemanal: [],
@@ -174,27 +186,45 @@ export function LocalDataProvider({ children }: { children: React.ReactNode }) {
             registrosSesion: [],
             eventosCalendario: [],
             usuarios: localUsers,
-          };
+            evaluacionesTecnicas: []
+          } as StorageData;
+        }
+
+        if (!stored) {
+          stored = {
+            version: 1,
+            asignaciones: [],
+            bloques: [],
+            feedbacksSemanal: [],
+            piezas: [],
+            planes: [],
+            registrosBloque: [],
+            registrosSesion: [],
+            eventosCalendario: [],
+            usuarios: localUsers,
+            evaluacionesTecnicas: []
+          } as StorageData;
         }
 
         // Normalizar usuarios asegurando que todos tengan nombreCompleto
-        let usuarios = stored.usuarios?.length ? stored.usuarios : localUsers;
+        let usuarios = (stored.usuarios?.length ? stored.usuarios : localUsers) as any[];
         const { usuarios: normalizedUsuarios, needsUpdate } = migrateUsers(usuarios);
 
         // Si hubo cambios, guardar de vuelta en localStorage
         if (needsUpdate && stored) {
+          // @ts-ignore
           saveToStorage({ usuarios: normalizedUsuarios });
         }
 
         const loadedData = {
-          asignaciones: stored.asignaciones || [],
-          bloques: stored.bloques || [],
-          feedbacksSemanal: stored.feedbacksSemanal || [],
-          piezas: stored.piezas || [],
-          planes: stored.planes || [],
-          registrosBloque: stored.registrosBloque || [],
-          registrosSesion: stored.registrosSesion || [],
-          eventosCalendario: stored.eventosCalendario || [],
+          asignaciones: (stored.asignaciones || []) as Asignacion[],
+          bloques: (stored.bloques || []) as Bloque[],
+          feedbacksSemanal: (stored.feedbacksSemanal || []) as FeedbackSemanal[],
+          piezas: (stored.piezas || []) as Pieza[],
+          planes: (stored.planes || []) as Plan[],
+          registrosBloque: (stored.registrosBloque || []) as RegistroBloque[],
+          registrosSesion: (stored.registrosSesion || []) as RegistroSesion[],
+          eventosCalendario: (stored.eventosCalendario || []) as EventoCalendario[],
           usuarios: normalizedUsuarios,
           loading: false,
         };
@@ -209,7 +239,7 @@ export function LocalDataProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadData();
-  }, []);
+  }, [disableLocalData]);
 
   const getUsuarioById = (id: string) => {
     return data.usuarios.find(u => u.id === id);

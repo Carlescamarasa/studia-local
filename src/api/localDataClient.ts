@@ -625,14 +625,14 @@ export const localDataClient: LocalDataClient = {
                 let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())];
                 const bloques = localDataRef.registrosBloque || [];
 
-                sesiones = sesiones.map(s => ({
+                sesiones = sesiones.map((s: any) => ({
                     ...s,
-                    registrosBloque: bloques.filter(b => b.registroSesionId === s.id)
+                    registrosBloque: bloques.filter((b: any) => b.registroSesionId === s.id)
                 }));
 
                 if (sort.startsWith('-')) {
                     const field = sort.slice(1);
-                    sesiones.sort((a, b) => {
+                    sesiones.sort((a: any, b: any) => {
                         if (a[field] < b[field]) return 1;
                         if (a[field] > b[field]) return -1;
                         return 0;
@@ -651,9 +651,10 @@ export const localDataClient: LocalDataClient = {
                 if (!sesion) return null;
 
                 const bloques = localDataRef.registrosBloque || [];
+                const sesionWithId = sesion as any;
                 return {
-                    ...sesion,
-                    registrosBloque: bloques.filter(b => b.registroSesionId === sesion.id)
+                    ...sesionWithId,
+                    registrosBloque: bloques.filter((b: any) => b.registroSesionId === sesionWithId.id)
                 };
             },
             filter: async (filters = {}, limit = null) => {
@@ -664,13 +665,13 @@ export const localDataClient: LocalDataClient = {
 
                 let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())];
                 Object.keys(filters).forEach(key => {
-                    sesiones = sesiones.filter(s => s[key] === filters[key]);
+                    sesiones = sesiones.filter((s: any) => s[key] === (filters as Record<string, unknown>)[key]);
                 });
 
                 const bloques = localDataRef.registrosBloque || [];
-                sesiones = sesiones.map(s => ({
+                sesiones = sesiones.map((s: any) => ({
                     ...s,
-                    registrosBloque: bloques.filter(b => b.registroSesionId === s.id)
+                    registrosBloque: bloques.filter((b: any) => b.registroSesionId === s.id)
                 }));
 
                 if (limit) sesiones = sesiones.slice(0, limit);

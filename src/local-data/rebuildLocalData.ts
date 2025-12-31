@@ -757,7 +757,8 @@ export async function rebuildAllLocalData(options: RebuildOptions = {}) {
       registrosBloque,
       registrosSesion,
       usuarios: localUsers as any, // Cast if needed
-      evaluacionesTecnicas: []
+      evaluacionesTecnicas: [],
+      eventosCalendario: [],
     };
     // @ts-ignore
     setLocalDataRef({ ...loadedData, loading: false });
@@ -816,6 +817,7 @@ export async function rebuildLocalData() {
       registrosBloque: JSON.parse(localStorage.getItem('local_registrosBloque') || '[]'),
       registrosSesion: JSON.parse(localStorage.getItem('local_registrosSesion') || '[]'),
       evaluacionesTecnicas: JSON.parse(localStorage.getItem('local_evaluacionesTecnicas') || '[]'),
+      eventosCalendario: JSON.parse(localStorage.getItem('local_eventosCalendario') || '[]'),
     };
 
     console.log(`📊 Datos cargados:`);

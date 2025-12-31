@@ -1,6 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { listErrorReports } from '@/api/errorReportsAPI';
 import { useEffectiveUser } from '@/providers/EffectiveUserProvider';
+import { supabase } from '@/lib/supabaseClient';
+
+interface ErrorWithDetails {
+  message?: string;
+  code?: string;
+  status?: number;
+}
 
 /**
  * Hook para obtener los conteos de reportes de errores
@@ -21,8 +28,7 @@ export function useErrorReportsCount() {
       }
 
       try {
-        const { localDataClient } = await import('@/api/localDataClient');
-        const { data: { session } } = await localDataClient.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) {
           return { nuevos: 0, enRevision: 0 };
         }
@@ -41,11 +47,12 @@ export function useErrorReportsCount() {
           enRevision: Array.isArray(enRevision) ? enRevision.length : 0
         };
       } catch (error) {
-        if (error?.message?.includes('CORS') ||
-          error?.message?.includes('NetworkError') ||
-          error?.code === 'PGRST301' ||
-          error?.status === 401 ||
-          error?.status === 403) {
+        const err = error as ErrorWithDetails;
+        if (err?.message?.includes('CORS') ||
+          err?.message?.includes('NetworkError') ||
+          err?.code === 'PGRST301' ||
+          err?.status === 401 ||
+          err?.status === 403) {
           return { nuevos: 0, enRevision: 0 };
         }
         console.error('[useErrorReportsCount] Error obteniendo conteos:', error);

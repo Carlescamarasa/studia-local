@@ -2,9 +2,8 @@
 // Verifica que todas las referencias entre entidades sean válidas
 
 import { localUsers } from './localUsers';
-import { loadFromStorage } from '@/data/localStorageClient';
+import { loadFromStorage, StorageData } from '@/data/localStorageClient';
 import {
-  LocalData,
   Asignacion,
   Bloque,
   FeedbackSemanal,
@@ -36,16 +35,17 @@ export function verifyLocalData(): ValidationReport {
 
   try {
     // Cargar todos los datos desde studia_data o usar arrays vacíos
-    const storage = loadFromStorage() || {};
-    // @ts-ignore
-    const usuarios: Usuario[] = storage.usuarios?.length ? storage.usuarios : localUsers;
-    const asignaciones: Asignacion[] = Array.isArray(storage.asignaciones) ? storage.asignaciones : [];
-    const bloques: Bloque[] = Array.isArray(storage.bloques) ? storage.bloques : [];
-    const feedbacksSemanal: FeedbackSemanal[] = Array.isArray(storage.feedbacksSemanal) ? storage.feedbacksSemanal : [];
-    const piezas: Pieza[] = Array.isArray(storage.piezas) ? storage.piezas : [];
-    const planes: Plan[] = Array.isArray(storage.planes) ? storage.planes : [];
-    const registrosBloque: RegistroBloque[] = Array.isArray(storage.registrosBloque) ? storage.registrosBloque : [];
-    const registrosSesion: RegistroSesion[] = Array.isArray(storage.registrosSesion) ? storage.registrosSesion : [];
+    const storage = (loadFromStorage() || {}) as Partial<StorageData>;
+
+    // cast to unknown first to avoid overlap errors if types don't match perfectly yet
+    const usuarios: Usuario[] = (storage.usuarios?.length ? storage.usuarios : localUsers) as unknown as Usuario[];
+    const asignaciones: Asignacion[] = (Array.isArray(storage.asignaciones) ? storage.asignaciones : []) as unknown as Asignacion[];
+    const bloques: Bloque[] = (Array.isArray(storage.bloques) ? storage.bloques : []) as unknown as Bloque[];
+    const feedbacksSemanal: FeedbackSemanal[] = (Array.isArray(storage.feedbacksSemanal) ? storage.feedbacksSemanal : []) as unknown as FeedbackSemanal[];
+    const piezas: Pieza[] = (Array.isArray(storage.piezas) ? storage.piezas : []) as unknown as Pieza[];
+    const planes: Plan[] = (Array.isArray(storage.planes) ? storage.planes : []) as unknown as Plan[];
+    const registrosBloque: RegistroBloque[] = (Array.isArray(storage.registrosBloque) ? storage.registrosBloque : []) as unknown as RegistroBloque[];
+    const registrosSesion: RegistroSesion[] = (Array.isArray(storage.registrosSesion) ? storage.registrosSesion : []) as unknown as RegistroSesion[];
 
     // Estadísticas básicas
     report.stats = {
@@ -79,7 +79,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Asignaciones con alumnoId inexistente
     const asignacionesAlumnoInvalido = asignaciones.filter(a => {
-      const alumnoId = a.alumnoId || a.estudianteId || a.userId;
+      const alumnoId = a.alumnoId || (a as any).estudianteId || (a as any).userId;
       return alumnoId && !usuariosById.has(alumnoId);
     });
     if (asignacionesAlumnoInvalido.length > 0) {
@@ -89,7 +89,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Asignaciones con profesorId inexistente
     const asignacionesProfesorInvalido = asignaciones.filter(a => {
-      const profesorId = a.profesorId || a.profesorAsignadoId;
+      const profesorId = a.profesorId || (a as any).profesorAsignadoId;
       return profesorId && !usuariosById.has(profesorId);
     });
     if (asignacionesProfesorInvalido.length > 0) {
@@ -99,8 +99,7 @@ export function verifyLocalData(): ValidationReport {
     // Asignaciones con piezaId inexistente
     const asignacionesPiezaInvalida = asignaciones.filter(a => {
       const piezaId = a.piezaId;
-      // piezaId can be null/undefined in some contexts, but if present should be valid?
-      // Interface says piezaId?: string | null.
+      // piezaId can be null/undefined in some contexts
       return piezaId && !piezasById.has(piezaId);
     });
     if (asignacionesPiezaInvalida.length > 0) {
@@ -109,7 +108,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Asignaciones sin plan válido (si tienen planId, debe existir)
     const asignacionesPlanInvalido = asignaciones.filter(a => {
-      if (a.plan && typeof a.plan === 'object') {
+      if ((a as any).plan && typeof (a as any).plan === 'object') {
         // Si plan es un objeto, está bien (snapshot)
         return false;
       }
@@ -144,6 +143,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Bloques con piezaId inexistente (si tienen referencia)
     const bloquesPiezaInvalida = bloques.filter(b => {
+      // @ts-ignore
       const piezaId = b.piezaRefId;
       return piezaId && !piezasById.has(piezaId);
     });
@@ -156,7 +156,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Registros con asignacionId inexistente
     const registrosAsignacionInvalida = registrosSesion.filter(r => {
-      const asignacionId = r.asignacionId || r.asignacion_id;
+      const asignacionId = r.asignacionId || (r as any).asignacion_id;
       return asignacionId && !asignacionesById.has(asignacionId);
     });
     if (registrosAsignacionInvalida.length > 0) {
@@ -165,7 +165,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Registros con alumnoId inexistente
     const registrosAlumnoInvalido = registrosSesion.filter(r => {
-      const alumnoId = r.alumnoId || r.estudianteId || r.userId;
+      const alumnoId = r.alumnoId || (r as any).estudianteId || (r as any).userId;
       return alumnoId && !usuariosById.has(alumnoId);
     });
     if (registrosAlumnoInvalido.length > 0) {
@@ -177,7 +177,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Registros con registroSesionId inexistente
     const registrosBloqueSesionInvalida = registrosBloque.filter(r => {
-      const sesionId = r.registroSesionId || r.registroSesion_id || r.sesionId;
+      const sesionId = r.registroSesionId || (r as any).registroSesion_id || (r as any).sesionId;
       return sesionId && !registrosSesionById.has(sesionId);
     });
     if (registrosBloqueSesionInvalida.length > 0) {
@@ -186,7 +186,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Registros con bloqueId inexistente
     const registrosBloqueInvalido = registrosBloque.filter(r => {
-      const bloqueId = r.bloqueId || r.ejercicioId || r.bloque_id;
+      const bloqueId = r.bloqueId || (r as any).ejercicioId || (r as any).bloque_id;
       return bloqueId && !bloquesById.has(bloqueId);
     });
     if (registrosBloqueInvalido.length > 0) {
@@ -198,7 +198,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Feedbacks con alumnoId inexistente
     const feedbacksAlumnoInvalido = feedbacksSemanal.filter(f => {
-      const alumnoId = f.alumnoId || f.estudianteId || f.userId;
+      const alumnoId = f.alumnoId || (f as any).estudianteId || (f as any).userId;
       return alumnoId && !usuariosById.has(alumnoId);
     });
     if (feedbacksAlumnoInvalido.length > 0) {
@@ -207,7 +207,7 @@ export function verifyLocalData(): ValidationReport {
 
     // Feedbacks con profesorId inexistente
     const feedbacksProfesorInvalido = feedbacksSemanal.filter(f => {
-      const profesorId = f.profesorId || f.profesorAsignadoId;
+      const profesorId = f.profesorId || (f as any).profesorAsignadoId;
       return profesorId && !usuariosById.has(profesorId);
     });
     if (feedbacksProfesorInvalido.length > 0) {
@@ -215,12 +215,12 @@ export function verifyLocalData(): ValidationReport {
     }
 
     // 9. Validar campos requeridos
-    const asignacionesSinSemana = asignaciones.filter(a => !a.semanaInicioISO && !a.semana_inicio_iso);
+    const asignacionesSinSemana = asignaciones.filter(a => !a.semanaInicioISO && !(a as any).semana_inicio_iso);
     if (asignacionesSinSemana.length > 0) {
       report.warnings.push(`[WARN] asignaciones: ${asignacionesSinSemana.length} asignaciones sin semanaInicioISO`);
     }
 
-    const registrosSinFecha = registrosSesion.filter(r => !r.inicioISO && !r.inicio_iso && !r.fecha);
+    const registrosSinFecha = registrosSesion.filter(r => !r.inicioISO && !(r as any).inicio_iso && !(r as any).fecha);
     if (registrosSinFecha.length > 0) {
       report.warnings.push(`[WARN] registrosSesion: ${registrosSinFecha.length} registros sin fecha de inicio`);
     }

@@ -128,6 +128,23 @@ export interface Usuario {
     [key: string]: any;
 }
 
+export interface EventoCalendario {
+    id: string;
+    titulo: string;
+    descripcion?: string | null;
+    fechaInicio: string;
+    fechaFin?: string | null;
+    start_at?: string | null;
+    end_at?: string | null;
+    all_day?: boolean;
+    tipo?: 'encuentro' | 'masterclass' | 'colectiva' | 'otro';
+    visiblePara?: string[];
+    creadoPorId?: string;
+    created_at?: string;
+    updated_at?: string;
+    [key: string]: any;
+}
+
 // Support & Error Reporting
 export interface ErrorContext {
     url: string;
@@ -196,8 +213,8 @@ export interface LocalData {
     planes: Plan[];
     registrosBloque: RegistroBloque[];
     registrosSesion: RegistroSesion[];
+    eventosCalendario: EventoCalendario[];
     evaluacionesTecnicas: EvaluacionTecnica[];
     loading?: boolean;
     [key: string]: any;
 }
-

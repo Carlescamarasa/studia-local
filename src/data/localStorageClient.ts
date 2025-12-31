@@ -8,7 +8,7 @@
 const STORAGE_KEY = 'studia_data';
 const STORAGE_VERSION = 1;
 
-interface StorageData {
+export interface StorageData {
   version: number;
   asignaciones: unknown[];
   bloques: unknown[];
