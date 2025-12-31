@@ -144,7 +144,7 @@ export default function MediaEmbed({ url, className = '', open = false }: MediaE
                     <SimpleLightbox
                         open={lightboxOpen}
                         onClose={() => setLightboxOpen(false)}
-                        src={media.embedUrl}
+                        src={media.embedUrl || ''}
                         alt={media.title}
                     />
                 </>
@@ -191,7 +191,7 @@ export default function MediaEmbed({ url, className = '', open = false }: MediaE
                     <SimpleLightbox
                         open={lightboxOpen}
                         onClose={() => setLightboxOpen(false)}
-                        src={media.embedUrl}
+                        src={media.embedUrl || ''}
                         alt={media.title}
                         type="pdf"
                     />

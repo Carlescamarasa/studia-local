@@ -13,7 +13,22 @@ export const MediaKind = {
   IMAGE: 'image',
   PDF: 'pdf',
   UNKNOWN: 'unknown',
-};
+} as const;
+
+export type MediaKindType = typeof MediaKind[keyof typeof MediaKind];
+
+export interface MediaInput {
+  url: string;
+  name?: string | null;
+}
+
+export interface MediaResult {
+  kind: MediaKindType;
+  originalUrl: string;
+  embedUrl?: string;
+  name?: string | null;
+  title?: string;
+}
 
 // Patrones de detección
 const YOUTUBE_PATTERNS = [
@@ -40,7 +55,7 @@ const PDF_EXTENSION = '.pdf';
  * Valida si una URL es segura (http/https)
  * Soporta string o objeto {url: string}
  */
-export function isValidUrl(input) {
+export function isValidUrl(input: string | MediaInput | null | undefined): boolean {
   if (!input) return false;
   const urlString = typeof input === 'string' ? input : input.url;
 
@@ -58,21 +73,19 @@ export function isValidUrl(input) {
  * Detecta el tipo de medio y genera URL de embed
  * Soporta string o objeto {url: string, name?: string}
  */
-export function resolveMedia(input) {
+export function resolveMedia(input: string | MediaInput | null | undefined): MediaResult {
   const urlString = typeof input === 'string' ? input : input?.url;
   const customName = typeof input === 'object' ? input?.name : null;
 
-  if (!isValidUrl(urlString)) {
-    return { kind: MediaKind.UNKNOWN, originalUrl: urlString, name: customName };
+  if (!urlString || !isValidUrl(urlString)) {
+    return { kind: MediaKind.UNKNOWN, originalUrl: urlString || '', name: customName };
   }
 
   const url = urlString.trim();
   const urlLower = url.toLowerCase();
 
-  let result = { kind: MediaKind.UNKNOWN, originalUrl: url, name: customName, title: 'External Link' };
-
   // Helper to attach name if present
-  const withName = (res) => ({ ...res, name: customName || res.title });
+  const withName = (res: Omit<MediaResult, 'name'>): MediaResult => ({ ...res, name: customName || res.title });
 
   // YouTube
   for (const pattern of YOUTUBE_PATTERNS) {
@@ -214,11 +227,11 @@ export function resolveMedia(input) {
  * Soporta mezclar strings y objetos {url, name}
  * Devuelve array de objetos {url, name} si preserveObjects es true, o array de strings
  */
-export function normalizeMediaLinks(items, preserveObjects = false) {
+export function normalizeMediaLinks(items: (string | MediaInput | null | undefined)[], preserveObjects: boolean = false): (string | MediaInput)[] {
   if (!Array.isArray(items)) return [];
 
-  const seen = new Set();
-  const normalized = [];
+  const seen = new Set<string>();
+  const normalized: (string | MediaInput)[] = [];
 
   for (const item of items) {
     if (!item) continue;
@@ -251,12 +264,12 @@ export function normalizeMediaLinks(items, preserveObjects = false) {
 /**
  * Extrae URLs de un texto multi-línea
  */
-export function extractUrlsFromText(text) {
+export function extractUrlsFromText(text: string | null | undefined): string[] {
   if (!text || typeof text !== 'string') return [];
 
   const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
   // Default to returning strings for parsing raw text
-  return normalizeMediaLinks(lines, false);
+  return normalizeMediaLinks(lines, false) as string[];
 }
 
 // --- YouTube oEmbed Caching Utilities ---
@@ -264,8 +277,13 @@ export function extractUrlsFromText(text) {
 const YOUTUBE_TITLE_CACHE_KEY = 'yt_title_cache_v1';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+interface CacheEntry {
+  title: string;
+  timestamp: number;
+}
+
 // In-memory cache for current session speed
-const memoryCache = new Map();
+const memoryCache = new Map<string, string>();
 
 /**
  * Clean up expired items from localStorage
@@ -305,17 +323,17 @@ if (typeof window !== 'undefined') {
  * @param {string} url - The YouTube URL
  * @returns {Promise<string|null>} - The title or null if failed
  */
-export async function getYouTubeTitle(url) {
+export async function getYouTubeTitle(url: string | null | undefined): Promise<string | null> {
   if (!url) return null;
 
   // 1. Check Memory Cache
-  if (memoryCache.has(url)) return memoryCache.get(url);
+  if (memoryCache.has(url)) return memoryCache.get(url) || null;
 
   // 2. Check LocalStorage
   try {
     const raw = localStorage.getItem(YOUTUBE_TITLE_CACHE_KEY);
     if (raw) {
-      const cache = JSON.parse(raw);
+      const cache: Record<string, CacheEntry> = JSON.parse(raw);
       if (cache[url] && (Date.now() - cache[url].timestamp < CACHE_TTL_MS)) {
         memoryCache.set(url, cache[url].title);
         return cache[url].title;

@@ -266,6 +266,7 @@ export interface Asignacion {
   modo?: 'manual' | 'asignada';
   created_at: string;
   updated_at: string;
+  updated_date?: string; // Legacy local field compatibility
 }
 
 export type CreateAsignacionInput = Omit<Asignacion, 'id' | 'created_at' | 'updated_at'> & { id?: string };

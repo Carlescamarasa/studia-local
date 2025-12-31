@@ -14,19 +14,37 @@ const BANNED_GRADIENT_HEX = /from-\[\#?[0-9A-Fa-f]{3,6}\]|to-\[\#?[0-9A-Fa-f]{3,
 
 // Radios permitidos: lg, xl, 2xl, full + variantes direccionales
 const ALLOWED_RADIUS_PATTERN = /^rounded(-([trbl]|t[lr]|b[lr]))?(-(lg|xl|2xl|full))?$/;
-const ALLOWED_SHADOWS = new Set(["shadow-card","shadow-sm","shadow-md","shadow-none"]); // permitimos md para casos específicos
+const ALLOWED_SHADOWS = new Set(["shadow-card", "shadow-sm", "shadow-md", "shadow-none"]); // permitimos md para casos específicos
 const BAD_REQUIRE = /(^|[^'"\\])\brequire\(/g; // require() no dentro de strings
 const BAD_REQUIRE_ROLE_PROPS = /<RequireRole[^>]+roles=|roles\s*=/g; // debe ser anyOf
 const DYNAMIC_CLASSNAME = /className=\{`[^`]*\$\{[^}]+\}[^`]*`\}/g; // clases construidas dinámicamente
 const WHITELISTED_DYNAMICS = /tipoColors|nivelColors|estadoColors|focoColors|colorClase|priorityColors|categoryColors|statusColors/;
 const RAW_BRAND_VAR = /var\(--brand-(\d{2,3})\)/g;
 
-const isAllowedBrandToken = (n) => {
+const isAllowedBrandToken = (n: string | number) => {
   const num = Number(n);
-  return [50,100,200,300,400,500,600,700,800].includes(num);
+  return [50, 100, 200, 300, 400, 500, 600, 700, 800].includes(num);
 };
 
-export async function runDesignAudit() {
+export interface AuditIssue {
+  file: string;
+  line: number;
+  snippet: string;
+  [key: string]: any;
+}
+
+export interface AuditReport {
+  summary: {
+    filesScanned: number;
+    totalIssues: number;
+    issues: Record<string, number>;
+  };
+  issues: Record<string, AuditIssue[]>;
+  scannedFiles: Set<string>;
+  scannedAt: string;
+}
+
+export async function runDesignAudit(): Promise<AuditReport> {
   // Incluye JSX/TSX/JS/TS/CSS, excluyendo ui/
   // Usamos eager: false para code-splitting - se carga solo cuando se necesita
   const filesModule = await import.meta.glob(
@@ -38,16 +56,16 @@ export async function runDesignAudit() {
     ],
     { query: "?raw", import: "default", eager: false }
   );
-  
+
   // Cargar todos los archivos de forma asíncrona
-  const files = {};
+  const files: Record<string, string> = {};
   await Promise.all(
     Object.entries(filesModule).map(async ([path, loader]) => {
-      files[path] = await loader();
+      files[path] = (await loader()) as string;
     })
   );
 
-  const report = {
+  const report: AuditReport = {
     summary: {
       filesScanned: 0,
       totalIssues: 0,
@@ -69,16 +87,16 @@ export async function runDesignAudit() {
     scannedAt: new Date().toISOString(),
   };
 
-  const add = (bucket, file, line, snippet, meta={}) => {
+  const add = (bucket: string, file: string, line: number, snippet: string, meta: Record<string, any> = {}) => {
     report.issues[bucket].push({ file, line, snippet, ...meta });
     report.summary.issues[bucket] = (report.summary.issues[bucket] || 0) + 1;
     report.summary.totalIssues++;
   };
 
-  const eachLine = (text) => text.split(/\r?\n/);
+  const eachLine = (text: string) => text.split(/\r?\n/);
 
   // Para detectar alias mixtos
-  const aliasUsage = { app: new Set(), components: new Set() };
+  const aliasUsage = { app: new Set<string>(), components: new Set<string>() };
 
   for (const [path, content] of Object.entries(files)) {
     report.summary.filesScanned++;
@@ -89,21 +107,21 @@ export async function runDesignAudit() {
     lines.forEach((ln, i) => {
       for (const hex of BANNED_HEX) {
         const re = new RegExp(hex.replace('#', '#?'), 'gi');
-        if (re.test(ln)) add("bannedHex", path, i+1, ln.trim(), { hex });
+        if (re.test(ln)) add("bannedHex", path, i + 1, ln.trim(), { hex });
       }
     });
 
     // 2) Clases naranja Tailwind
     lines.forEach((ln, i) => {
       if (BANNED_TW_ORANGE.some(k => ln.includes(k))) {
-        add("bannedTailwindOrange", path, i+1, ln.trim());
+        add("bannedTailwindOrange", path, i + 1, ln.trim());
       }
     });
 
     // 3) Gradientes con HEX entre corchetes
     lines.forEach((ln, i) => {
       const m = ln.match(BANNED_GRADIENT_HEX);
-      if (m) add("gradientHex", path, i+1, ln.trim(), { matches: m });
+      if (m) add("gradientHex", path, i + 1, ln.trim(), { matches: m });
     });
 
     // 4) Radios - ahora con patrón
@@ -112,7 +130,7 @@ export async function runDesignAudit() {
         const classes = ln.match(/rounded(-([trbl]|t[lr]|b[lr]))?(-([\w\[\]-]+))?/g) || [];
         classes.forEach((c) => {
           if (!ALLOWED_RADIUS_PATTERN.test(c) && !c.includes('[')) {
-            add("radiusInconsistent", path, i+1, ln.trim(), { value: c });
+            add("radiusInconsistent", path, i + 1, ln.trim(), { value: c });
           }
         });
       }
@@ -123,7 +141,7 @@ export async function runDesignAudit() {
       const classes = ln.match(/shadow-[\w-]+/g) || [];
       classes.forEach((c) => {
         if (!ALLOWED_SHADOWS.has(c)) {
-          add("shadowInconsistent", path, i+1, ln.trim(), { value: c });
+          add("shadowInconsistent", path, i + 1, ln.trim(), { value: c });
         }
       });
     });
@@ -131,12 +149,12 @@ export async function runDesignAudit() {
     // 6) require() - solo fuera de strings
     lines.forEach((ln, i) => {
       BAD_REQUIRE.lastIndex = 0;
-      if (BAD_REQUIRE.test(ln)) add("requireUsage", path, i+1, ln.trim());
+      if (BAD_REQUIRE.test(ln)) add("requireUsage", path, i + 1, ln.trim());
     });
 
     // 7) RequireRole con prop legacy "roles"
     lines.forEach((ln, i) => {
-      if (BAD_REQUIRE_ROLE_PROPS.test(ln)) add("requireRoleLegacyProp", path, i+1, ln.trim());
+      if (BAD_REQUIRE_ROLE_PROPS.test(ln)) add("requireRoleLegacyProp", path, i + 1, ln.trim());
     });
 
     // 8) Alias DS - detectar mixtos
@@ -146,7 +164,7 @@ export async function runDesignAudit() {
     // 9) className dinámico - solo si no está en whitelist
     lines.forEach((ln, i) => {
       if (DYNAMIC_CLASSNAME.test(ln) && !WHITELISTED_DYNAMICS.test(ln)) {
-        add("dynamicClassname", path, i+1, ln.trim());
+        add("dynamicClassname", path, i + 1, ln.trim());
       }
     });
 
@@ -164,7 +182,7 @@ export async function runDesignAudit() {
 
   // Reportar alias mixtos solo si hay ambos tipos
   if (aliasUsage.app.size > 0 && aliasUsage.components.size > 0) {
-    add("dsAliasNotes", "global", 0, 
+    add("dsAliasNotes", "global", 0,
       `Alias mixtos detectados: ${aliasUsage.app.size} archivos usan @/App/ds y ${aliasUsage.components.size} usan @/components/ds`);
   }
 
@@ -188,9 +206,15 @@ export const QUICK_PROFILES = {
   },
 };
 
-export function parseAuditSpec(spec) {
+export interface AuditConfig {
+  patterns: RegExp[];
+  includes: string[];
+  excludes: string[];
+}
+
+export function parseAuditSpec(spec: string): AuditConfig {
   const lines = spec.split('\n').map(l => l.trim()).filter(Boolean);
-  const config = {
+  const config: AuditConfig = {
     patterns: [],
     includes: ['/src/**/*.{js,jsx,tsx,ts,css}'],
     excludes: ['**/node_modules/**'],
@@ -214,9 +238,32 @@ export function parseAuditSpec(spec) {
   return config;
 }
 
-export async function runAudit(config) {
+export interface AuditResults {
+  filesScanned: number;
+  matchesTotal: number;
+  perFile: {
+    path: string;
+    matches: {
+      line: number;
+      pattern: string;
+      match: string;
+      start: number;
+      end: number;
+      context: {
+        before: string | null;
+        current: string;
+        after: string | null;
+      };
+    }[];
+  }[];
+  durationMs: number;
+  compiled: AuditConfig;
+  reason?: string;
+}
+
+export async function runAudit(config: AuditConfig): Promise<AuditResults> {
   const startTime = Date.now();
-  const results = {
+  const results: AuditResults = {
     filesScanned: 0,
     matchesTotal: 0,
     perFile: [],
@@ -236,12 +283,12 @@ export async function runAudit(config) {
       ['/src/**/*.{jsx,tsx,js,ts,css}'],
       { query: "?raw", import: "default", eager: false }
     );
-    
+
     // Cargar todos los archivos de forma asíncrona
-    const files = {};
+    const files: Record<string, string> = {};
     await Promise.all(
       Object.entries(filesModule).map(async ([path, loader]) => {
-        files[path] = await loader();
+        files[path] = (await loader()) as string;
       })
     );
 
@@ -260,7 +307,7 @@ export async function runAudit(config) {
 
       results.filesScanned++;
       const lines = content.split(/\r?\n/);
-      const fileMatches = [];
+      const fileMatches: AuditResults['perFile'][0]['matches'] = [];
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -289,7 +336,7 @@ export async function runAudit(config) {
         results.perFile.push({ path, matches: fileMatches });
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     results.reason = `Error al escanear archivos: ${error.message}`;
   }
 

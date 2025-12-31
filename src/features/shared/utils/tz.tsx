@@ -17,17 +17,17 @@ export const ADMIN_TZ = 'Europe/Madrid';
 
 /**
  * Obtiene el lunes ISO de una fecha en una zona horaria específica
- * @param {Date} dateLike - Fecha de referencia
+ * @param {Date | string} dateLike - Fecha de referencia
  * @param {string} tz - Zona horaria IANA (default: Europe/Madrid)
  * @returns {string} - Fecha ISO del lunes (YYYY-MM-DD)
  */
-export const mondayISO = (dateLike, tz = ADMIN_TZ) => {
+export const mondayISO = (dateLike: Date | string, tz: string = ADMIN_TZ): string => {
   // Uncomment when Luxon is installed:
   // return DateTime.fromJSDate(dateLike instanceof Date ? dateLike : new Date(), { zone: tz })
   //   .startOf('week')
   //   .plus({ days: 1 })
   //   .toISODate();
-  
+
   // Fallback temporal (local):
   const d = dateLike instanceof Date ? dateLike : new Date(dateLike);
   return formatLocalDate(startOfMonday(d));
@@ -40,10 +40,10 @@ export const mondayISO = (dateLike, tz = ADMIN_TZ) => {
  * @param {string} tz - Zona horaria IANA
  * @returns {string} - Nueva fecha ISO (YYYY-MM-DD)
  */
-export const addWeeksISO = (iso, n, tz = ADMIN_TZ) => {
+export const addWeeksISO = (iso: string, n: number, tz: string = ADMIN_TZ): string => {
   // Uncomment when Luxon is installed:
   // return DateTime.fromISO(iso, { zone: tz }).plus({ weeks: n }).toISODate();
-  
+
   // Fallback temporal (local):
   const base = parseLocalDate(iso);
   base.setDate(base.getDate() + (n * 7));
@@ -56,7 +56,7 @@ export const addWeeksISO = (iso, n, tz = ADMIN_TZ) => {
  * @param {string} tz - Zona horaria IANA del usuario
  * @returns {object} - { numero: number, rango: string }
  */
-export const weekLabel = (isoMonday, tz = ADMIN_TZ) => {
+export const weekLabel = (isoMonday: string, tz: string = ADMIN_TZ): { numero: number; rango: string } => {
   // Uncomment when Luxon is installed:
   // const mon = DateTime.fromISO(isoMonday, { zone: tz });
   // const sun = mon.plus({ days: 6 });
@@ -64,20 +64,20 @@ export const weekLabel = (isoMonday, tz = ADMIN_TZ) => {
   //   numero: mon.weekNumber,
   //   rango: `${mon.day} ${mon.toFormat('LLL')} - ${sun.day} ${sun.toFormat('LLL')}`
   // };
-  
+
   // Fallback temporal (local):
   const lunes = parseLocalDate(isoMonday);
   const domingo = new Date(lunes);
   domingo.setDate(lunes.getDate() + 6);
-  
+
   const numeroSemana = isoWeekNumberLocal(lunes);
-  
-  const formatoFecha = (fecha) => {
+
+  const formatoFecha = (fecha: Date) => {
     const dia = fecha.getDate();
     const mes = fecha.toLocaleDateString('es-ES', { month: 'short' });
     return `${dia} ${mes}`;
   };
-  
+
   return {
     numero: numeroSemana,
     rango: `${formatoFecha(lunes)} - ${formatoFecha(domingo)}`,
@@ -90,12 +90,12 @@ export const weekLabel = (isoMonday, tz = ADMIN_TZ) => {
  * @param {string} tz - Zona horaria IANA del usuario
  * @returns {string} - Timestamp formateado en zona local
  */
-export const formatInUserTZ = (utcISO, tz = ADMIN_TZ) => {
+export const formatInUserTZ = (utcISO: string, tz: string = ADMIN_TZ): string => {
   // Uncomment when Luxon is installed:
   // return DateTime.fromISO(utcISO, { zone: 'utc' })
   //   .setZone(tz)
   //   .toLocaleString(DateTime.DATETIME_MED);
-  
+
   // Fallback temporal:
   return new Date(utcISO).toLocaleString('es-ES', { timeZone: tz });
 };
@@ -104,6 +104,6 @@ export const formatInUserTZ = (utcISO, tz = ADMIN_TZ) => {
  * Obtiene la zona horaria del usuario desde el navegador
  * @returns {string} - Zona horaria IANA detectada
  */
-export const getUserTimeZone = () => {
+export const getUserTimeZone = (): string => {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 };

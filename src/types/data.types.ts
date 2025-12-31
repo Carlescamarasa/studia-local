@@ -28,6 +28,7 @@ export interface Asignacion {
     notas?: string | null;
     notificarAlumno?: boolean;
     created_date?: string; // Legacy local field
+    updated_date?: string; // Legacy local field
     [key: string]: any;
 }
 
