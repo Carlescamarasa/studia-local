@@ -1,5 +1,4 @@
 import React from "react";
-// @ts-expect-error AsignacionesTab is not typed yet
 import AsignacionesTab from "./AsignacionesTab";
 
 interface CuadernoAsignacionesTabProps {

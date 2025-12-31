@@ -8,7 +8,6 @@ import CuadernoHeader from "./CuadernoHeader";
 import CuadernoTabs from "./CuadernoTabs";
 import CuadernoEstudiantesTab from "./CuadernoEstudiantesTab";
 import CuadernoAsignacionesTab from "./CuadernoAsignacionesTab";
-// @ts-expect-error FormularioRapido is not typed yet
 import FormularioRapido from "@/features/asignaciones/components/FormularioRapido";
 import {
     formatLocalDate,
