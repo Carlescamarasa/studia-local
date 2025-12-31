@@ -1,7 +1,12 @@
 import React from "react";
 import { Badge } from "@/features/shared/components/ds/Badge";
 
-export default function LevelBadge({ level, label: customLabel }) {
+interface LevelBadgeProps {
+    level?: number;
+    label?: string;
+}
+
+export default function LevelBadge({ level, label: customLabel }: LevelBadgeProps) {
     if (!level) return null;
 
     let label = customLabel;

@@ -3,13 +3,21 @@ import { useLocation } from 'react-router-dom';
 import { Bug, Search, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/ui/button';
 
+interface SystemTopBarProps {
+    isImpersonating: boolean;
+    effectiveUser: { full_name?: string } | null;
+    effectiveRole: string;
+    stopImpersonation: () => void;
+    isMobile?: boolean;
+}
+
 export default function SystemTopBar({
     isImpersonating,
     effectiveUser,
     effectiveRole,
     stopImpersonation,
     isMobile
-}) {
+}: SystemTopBarProps) {
     const location = useLocation();
     const isStudiaMode = location.pathname.startsWith('/studia');
 

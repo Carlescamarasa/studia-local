@@ -14,16 +14,29 @@ import { getHotkeysForRole, formatShortcut } from "@/utils/hotkeys";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
+interface HotkeysModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+interface Hotkey {
+  primary: string;
+  useCmdOnMac?: boolean;
+  aliases?: string[];
+  description: string;
+}
+
 /**
  * Modal que muestra todas las leyendas de atajos de teclado disponibles
  */
-export default function HotkeysModal({ open, onOpenChange }) {
+export default function HotkeysModal({ open, onOpenChange }: HotkeysModalProps) {
   const effectiveUser = useEffectiveUser();
+  // @ts-ignore - rolPersonalizado may not be in the type but exists at runtime
   const userRole = effectiveUser?.rolPersonalizado || 'ESTU';
   const navigate = useNavigate();
 
   // Obtener hotkeys desde la configuración única - mostrar primary y alt si existe
-  const formatHotkeyDisplay = (hotkey) => {
+  const formatHotkeyDisplay = (hotkey: Hotkey) => {
     const useCmdOnMac = hotkey.useCmdOnMac || false;
     let texto = formatShortcut(hotkey.primary, useCmdOnMac);
     // Si hay alias (máximo 1), mostrarlo también
@@ -33,7 +46,7 @@ export default function HotkeysModal({ open, onOpenChange }) {
     }
     return texto;
   };
-  
+
   const hotkeysGlobales = getHotkeysForRole(userRole, 'global').map(hk => ({
     atajo: formatHotkeyDisplay(hk),
     descripcion: hk.description,
@@ -61,8 +74,8 @@ export default function HotkeysModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        size="lg" 
+      <DialogContent
+        size="lg"
         className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden"
       >
         {/* Header fijo */}
@@ -95,9 +108,9 @@ export default function HotkeysModal({ open, onOpenChange }) {
                   key={idx}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-surface-muted)] transition-colors"
                 >
-                    <kbd className="shrink-0 min-w-[140px] text-center text-xs font-mono bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] rounded px-2.5 py-1.5 text-[var(--color-text-primary)] leading-tight">
-                      {hotkey.atajo}
-                    </kbd>
+                  <kbd className="shrink-0 min-w-[140px] text-center text-xs font-mono bg-[var(--color-surface-muted)] border border-[var(--color-border-default)] rounded px-2.5 py-1.5 text-[var(--color-text-primary)] leading-tight">
+                    {hotkey.atajo}
+                  </kbd>
                   <span className="text-sm text-[var(--color-text-primary)] flex-1">
                     {hotkey.descripcion}
                   </span>

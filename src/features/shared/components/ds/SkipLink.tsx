@@ -2,20 +2,22 @@ import React from "react";
 import { componentStyles } from "@/design/componentStyles";
 import { cn } from "@/lib/utils";
 
+interface SkipLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+  href?: string;
+  text?: string;
+  className?: string;
+}
+
 /**
  * SkipLink - Componente de accesibilidad para skip links
  * Permite a usuarios de teclado saltar al contenido principal
- * 
- * @param {string} href - ID del elemento al que saltar (ej: "#main-content")
- * @param {string} text - Texto del skip link
- * @param {string} className - Clases adicionales
  */
 export function SkipLink({
   href = "#main-content",
   text = "Saltar al contenido principal",
   className,
   ...props
-}) {
+}: SkipLinkProps) {
   return (
     <a
       href={href}

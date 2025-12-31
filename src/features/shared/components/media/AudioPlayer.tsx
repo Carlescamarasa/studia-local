@@ -2,13 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/features/shared/components/ui/button';
 import { Play, ExternalLink, AlertCircle } from 'lucide-react';
 
+interface AudioPlayerProps {
+  url: string;
+  className?: string;
+}
+
 /**
  * Reproductor de audio personalizado
  * Para Google Drive, muestra un mensaje claro sobre las limitaciones
  * Para otros servicios, usa reproductor embebido
  */
-export default function AudioPlayer({ url, className = '' }) {
-  const audioRef = useRef(null);
+export default function AudioPlayer({ url, className = '' }: AudioPlayerProps) {
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [error, setError] = useState(false);
   const [triedDirect, setTriedDirect] = useState(false);
 
@@ -16,9 +21,9 @@ export default function AudioPlayer({ url, className = '' }) {
   if (url && url.includes('drive.google.com')) {
     const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
     const fileId = driveMatch ? driveMatch[1] : null;
-    
+
     // Intentar diferentes formatos de URL
-    const directUrl = fileId 
+    const directUrl = fileId
       ? `https://drive.google.com/uc?export=download&id=${fileId}`
       : url;
 
@@ -43,7 +48,7 @@ export default function AudioPlayer({ url, className = '' }) {
           >
             Tu navegador no soporta el elemento audio.
           </audio>
-          
+
           {error && (
             <div className="bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20 rounded-lg p-4 space-y-3">
               <div className="flex items-start gap-2">
@@ -53,12 +58,12 @@ export default function AudioPlayer({ url, className = '' }) {
                     Google Drive no permite reproducir audio embebido
                   </p>
                   <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                    Google Drive bloquea la reproducción directa de audio por restricciones de seguridad (CORS). 
+                    Google Drive bloquea la reproducción directa de audio por restricciones de seguridad (CORS).
                     Para reproducir el audio, debes abrirlo en una nueva pestaña.
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -91,12 +96,12 @@ export default function AudioPlayer({ url, className = '' }) {
                 Google Drive no permite reproducir audio embebido
               </p>
               <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                Google Drive bloquea la reproducción directa de audio por restricciones de seguridad (CORS). 
+                Google Drive bloquea la reproducción directa de audio por restricciones de seguridad (CORS).
                 Para reproducir el audio mientras usas el modal, abre el enlace en una nueva pestaña.
               </p>
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             <Button
               type="button"

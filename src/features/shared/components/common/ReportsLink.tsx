@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, LinkProps } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { listErrorReports } from '@/api/errorReportsAPI';
 import { Badge } from '@/features/shared/components/ds';
@@ -7,6 +7,11 @@ import { Bug } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { useAuth } from '@/auth/AuthProvider';
 import { getEffectiveRole } from '@/features/shared/utils/helpers';
+
+interface ReportsLinkProps extends Omit<LinkProps, 'to'> {
+  children?: React.ReactNode;
+  className?: string;
+}
 
 /**
  * Componente Link que muestra el badge de reportes cuando hay reportes pendientes
@@ -16,7 +21,7 @@ export default function ReportsLink({
   children,
   className = '',
   ...linkProps
-}) {
+}: ReportsLinkProps) {
   const { user, appRole } = useAuth();
   const userRole = getEffectiveRole({ appRole, currentUser: null }) || null;
 
@@ -30,6 +35,7 @@ export default function ReportsLink({
 
       try {
         const { localDataClient } = await import('@/api/localDataClient');
+        // @ts-ignore - getSession may not exist on this type
         const { data: { session } } = await localDataClient.auth.getSession();
         if (!session?.access_token) {
           return { nuevos: 0, enRevision: 0 };
@@ -49,11 +55,12 @@ export default function ReportsLink({
           enRevision: Array.isArray(enRevision) ? enRevision.length : 0
         };
       } catch (error) {
-        if (error?.message?.includes('CORS') ||
-          error?.message?.includes('NetworkError') ||
-          error?.code === 'PGRST301' ||
-          error?.status === 401 ||
-          error?.status === 403) {
+        const err = error as any;
+        if (err?.message?.includes('CORS') ||
+          err?.message?.includes('NetworkError') ||
+          err?.code === 'PGRST301' ||
+          err?.status === 401 ||
+          err?.status === 403) {
           return { nuevos: 0, enRevision: 0 };
         }
         console.error('[ReportsLink] Error obteniendo conteos de reportes:', error);

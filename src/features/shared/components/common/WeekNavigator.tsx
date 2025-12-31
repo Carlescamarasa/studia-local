@@ -4,9 +4,9 @@ import { Card } from "@/features/shared/components/ui/card";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 
-const pad2 = (n) => String(n).padStart(2, "0");
-const parseLocalDate = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
-const getISOWeekNumber = (date) => {
+const pad2 = (n: number): string => String(n).padStart(2, "0");
+const parseLocalDate = (s: string): Date => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const getISOWeekNumber = (date: Date): number => {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
@@ -15,10 +15,18 @@ const getISOWeekNumber = (date) => {
   return weekNum;
 };
 
-export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday, children }) {
-  const [debounceTimer, setDebounceTimer] = useState(null);
+interface WeekNavigatorProps {
+  mondayISO: string;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  children?: React.ReactNode;
+}
 
-  const handleDebounced = useCallback((action) => {
+export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday, children }: WeekNavigatorProps) {
+  const [debounceTimer, setDebounceTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleDebounced = useCallback((action: () => void) => {
     if (debounceTimer) clearTimeout(debounceTimer);
     const timer = setTimeout(() => {
       action();
@@ -27,8 +35,8 @@ export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday, chil
   }, [debounceTimer]);
 
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      const target = e.target;
+    const handleKeyPress = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
       if (document.querySelector('[role="dialog"]')) return;
 
@@ -67,7 +75,7 @@ export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday, chil
           {monday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {sunday.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
         </p>
       </div>
-      
+
       <div className="flex gap-2 md:gap-3">
         <Button
           variant="outline"
@@ -99,7 +107,7 @@ export default function WeekNavigator({ mondayISO, onPrev, onNext, onToday, chil
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
-      
+
       {children && (
         <div className="mt-4 pt-4 border-t border-[var(--color-border-default)]">
           {children}

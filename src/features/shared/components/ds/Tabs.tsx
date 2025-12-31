@@ -2,6 +2,22 @@ import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { componentStyles } from "@/design/componentStyles";
 
+interface TabItem {
+  value: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  content?: React.ReactNode;
+}
+
+interface TabsProps {
+  value: string;
+  onChange: (value: string) => void;
+  items: TabItem[];
+  variant?: "segmented" | "underline";
+  className?: string;
+  showIconsOnlyMobile?: boolean;
+}
+
 /**
  * Tabs - Componente de pestañas del Design System
  * 100% conectado al Design System con tokens semánticos
@@ -14,21 +30,21 @@ export function Tabs({
   variant = "segmented",
   className = "",
   showIconsOnlyMobile = false
-}) {
+}: TabsProps) {
   const activeItem = items.find(item => item.value === value);
-  const containerRef = useRef(null);
-  const sliderRef = useRef(null);
-  const buttonsRef = useRef({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const buttonsRef = useRef<Record<string, HTMLButtonElement>>({});
   const [showIconsOnly, setShowIconsOnly] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [sliderStyle, setSliderStyle] = useState({});
+  const [sliderStyle, setSliderStyle] = useState<Record<string, string | number>>({});
 
   // Detectar si estamos en mobile usando media query
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 768px)');
     setIsMobile(mediaQuery.matches);
 
-    const handleChange = (e) => {
+    const handleChange = (e: MediaQueryListEvent) => {
       setIsMobile(e.matches);
     };
 
@@ -61,8 +77,8 @@ export function Tabs({
     }
 
     // Solo ejecutar detección de espacio si estamos en mobile o si showIconsOnlyMobile no está definido
-    let timeoutId;
-    let rafId;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let rafId: number | undefined;
     let isChecking = false;
 
     const checkSpace = () => {

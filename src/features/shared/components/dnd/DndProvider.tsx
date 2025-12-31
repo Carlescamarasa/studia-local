@@ -6,6 +6,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -14,7 +15,17 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 
-export function DndProvider({ children, onDragEnd }) {
+interface DragResult {
+  active: { id: string | number; data: any };
+  over: { id: string | number; data: any };
+}
+
+interface DndProviderProps {
+  children: React.ReactNode;
+  onDragEnd: (result: DragResult) => void;
+}
+
+export function DndProvider({ children, onDragEnd }: DndProviderProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -26,9 +37,9 @@ export function DndProvider({ children, onDragEnd }) {
     })
   );
 
-  const handleDragEnd = (event) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     if (!over || active.id === over.id) {
       return;
     }

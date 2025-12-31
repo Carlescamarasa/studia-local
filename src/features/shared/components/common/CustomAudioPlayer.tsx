@@ -1,11 +1,17 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Slider } from "@/features/shared/components/ui/slider";
 import { Button } from "@/features/shared/components/ds/Button";
-import { Play, Pause, RotateCcw } from "lucide-react";
+import { Play, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const CustomAudioPlayer = ({ src, className, ...props }) => {
-    const audioRef = useRef(null);
+interface CustomAudioPlayerProps {
+    src: string;
+    className?: string;
+    [key: string]: any;
+}
+
+const CustomAudioPlayer = ({ src, className, ...props }: CustomAudioPlayerProps) => {
+    const audioRef = useRef<HTMLAudioElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
     const [currentTime, setCurrentTime] = useState(0);
@@ -52,18 +58,18 @@ const CustomAudioPlayer = ({ src, className, ...props }) => {
         }
     };
 
-    const handleSeek = (value) => {
+    const handleSeek = (value: number[]) => {
         if (audioRef.current) {
             audioRef.current.currentTime = value[0];
             setCurrentTime(value[0]);
         }
     };
 
-    const handleSpeedChange = (value) => {
+    const handleSpeedChange = (value: number[]) => {
         setPlaybackRate(value[0]);
     };
 
-    const formatTime = (time) => {
+    const formatTime = (time: number) => {
         if (isNaN(time)) return "0:00";
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);

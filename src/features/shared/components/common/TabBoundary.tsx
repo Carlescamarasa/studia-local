@@ -8,16 +8,17 @@ const DefaultFallback = () => (
     </div>
 );
 
+interface TabBoundaryProps {
+    children: React.ReactNode;
+    fallback?: React.ReactNode;
+}
+
 /**
  * TabBoundary
  * Unifies ErrorBoundary and Suspense for tab content.
  * Should be used to wrap individual tab renders.
- * 
- * @param {object} props
- * @param {React.ReactNode} props.children
- * @param {React.ReactNode} [props.fallback] - Custom loading fallback
  */
-export default function TabBoundary({ children, fallback }) {
+export default function TabBoundary({ children, fallback }: TabBoundaryProps) {
     return (
         <ErrorBoundary variant="compact">
             <Suspense fallback={fallback || <DefaultFallback />}>

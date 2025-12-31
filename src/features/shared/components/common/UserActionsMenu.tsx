@@ -55,7 +55,14 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/features/shared/components/ui/select";
 import { Label } from "@/features/shared/components/ui/label";
 
-export default function UserActionsMenu({ user, usuarios = [], onRefresh, compact = false }) {
+interface UserActionsMenuProps {
+    user: any;
+    usuarios?: any[];
+    onRefresh?: () => void;
+    compact?: boolean;
+}
+
+export default function UserActionsMenu({ user, usuarios = [], onRefresh, compact = false }: UserActionsMenuProps) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const effectiveUser = useEffectiveUser();
@@ -66,7 +73,9 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
     const [isAssignProfesorDialogOpen, setIsAssignProfesorDialogOpen] = useState(false);
     const [profesorSeleccionado, setProfesorSeleccionado] = useState(user?.profesorAsignadoId || '');
 
+    // @ts-ignore - rolPersonalizado may not be in EffectiveUserContextValue type but exists at runtime
     const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
+    // @ts-ignore - rolPersonalizado may not be in EffectiveUserContextValue type but exists at runtime
     const isProf = effectiveUser?.rolPersonalizado === 'PROF';
     const isStudent = user?.rolPersonalizado === 'ESTU';
     const isActive = user?.isActive !== false && user?.is_active !== false;

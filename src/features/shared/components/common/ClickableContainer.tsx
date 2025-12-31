@@ -1,13 +1,21 @@
 import React from "react";
 
-export default function ClickableContainer({ 
-  onActivate, 
-  className = "", 
-  children, 
+interface ClickableContainerProps {
+  onActivate: (e: React.MouseEvent | React.KeyboardEvent) => void;
+  className?: string;
+  children: React.ReactNode;
+  expanded?: boolean;
+  ariaLabel?: string;
+}
+
+export default function ClickableContainer({
+  onActivate,
+  className = "",
+  children,
   expanded,
-  ariaLabel 
-}) {
-  const handleKeyDown = (e) => {
+  ariaLabel
+}: ClickableContainerProps) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onActivate(e);
