@@ -118,7 +118,7 @@ const CSS_VARIABLE_OPTIONS = {
 // UTILITIES
 // ============================================================================
 
-function isInExcludedZone(element) {
+function isInExcludedZone(element: Element) {
     try {
         for (const selector of EXCLUDED_SELECTORS) {
             if (element.closest(selector)) return true;
@@ -131,7 +131,7 @@ function isInExcludedZone(element) {
     return false;
 }
 
-function isHardcodedValue(value, category = null) {
+function isHardcodedValue(value: string | undefined, category: string | null = null) {
     if (!value) return false;
     if (ALLOWED_VALUES.has(value)) return false;
     if (value.includes('var(')) return false;
@@ -153,7 +153,7 @@ function isHardcodedValue(value, category = null) {
     return colorPatterns.some(p => p.test(value.trim()));
 }
 
-function normalizeColor(value) {
+function normalizeColor(value: string) {
     // Extract the color value for grouping
     const hexMatch = value.match(/#[0-9a-f]{3,8}/i);
     if (hexMatch) return hexMatch[0].toLowerCase();
@@ -177,7 +177,7 @@ function scanPage() {
 
         // Check inline styles
         STYLE_PROPERTIES.forEach(({ key, category }) => {
-            const value = el.style[key];
+            const value = (el as HTMLElement).style?.[key as any];
             if (value && isHardcodedValue(value, category)) {
                 const normalized = normalizeColor(value);
                 if (!byColor.has(normalized)) {
@@ -220,8 +220,8 @@ function scanPage() {
 // HIGHLIGHT HELPERS
 // ============================================================================
 
-function highlightElements(elements, color = '#ef4444') {
-    elements.forEach(el => {
+function highlightElements(elements: HTMLElement[], color = '#ef4444') {
+    elements.forEach((el: HTMLElement) => {
         if (!el.dataset.hardcodeHighlight) {
             el.dataset.hardcodeHighlight = 'true';
             el.dataset.originalOutline = el.style.outline || '';
@@ -233,10 +233,10 @@ function highlightElements(elements, color = '#ef4444') {
 
 function clearHighlights() {
     document.querySelectorAll('[data-hardcode-highlight]').forEach(el => {
-        el.style.outline = el.dataset.originalOutline || '';
-        el.style.outlineOffset = '';
-        delete el.dataset.hardcodeHighlight;
-        delete el.dataset.originalOutline;
+        (el as HTMLElement).style.outline = (el as HTMLElement).dataset.originalOutline || '';
+        (el as HTMLElement).style.outlineOffset = '';
+        delete (el as HTMLElement).dataset.hardcodeHighlight;
+        delete (el as HTMLElement).dataset.originalOutline;
     });
 }
 
@@ -251,15 +251,15 @@ export function HardcodeInspector({ showToggleButton = true }) {
         } catch { return false; }
     });
     const [isMinimized, setIsMinimized] = useState(false);
-    const [results, setResults] = useState([]);
-    const [selectedColor, setSelectedColor] = useState(null);
-    const [expandedItem, setExpandedItem] = useState(null); // For dropdown expansion
-    const [previewVars, setPreviewVars] = useState({}); // { color: cssVar } mapping for preview
-    const [savedAdjustments, setSavedAdjustments] = useState([]); // Persisted adjustments: { url, hardcode, category, type, replacement }
+    const [results, setResults] = useState<any[]>([]);
+    const [selectedColor, setSelectedColor] = useState<string | null>(null);
+    const [expandedItem, setExpandedItem] = useState<string | null>(null); // For dropdown expansion
+    const [previewVars, setPreviewVars] = useState<Record<string, string>>({}); // { color: cssVar } mapping for preview
+    const [savedAdjustments, setSavedAdjustments] = useState<any[]>([]); // Persisted adjustments: { url, hardcode, category, type, replacement }
     const [typeFilter, setTypeFilter] = useState('all'); // 'all' | 'inline' | 'tailwind'
     const [isScanning, setIsScanning] = useState(false);
-    const [panelPosition, setPanelPosition] = useState({ x: null, y: null }); // null = default position
-    const containerRef = useRef(null);
+    const [panelPosition, setPanelPosition] = useState<{ x: number | null, y: number | null }>({ x: null, y: null }); // null = default position
+    const containerRef = useRef<HTMLDivElement>(null);
     const isDragging = useRef(false);
     const dragOffset = useRef({ x: 0, y: 0 });
 
@@ -303,8 +303,8 @@ export function HardcodeInspector({ showToggleButton = true }) {
     }, []);
 
     // Drag handlers
-    const handleMouseDown = useCallback((e) => {
-        if (e.target.closest('button') || e.target.closest('select')) return; // Don't drag from buttons
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('select')) return; // Don't drag from buttons
         isDragging.current = true;
         const rect = containerRef.current?.getBoundingClientRect();
         if (rect) {
@@ -316,7 +316,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
         e.preventDefault();
     }, []);
 
-    const handleMouseMove = useCallback((e) => {
+    const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isDragging.current) return;
         const newX = e.clientX - dragOffset.current.x;
         const newY = e.clientY - dragOffset.current.y;
@@ -369,7 +369,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
         if (!isEnabled) return;
 
         let lastUrl = window.location.href;
-        let debounceTimer = null;
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
         const checkRouteChange = () => {
             const currentUrl = window.location.href;
@@ -397,7 +397,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
     }, [isEnabled, handleScan]);
 
 
-    const handleColorClick = useCallback((colorData) => {
+    const handleColorClick = useCallback((colorData: any) => {
         clearHighlights();
         if (selectedColor === colorData.color) {
             setSelectedColor(null);
@@ -448,7 +448,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
     }, [results, savedAdjustments]);
 
     // Apply CSS variable preview to elements and save adjustment
-    const handleApplyPreview = useCallback((colorData, cssVar) => {
+    const handleApplyPreview = useCallback((colorData: any, cssVar: string) => {
         const currentUrl = window.location.href;
 
         // Store the mapping for preview
@@ -474,19 +474,19 @@ export function HardcodeInspector({ showToggleButton = true }) {
         });
 
         // Apply preview to elements
-        colorData.elements.forEach(el => {
+        colorData.elements.forEach((el: HTMLElement) => {
             // Store original value if not already stored
             if (!el.dataset.originalHardcode) {
                 const property = colorData.category === 'background' ? 'backgroundColor' :
                     colorData.category === 'color' ? 'color' :
                         colorData.category === 'border' ? 'borderColor' :
                             colorData.category === 'radius' ? 'borderRadius' : 'boxShadow';
-                el.dataset.originalHardcode = el.style[property] || '';
+                el.dataset.originalHardcode = el.style[property as any] || '';
                 el.dataset.originalProperty = property;
             }
             // Apply the CSS variable
             const property = el.dataset.originalProperty || 'backgroundColor';
-            el.style[property] = `var(${cssVar})`;
+            el.style[property as any] = `var(${cssVar})`;
         });
 
         toast.success(`🎨 Ajuste guardado: var(${cssVar})`);
@@ -495,10 +495,10 @@ export function HardcodeInspector({ showToggleButton = true }) {
     // Clear all previews
     const handleClearPreviews = useCallback(() => {
         document.querySelectorAll('[data-original-hardcode]').forEach(el => {
-            const property = el.dataset.originalProperty || 'backgroundColor';
-            el.style[property] = el.dataset.originalHardcode || '';
-            delete el.dataset.originalHardcode;
-            delete el.dataset.originalProperty;
+            const property = (el as HTMLElement).dataset.originalProperty || 'backgroundColor';
+            (el as HTMLElement).style[property as any] = (el as HTMLElement).dataset.originalHardcode || '';
+            delete (el as HTMLElement).dataset.originalHardcode;
+            delete (el as HTMLElement).dataset.originalProperty;
         });
         setPreviewVars({});
         setSavedAdjustments([]);
@@ -506,7 +506,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
     }, []);
 
     // Remove single adjustment
-    const handleRemoveAdjustment = useCallback((hardcode) => {
+    const handleRemoveAdjustment = useCallback((hardcode: string) => {
         setSavedAdjustments(prev => prev.filter(a => a.hardcode !== hardcode));
         setPreviewVars(prev => {
             const updated = { ...prev };
@@ -557,7 +557,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
     // Panel (only when enabled) - draggable
     const panelStyle = panelPosition.x !== null ? {
         left: panelPosition.x,
-        top: panelPosition.y,
+        top: panelPosition.y ?? undefined,
         right: 'auto',
         bottom: 'auto'
     } : {};
@@ -681,7 +681,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
                     // Check previewVars first (live preview), then savedAdjustments (persisted)
                     const appliedVar = previewVars[item.color] ||
                         savedAdjustments.find(a => a.hardcode === item.color)?.replacement;
-                    const options = CSS_VARIABLE_OPTIONS[item.category] || CSS_VARIABLE_OPTIONS.color;
+                    const options = (CSS_VARIABLE_OPTIONS as any)[item.category] || CSS_VARIABLE_OPTIONS.color;
 
                     return (
                         <div key={idx} className="space-y-1">
@@ -734,7 +734,7 @@ export function HardcodeInspector({ showToggleButton = true }) {
                                 <div className="ml-4 p-2 rounded-lg bg-[var(--color-surface-muted)] border border-[var(--color-border-muted)] space-y-1">
                                     <p className="text-[9px] text-[var(--color-text-muted)] mb-1">Selecciona una variable CSS:</p>
                                     <div className="flex flex-wrap gap-1">
-                                        {options.map((opt) => (
+                                        {options.map((opt: any) => (
                                             <button
                                                 key={opt.var}
                                                 onClick={(e) => {

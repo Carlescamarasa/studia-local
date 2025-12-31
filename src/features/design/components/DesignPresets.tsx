@@ -25,34 +25,34 @@ export function getAllPresets() {
 /**
  * Guardar un preset personalizado
  */
-export function saveCustomPreset(id, name, description, config) {
+export function saveCustomPreset(id: string, name: string, description: string, config: any) {
   try {
     const customRaw = localStorage.getItem(CUSTOM_PRESETS_KEY);
     const custom = customRaw ? JSON.parse(customRaw) : {};
-    
+
     custom[id] = { name, description, config };
     localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(custom));
-    
+
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
 
 /**
  * Eliminar un preset personalizado
  */
-export function deleteCustomPreset(id) {
+export function deleteCustomPreset(id: string) {
   try {
     const customRaw = localStorage.getItem(CUSTOM_PRESETS_KEY);
     const custom = customRaw ? JSON.parse(customRaw) : {};
-    
+
     delete custom[id];
     localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(custom));
-    
+
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
 
@@ -61,7 +61,7 @@ export function deleteCustomPreset(id) {
  * NOTA: Los presets base están en BasePresets.ts, no aquí
  * Esta función siempre devuelve false porque aquí solo hay presets personalizados
  */
-export function isBuiltInPreset(id) {
+export function isBuiltInPreset(id: string) {
   // Los presets base están en BasePresets.ts, no aquí
   // Todos los presets aquí son personalizados y se pueden eliminar
   return false;
@@ -82,24 +82,24 @@ export function exportCustomPresets() {
 /**
  * Importar presets desde JSON
  */
-export function importCustomPresets(json) {
+export function importCustomPresets(json: string) {
   try {
     const imported = JSON.parse(json);
-    
+
     // Validar estructura básica
     if (typeof imported !== 'object') {
       throw new Error('Formato inválido');
     }
-    
+
     // Merge con presets existentes
     const customRaw = localStorage.getItem(CUSTOM_PRESETS_KEY);
     const existing = customRaw ? JSON.parse(customRaw) : {};
-    
+
     const merged = { ...existing, ...imported };
     localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(merged));
-    
+
     return { success: true, count: Object.keys(imported).length };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }

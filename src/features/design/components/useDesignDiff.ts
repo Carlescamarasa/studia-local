@@ -7,6 +7,12 @@
 import { useMemo, useCallback } from 'react';
 import { useDesign } from './DesignProvider';
 
+interface DiffChange {
+    path: string;
+    from: any;
+    to: any;
+}
+
 /**
  * Hook to compute and manage diffs between base design and preview overlay
  * @returns {Object} - partitioned diff, counts, and utility functions
@@ -46,7 +52,7 @@ export function useDesignDiff() {
     }, [diff]);
 
     // Download as JSON file
-    const downloadExport = useCallback((data, filename) => {
+    const downloadExport = useCallback((data: any, filename?: string) => {
         const json = JSON.stringify(data, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -82,7 +88,7 @@ export function useDesignDiff() {
 
         if (diff.common.length > 0) {
             lines.push('## Common Changes (affect both modes)');
-            diff.common.forEach(c => {
+            diff.common.forEach((c: DiffChange) => {
                 lines.push(`- \`${c.path}\`: ${JSON.stringify(c.from)} → ${JSON.stringify(c.to)}`);
             });
             lines.push('');
@@ -90,7 +96,7 @@ export function useDesignDiff() {
 
         if (diff.light.length > 0) {
             lines.push('## Light Mode Changes');
-            diff.light.forEach(c => {
+            diff.light.forEach((c: DiffChange) => {
                 lines.push(`- \`${c.path}\`: ${JSON.stringify(c.from)} → ${JSON.stringify(c.to)}`);
             });
             lines.push('');
@@ -98,7 +104,7 @@ export function useDesignDiff() {
 
         if (diff.dark.length > 0) {
             lines.push('## Dark Mode Changes');
-            diff.dark.forEach(c => {
+            diff.dark.forEach((c: DiffChange) => {
                 lines.push(`- \`${c.path}\`: ${JSON.stringify(c.from)} → ${JSON.stringify(c.to)}`);
             });
             lines.push('');

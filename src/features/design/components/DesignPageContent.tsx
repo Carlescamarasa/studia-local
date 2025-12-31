@@ -780,7 +780,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPa
   const setConfig = setDesign;
   const reset = resetDesign;
   const [activeSection, setActiveSection] = useState('controls');
-  const [qaTabsValue, setQaTabsValue] = useState<string | null>('one');
+  const [qaTabsValue, setQaTabsValue] = useState<string>('one');
   const [qaOutput, setQaOutput] = useState<AuditResults | null>(null);
   const [qaRunning, setQaRunning] = useState(false);
   const [auditReport, setAuditReport] = useState<DesignAuditReport | null>(null);

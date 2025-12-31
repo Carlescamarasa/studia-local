@@ -6,15 +6,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Play, Pause, Volume2, VolumeX, Minus, Plus, Timer } from "lucide-react";
 import { componentStyles } from "@/design/componentStyles";
 
-export default function Metronomo({ initialBpm = 60, onPpmChange }) {
+interface MetronomoProps {
+    initialBpm?: number;
+    onPpmChange?: (data: { bpm: number; unidad: string }) => void;
+}
+
+export default function Metronomo({ initialBpm = 60, onPpmChange }: MetronomoProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [bpm, setBpm] = useState(initialBpm);
     const [unidad, setUnidad] = useState('negra'); // negra, blanca, blancaConPuntillo, corchea
     const [volume, setVolume] = useState(0.5);
 
-    const audioContextRef = useRef(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
     const nextNoteTimeRef = useRef(0);
-    const timerIDRef = useRef(null);
+    const timerIDRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lookahead = 25.0; // ms
     const scheduleAheadTime = 0.1; // s
 
@@ -28,8 +33,8 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }) {
 
     // Inicializar AudioContext
     useEffect(() => {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioContextRef.current = new AudioContext();
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        audioContextRef.current = new AudioContextClass();
         return () => {
             if (audioContextRef.current) {
                 audioContextRef.current.close();
@@ -45,7 +50,8 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }) {
         nextNoteTimeRef.current += secondsPerBeat;
     }, [bpm]);
 
-    const playClick = (time) => {
+    const playClick = (time: number) => {
+        if (!audioContextRef.current) return;
         const osc = audioContextRef.current.createOscillator();
         const gainNode = audioContextRef.current.createGain();
 
@@ -60,6 +66,7 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }) {
     };
 
     const scheduler = useCallback(() => {
+        if (!audioContextRef.current) return;
         while (nextNoteTimeRef.current < audioContextRef.current.currentTime + scheduleAheadTime) {
             playClick(nextNoteTimeRef.current);
             nextNote();
@@ -68,7 +75,7 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }) {
     }, [nextNote, volume]);
 
     useEffect(() => {
-        if (isPlaying) {
+        if (isPlaying && audioContextRef.current) {
             if (audioContextRef.current.state === 'suspended') {
                 audioContextRef.current.resume();
             }
@@ -92,7 +99,7 @@ export default function Metronomo({ initialBpm = 60, onPpmChange }) {
         }
     }, [bpm, unidad, onPpmChange]);
 
-    const adjustBpm = (delta) => {
+    const adjustBpm = (delta: number) => {
         setBpm(prev => Math.max(30, Math.min(300, prev + delta)));
     };
 

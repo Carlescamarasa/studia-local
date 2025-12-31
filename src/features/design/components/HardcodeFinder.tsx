@@ -22,6 +22,32 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface HardcodeIssue {
+    element: Element;
+    type: 'inline' | 'tailwind';
+    property: string;
+    category: string;
+    value: string;
+    selector: string;
+    rootSelector: string;
+}
+
+interface HardcodeGroup {
+    root: string;
+    count: number;
+    inlineCount: number;
+    tailwindCount: number;
+    issues: HardcodeIssue[];
+}
+
+interface ScanData {
+    results: HardcodeGroup[];
+    allIssues: HardcodeIssue[];
+    totalInline: number;
+    totalTailwind: number;
+    totalIssues: number;
+}
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
@@ -76,7 +102,7 @@ const TAILWIND_ARBITRARY_PATTERNS = [
 // UTILITY FUNCTIONS
 // ============================================================================
 
-function isInExcludedZone(element) {
+function isInExcludedZone(element: Element): boolean {
     try {
         for (const selector of EXCLUDED_SELECTORS) {
             if (element.closest(selector)) return true;
@@ -89,11 +115,11 @@ function isInExcludedZone(element) {
     return false;
 }
 
-function usesVariable(value) {
+function usesVariable(value: string) {
     return value && value.includes('var(');
 }
 
-function isHardcodedValue(value) {
+function isHardcodedValue(value: string) {
     if (!value) return false;
     if (ALLOWED_VALUES.has(value)) return false;
     if (usesVariable(value)) return false;
@@ -109,7 +135,7 @@ function isHardcodedValue(value) {
     return colorPatterns.some(p => p.test(value.trim()));
 }
 
-function getRootSelector(element) {
+function getRootSelector(element: Element) {
     let current = element;
     let depth = 0;
 
@@ -124,7 +150,7 @@ function getRootSelector(element) {
 
         if (current.className && typeof current.className === 'string') {
             const classes = current.className.split(' ');
-            const meaningful = classes.find(c =>
+            const meaningful = classes.find((c: string) =>
                 c && !c.startsWith('p-') && !c.startsWith('m-') &&
                 !c.startsWith('w-') && !c.startsWith('h-') &&
                 !c.startsWith('flex') && !c.startsWith('grid') &&
@@ -141,15 +167,19 @@ function getRootSelector(element) {
             return `#${current.id}`;
         }
 
-        current = current.parentElement;
+        if (current.parentElement) {
+            current = current.parentElement as Element;
+        } else {
+            current = document.body; // Break loop
+        }
         depth++;
     }
 
     return element.tagName?.toLowerCase() || 'unknown';
 }
 
-function getShortSelector(element) {
-    const parts = [];
+function getShortSelector(element: Element) {
+    const parts: string[] = [];
     let current = element;
     let depth = 0;
 
@@ -160,7 +190,12 @@ function getShortSelector(element) {
             if (cls && cls.length < 30 && !cls.startsWith('hardcode-')) sel += `.${cls}`;
         }
         if (sel) parts.unshift(sel);
-        current = current.parentElement;
+
+        if (current.parentElement) {
+            current = current.parentElement as Element;
+        } else {
+            break;
+        }
         depth++;
     }
 
@@ -175,14 +210,14 @@ function getShortSelector(element) {
  * Scan DOM for hardcoded INLINE styles
  */
 function scanInlineStyles() {
-    const results = [];
+    const results: any[] = [];
     const elements = document.querySelectorAll('*');
 
     elements.forEach((el) => {
         if (isInExcludedZone(el)) return;
 
         STYLE_PROPERTIES.forEach(({ key, label, category }) => {
-            const inlineValue = el.style[key];
+            const inlineValue = (el as HTMLElement).style?.[key as any];
 
             if (inlineValue && isHardcodedValue(inlineValue)) {
                 results.push({
@@ -205,7 +240,7 @@ function scanInlineStyles() {
  * Scan DOM for Tailwind arbitrary color values
  */
 function scanTailwindArbitrary() {
-    const results = [];
+    const results: any[] = [];
     const elements = document.querySelectorAll('[class]');
 
     elements.forEach((el) => {
@@ -249,7 +284,7 @@ function scanAll() {
     // Group by root selector
     const byRoot = new Map();
 
-    allResults.forEach(issue => {
+    allResults.forEach((issue: any) => {
         const key = issue.rootSelector;
         if (!byRoot.has(key)) {
             byRoot.set(key, { issues: [], inlineCount: 0, tailwindCount: 0 });
@@ -296,7 +331,7 @@ const HIGHLIGHT_STYLE = `
     position: relative !important;
 `;
 
-function addHighlight(element) {
+function addHighlight(element: HTMLElement) {
     if (!element || element.dataset.hardcodeHighlight) return;
     element.dataset.hardcodeHighlight = 'true';
     element.dataset.originalOutline = element.style.outline || '';
@@ -305,7 +340,7 @@ function addHighlight(element) {
     element.style.outlineOffset = '2px';
 }
 
-function removeHighlight(element) {
+function removeHighlight(element: HTMLElement) {
     if (!element || !element.dataset.hardcodeHighlight) return;
     element.style.outline = element.dataset.originalOutline || '';
     element.style.outlineOffset = element.dataset.originalOutlineOffset || '';
@@ -316,11 +351,11 @@ function removeHighlight(element) {
 
 function clearAllHighlights() {
     document.querySelectorAll('[data-hardcode-highlight]').forEach(el => {
-        removeHighlight(el);
+        removeHighlight(el as HTMLElement);
     });
 }
 
-function scrollToElement(element) {
+function scrollToElement(element: HTMLElement) {
     if (!element) return;
     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     // Flash effect
@@ -335,7 +370,7 @@ function scrollToElement(element) {
 // REPORT GENERATION
 // ============================================================================
 
-function generateMarkdownReport(data) {
+function generateMarkdownReport(data: any) {
     if (data.results.length === 0) {
         return '# Hardcoded Styles Report\n\n✅ No hardcoded styles found.';
     }
@@ -349,14 +384,14 @@ function generateMarkdownReport(data) {
         '',
     ];
 
-    data.results.forEach(r => {
+    data.results.forEach((r: any) => {
         const badges = [];
         if (r.inlineCount > 0) badges.push(`${r.inlineCount} inline`);
         if (r.tailwindCount > 0) badges.push(`${r.tailwindCount} tailwind`);
 
         lines.push(`## ${r.root} (${badges.join(', ')})`);
         lines.push('');
-        r.issues.forEach(issue => {
+        r.issues.forEach((issue: any) => {
             const typeTag = issue.type === 'inline' ? '🔧' : '🎨';
             lines.push(`- ${typeTag} \`${issue.property}: ${issue.value}\` → ${issue.selector}`);
         });
@@ -377,8 +412,8 @@ function generateMarkdownReport(data) {
 // ============================================================================
 
 export function HardcodeFinder() {
-    const [openRoot, setOpenRoot] = useState(null);
-    const [scanData, setScanData] = useState(null);
+    const [openRoot, setOpenRoot] = useState<number | null>(null);
+    const [scanData, setScanData] = useState<ScanData | null>(null);
     const [isScanning, setIsScanning] = useState(false);
 
     // Navigation mode
@@ -403,9 +438,9 @@ export function HardcodeFinder() {
             highlightedElements.current.clear();
         } else if (scanData) {
             // Apply highlights to all detected elements
-            scanData.allIssues.forEach(issue => {
+            scanData.allIssues.forEach((issue: any) => {
                 if (issue.element) {
-                    addHighlight(issue.element);
+                    addHighlight(issue.element as HTMLElement);
                     highlightedElements.current.add(issue.element);
                 }
             });
@@ -444,9 +479,9 @@ export function HardcodeFinder() {
         toast.success('📋 Reporte copiado al portapapeles');
     }, [scanData]);
 
-    const handleItemClick = useCallback((issue) => {
+    const handleItemClick = useCallback((issue: any) => {
         if (issue.element) {
-            scrollToElement(issue.element);
+            scrollToElement(issue.element as HTMLElement);
         }
     }, []);
 
@@ -459,7 +494,7 @@ export function HardcodeFinder() {
         if (!scanData) return [];
 
         return scanData.results.map(group => {
-            const filteredIssues = group.issues.filter(issue => {
+            const filteredIssues = group.issues.filter((issue: any) => {
                 if (filterType !== 'all' && issue.type !== filterType) return false;
                 if (filterCategory !== 'all' && issue.category !== filterCategory) return false;
                 return true;
@@ -468,7 +503,7 @@ export function HardcodeFinder() {
             // Recalculate counts based on filter
             let inlineCount = 0;
             let tailwindCount = 0;
-            group.issues.forEach(issue => {
+            group.issues.forEach((issue: any) => {
                 const passesFilter =
                     (filterType === 'all' || issue.type === filterType) &&
                     (filterCategory === 'all' || issue.category === filterCategory);
@@ -598,8 +633,8 @@ export function HardcodeFinder() {
                                                 key={t}
                                                 onClick={() => setFilterType(t)}
                                                 className={`px-2 py-1 text-[10px] rounded ${filterType === t
-                                                        ? 'bg-[var(--color-primary)] text-white'
-                                                        : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]'
+                                                    ? 'bg-[var(--color-primary)] text-white'
+                                                    : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]'
                                                     }`}
                                             >
                                                 {t === 'all' ? 'Todos' : t === 'inline' ? '🔧 Inline' : '🎨 Tailwind'}
@@ -613,8 +648,8 @@ export function HardcodeFinder() {
                                                 key={c}
                                                 onClick={() => setFilterCategory(c)}
                                                 className={`px-2 py-1 text-[10px] rounded ${filterCategory === c
-                                                        ? 'bg-[var(--color-primary)] text-white'
-                                                        : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]'
+                                                    ? 'bg-[var(--color-primary)] text-white'
+                                                    : 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]'
                                                     }`}
                                             >
                                                 {c === 'all' ? 'Todas' : c}
@@ -641,7 +676,7 @@ export function HardcodeFinder() {
                                     No hay resultados con los filtros actuales.
                                 </p>
                             )}
-                            {filteredResults.map((group, idx) => (
+                            {filteredResults.map((group: any, idx: number) => (
                                 <div
                                     key={idx}
                                     className="border border-[var(--color-border-muted)] rounded-lg overflow-hidden"
@@ -665,7 +700,7 @@ export function HardcodeFinder() {
 
                                     {openRoot === idx && (
                                         <div className="p-2 space-y-1 bg-[var(--color-surface-elevated)]">
-                                            {group.issues.map((issue, iidx) => (
+                                            {group.issues.map((issue: any, iidx: number) => (
                                                 <div
                                                     key={iidx}
                                                     className="text-[10px] flex gap-2 items-center cursor-pointer hover:bg-[var(--color-surface-muted)] p-1 rounded"

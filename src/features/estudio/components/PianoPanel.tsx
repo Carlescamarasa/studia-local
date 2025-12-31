@@ -10,7 +10,7 @@ import {
 } from "@/utils/musicTransposition";
 
 // Trumpet Icon Component - Based on trompet.svg, adapted for currentColor
-const TrumpetIcon = ({ className = "w-4 h-4", style = {} }) => (
+const TrumpetIcon = ({ className = "w-4 h-4", style = {} }: { className?: string; style?: React.CSSProperties }) => (
     <svg
         className={className}
         style={style}
@@ -35,7 +35,7 @@ const TrumpetIcon = ({ className = "w-4 h-4", style = {} }) => (
 );
 
 // InfoTooltip Component - Accessible tooltip with ⓘ icon
-const InfoTooltip = ({ text }) => {
+const InfoTooltip = ({ text }: { text: string }) => {
     const [isVisible, setIsVisible] = useState(false);
     const tooltipId = useRef(`tooltip-${Math.random().toString(36).substr(2, 9)}`);
 
@@ -66,7 +66,7 @@ const InfoTooltip = ({ text }) => {
 };
 
 // Helper to get frequency from semitone offset relative to A4 (440)
-const getFreq = (semitonesFromA4) => 440 * Math.pow(2, semitonesFromA4 / 12);
+const getFreq = (semitonesFromA4: number) => 440 * Math.pow(2, semitonesFromA4 / 12);
 
 /**
  * Convert piano key MIDI to concert pitch MIDI based on pianoKey mode.
@@ -76,7 +76,7 @@ const getFreq = (semitonesFromA4) => 440 * Math.pow(2, semitonesFromA4 / 12);
  * @param {string} pianoKey - 'Do' or 'Sib'
  * @returns {number} Concert pitch MIDI
  */
-const pianoToConcertMidi = (pianoKeyMidi, pianoKey) => {
+const pianoToConcertMidi = (pianoKeyMidi: number, pianoKey: string) => {
     if (pianoKey === 'Do') return pianoKeyMidi;
     // Bb instrument: written G (67) sounds as concert F (65), i.e., -2 semitones
     return pianoKeyMidi - 2;
@@ -89,7 +89,16 @@ const pianoToConcertMidi = (pianoKeyMidi, pianoKey) => {
 // "label": The label displayed on the key (WRITTEN pitch)
 // "accidental": explicitly used for Staff display (null, '#')
 // "enharmonic": Alternate name (e.g. Do# -> Reb)
-const WRITTEN_NOTES = [
+interface NoteDef {
+    name: string;
+    type: 'white' | 'black';
+    writtenMidi: number;
+    label: string;
+    accidental: string | null;
+    enharmonic?: string;
+}
+
+const WRITTEN_NOTES: NoteDef[] = [
     { name: "F#2", type: "black", writtenMidi: 42, label: "Fa#", accidental: '#', enharmonic: "Solb" },
     { name: "G2", type: "white", writtenMidi: 43, label: "Sol", accidental: null },
     { name: "G#2", type: "black", writtenMidi: 44, label: "Sol#", accidental: '#', enharmonic: "Lab" },
@@ -144,7 +153,7 @@ const VISIBLE_NOTES = WRITTEN_NOTES.slice(12); // From F#3 onwards
 // TRUMPET FINGERINGS DATA
 // Key = Note Name (approximate matching) considering the range Fa#3 to Do6
 // 0 = Open, 1, 2, 3 = Pistons
-const TRUMPET_FINGERINGS = {
+const TRUMPET_FINGERINGS: Record<string, number[]> = {
     // Octave 3 (Low)
     'F#3': [1, 2, 3],
     'G3': [1, 3],
@@ -183,7 +192,7 @@ const TRUMPET_FINGERINGS = {
 };
 
 // SVG MUSIC STAFF COMPONENT - Larger, cleaner notation
-const MusicStaff = ({ note }) => {
+const MusicStaff = ({ note }: { note: any }) => {
     // Larger dimensions for better visibility
     const staffHeight = 100;
     const spacing = 10;
@@ -209,7 +218,7 @@ const MusicStaff = ({ note }) => {
     }
 
     // Staff Drawing Logic
-    const noteSteps = { "C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6 };
+    const noteSteps: Record<string, number> = { "C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6 };
     const match = note.name.match(/([A-G])([#b]?)(\d)/);
     if (!match) return null;
 
@@ -276,12 +285,24 @@ const MusicStaff = ({ note }) => {
     );
 };
 
-export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
-    const audioContextRef = useRef(null);
+interface PianoPanelProps {
+    isOpen: boolean;
+    onClose: () => void;
+    bottomOffset?: number | string;
+}
+
+interface ActiveNote {
+    osc: OscillatorNode;
+    gain: GainNode;
+    concertMidi: number;
+}
+
+export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }: PianoPanelProps) {
+    const audioContextRef = useRef<AudioContext | null>(null);
     // Map of active notes: noteName -> { osc, gain, intervalId? }
-    const activeNotes = useRef(new Map());
-    const panelRef = useRef(null);
-    const scrollRef = useRef(null);
+    const activeNotes = useRef<Map<string, ActiveNote>>(new Map());
+    const panelRef = useRef<HTMLDivElement | null>(null);
+    const scrollRef = useRef<HTMLDivElement | null>(null);
     const sustainRef = useRef(false); // Ref for immediate audio logic
 
     // Sidebar state for positioning - safe access (returns defaults if no provider)
@@ -298,12 +319,12 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
     }, [isOpen]);
 
     // Track which keys are currently pressed for visual highlighting
-    const [pressedKeys, setPressedKeys] = useState(new Set());
+    const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
 
     // Feature State
     const [pianoMode, setPianoMode] = useState('Sib'); // 'Sib' | 'Do'
     const [trumpetMode, setTrumpetMode] = useState('Sib'); // 'Sib' | 'Do'
-    const [lastNote, setLastNote] = useState(null); // { name, midi, label }
+    const [lastNote, setLastNote] = useState<(NoteDef & { concertMidi?: number }) | null>(null); // { name, midi, label }
     const [isSustaining, setIsSustaining] = useState(false);
 
     // Sync Ref
@@ -333,9 +354,9 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
     // Init AudioContext on open
     useEffect(() => {
         if (isOpen && !audioContextRef.current) {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
             // Low latency hint for interactive audio
-            audioContextRef.current = new AudioContext({ latencyHint: 'interactive' });
+            audioContextRef.current = new AudioContextClass({ latencyHint: 'interactive' });
         }
     }, [isOpen]);
 
@@ -356,6 +377,8 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
     }, [isOpen]);
 
     const stopAllSounds = () => {
+        if (!audioContextRef.current) return;
+
         activeNotes.current.forEach(({ osc, gain }) => {
             try {
                 const now = audioContextRef.current?.currentTime || 0;
@@ -373,13 +396,13 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
         setPressedKeys(new Set()); // Reset visual state
     };
 
-    const startNote = (note, e) => {
+    const startNote = (note: NoteDef, e?: React.PointerEvent<any>) => {
         // ALLOW default behavior to enable native scrolling
         // if (e && e.cancelable) { e.preventDefault(); }
 
         // Capture pointer if available to track release outside
-        if (e && e.target && e.target.setPointerCapture) {
-            try { e.target.setPointerCapture(e.pointerId); } catch (err) { }
+        if (e && e.target && (e.target as Element).setPointerCapture) {
+            try { (e.target as Element).setPointerCapture(e.pointerId); } catch (err) { }
         }
 
         if (!audioContextRef.current) return;
@@ -430,7 +453,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
         setLastNote({ ...note, concertMidi });
     };
 
-    const stopNote = (note, e, force = false) => {
+    const stopNote = (note: NoteDef, e?: React.PointerEvent<any> | null, force = false) => {
         if (e && e.preventDefault && e.cancelable) e.preventDefault();
 
         // If Sustain is ON, we do NOT stop the audio AND we keep the visual key pressed
@@ -441,6 +464,8 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
 
         const active = activeNotes.current.get(note.name);
         if (!active) return; // Already stopped or not playing
+
+        if (!audioContextRef.current) return;
 
         const { osc, gain } = active;
         const now = audioContextRef.current.currentTime;
@@ -469,7 +494,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }) {
     };
 
     // Step Logic
-    const handleStep = (direction) => { // 1 or -1
+    const handleStep = (direction: number) => { // 1 or -1
         if (!lastNote) return;
         const currentIdx = WRITTEN_NOTES.findIndex(n => n.name === lastNote.name);
         if (currentIdx === -1) return;

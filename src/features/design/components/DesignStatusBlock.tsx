@@ -7,7 +7,19 @@ import { Badge } from '@/features/shared/components/ds';
 import { Sun, Moon, RotateCcw, Download, ChevronDown, ChevronUp, X, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
-export function DesignStatusBlock({ activeTab, onTabChange, tabs }) {
+interface DesignStatusBlockProps {
+    activeTab: string;
+    onTabChange: (tab: string) => void;
+    tabs: { value: string; label: string }[];
+}
+
+interface DiffChange {
+    path: string;
+    newValue: any;
+    to?: any;
+}
+
+export function DesignStatusBlock({ activeTab, onTabChange, tabs }: DesignStatusBlockProps) {
     const { activeMode, setActiveMode, isPreviewActive, clearPreview } = useDesign();
     const { totalCount, hasChanges, downloadExport, diff, revertChange } = useDesignDiff();
     const [showChanges, setShowChanges] = useState(false);
@@ -117,9 +129,9 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }) {
                                 size="sm"
                                 onClick={() => {
                                     const text = [
-                                        common.length > 0 && `Comunes (${common.length}):\n${common.map(c => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`,
-                                        light.length > 0 && `Solo Light (${light.length}):\n${light.map(c => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`,
-                                        dark.length > 0 && `Solo Dark (${dark.length}):\n${dark.map(c => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`
+                                        common.length > 0 && `Comunes (${common.length}):\n${common.map((c: DiffChange) => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`,
+                                        light.length > 0 && `Solo Light (${light.length}):\n${light.map((c: DiffChange) => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`,
+                                        dark.length > 0 && `Solo Dark (${dark.length}):\n${dark.map((c: DiffChange) => `  ${c.path}: ${c.to ?? c.newValue}`).join('\n')}`
                                     ].filter(Boolean).join('\n\n');
                                     navigator.clipboard.writeText(text);
                                     toast.success('Cambios copiados al portapapeles');
@@ -133,7 +145,7 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }) {
                                 variant="default"
                                 size="sm"
                                 onClick={() => {
-                                    downloadExport();
+                                    downloadExport(diff, `design-export-${new Date().toISOString()}.json`);
                                     toast.success('Informe exportado correctamente');
                                 }}
                                 className="h-8 text-xs gap-2 btn-primary"
@@ -165,7 +177,7 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }) {
                                 </div>
                                 {common.length > 0 ? (
                                     <ul className="space-y-1 text-[var(--color-text-secondary)] max-h-40 overflow-y-auto">
-                                        {common.map((c, i) => (
+                                        {common.map((c: DiffChange, i: number) => (
                                             <li key={i} className="flex items-center justify-between gap-2 group">
                                                 <span className="truncate font-mono text-[11px]">
                                                     {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
@@ -194,7 +206,7 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }) {
                                 </div>
                                 {light.length > 0 ? (
                                     <ul className="space-y-1 text-[var(--color-text-secondary)] max-h-40 overflow-y-auto">
-                                        {light.map((c, i) => (
+                                        {light.map((c: DiffChange, i: number) => (
                                             <li key={i} className="flex items-center justify-between gap-2 group">
                                                 <span className="truncate font-mono text-[11px]">
                                                     {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
@@ -223,7 +235,7 @@ export function DesignStatusBlock({ activeTab, onTabChange, tabs }) {
                                 </div>
                                 {dark.length > 0 ? (
                                     <ul className="space-y-1 text-[var(--color-text-secondary)] max-h-40 overflow-y-auto">
-                                        {dark.map((c, i) => (
+                                        {dark.map((c: DiffChange, i: number) => (
                                             <li key={i} className="flex items-center justify-between gap-2 group">
                                                 <span className="truncate font-mono text-[11px]">
                                                     {c.path}: {String(c.to ?? c.newValue).slice(0, 20)}
