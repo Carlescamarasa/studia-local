@@ -3,6 +3,27 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { remoteDataAPI, fetchBloquesPreview, fetchPiezasPreview, fetchFeedbacksSemanales, fetchRegistrosSesionMultimedia, fetchSupportMensajes } from "@/api/remoteDataAPI";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/features/shared/components/ds";
+
+interface MediaAsset {
+    id: string;
+    url?: string;
+    name?: string;
+    fileType: string;
+    originType: string;
+    originId?: string;
+    originLabel?: string;
+    storagePath?: string;
+    createdAt?: string;
+    [key: string]: any;
+}
+
+interface LegacyContent {
+    mediaLinks?: string[];
+    media_links?: string[];
+    variations?: any[];
+    [key: string]: any;
+}
+
 import { Button } from "@/features/shared/components/ui/button";
 import { Input } from "@/features/shared/components/ui/input";
 import { Search, X, FileVideo, FileAudio, Image as ImageIcon, FileText, Trash2, ExternalLink, Database, RefreshCw } from "lucide-react";
@@ -28,7 +49,7 @@ import {
  * 2. Storage Path (nombre de archivo)
  * 3. URL (nombre de archivo o ID youtube)
  */
-function deriveAssetDisplayName(asset) {
+function deriveAssetDisplayName(asset: MediaAsset) {
     if (!asset) return "(Desconocido)";
 
     let candidate = asset.name;
@@ -130,7 +151,7 @@ const STATE_BADGES = {
 import { getYouTubeTitle } from "@/features/shared/utils/media";
 
 // Componente para renderizar el nombre de forma asíncrona (YouTube titles)
-function AssetDisplayName({ asset, deriveDisplayName }) {
+function AssetDisplayName({ asset, deriveDisplayName }: { asset: MediaAsset, deriveDisplayName: (a: MediaAsset) => string }) {
     const defaultName = deriveDisplayName(asset);
     const [title, setTitle] = useState(defaultName);
     const [loading, setLoading] = useState(false);
@@ -193,14 +214,14 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
 
     // Delete Mutation
     const deleteAssetMutation = useMutation({
-        mutationFn: async (id) => {
+        mutationFn: async (id: string) => {
             await remoteDataAPI.mediaAssets.delete(id);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['media_assets'] });
             toast.success('Asset eliminado correctamente');
         },
-        onError: (error) => {
+        onError: (error: any) => {
             toast.error('Error al eliminar asset: ' + error.message);
         },
     });
@@ -218,7 +239,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
 
         try {
             // Helper to derive a better name for the link
-            const deriveNameFromLink = (url) => {
+            const deriveNameFromLink = (url: string) => {
                 if (!url) return null;
                 try {
                     // YouTube
@@ -235,7 +256,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                 return url.split('/').pop(); // Fallback
             };
 
-            const migrateLinks = async (links, originType, originId, originLabel, defaultName) => {
+            const migrateLinks = async (links: string[], originType: string, originId: any, originLabel: any, defaultName: any) => {
                 if (!links || !Array.isArray(links)) return;
 
                 for (const link of links) {
@@ -249,11 +270,11 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                             name: derivedName,
                             fileType: getFileTypeFromUrl(link),
                             /* originalName: null */
-                            originType: originType,
+                            originType: originType as any,
                             originId: originId,
                             originLabel: originLabel,
                             state: 'external',
-                            storagePath: null
+                            storagePath: null as any
                         });
                         addedCount++;
                     } catch (err) {
@@ -267,10 +288,10 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
             const exercises = await fetchBloquesPreview();
             if (exercises) {
                 scannedCount += exercises.length;
-                for (const ej of exercises) {
+                for (const ej of (exercises as any[])) {
                     // Main links
                     const mediaLinks = ej.media_links || ej.mediaLinks; // Handle snake/camel
-                    await migrateLinks(mediaLinks, MEDIA_ORIGIN_TYPES.EJERCICIO, ej.id, ej.nombre || ej.code, 'Ejercicio Legacy');
+                    await migrateLinks(mediaLinks, MEDIA_ORIGIN_TYPES.EJERCICIO as any, ej.id, ej.nombre || ej.code, 'Ejercicio Legacy');
 
                     // Variations
                     const variations = ej.variations ||
@@ -302,7 +323,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                     if (p.elementos && Array.isArray(p.elementos)) {
                         for (const elem of p.elementos) {
                             if (elem.mediaLinks && Array.isArray(elem.mediaLinks)) {
-                                await migrateLinks(elem.mediaLinks, MEDIA_ORIGIN_TYPES.PIEZA, p.id, `${p.nombre} - ${elem.nombre}`, 'Pieza Legacy');
+                                await migrateLinks(elem.mediaLinks, MEDIA_ORIGIN_TYPES.PIEZA as any, p.id, `${p.nombre} - ${elem.nombre}`, 'Pieza Legacy');
                             }
                         }
                     }
@@ -316,9 +337,9 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
             if (feedbacks) {
                 scannedCount += feedbacks.length;
                 for (const fb of feedbacks) {
-                    const links = fb.media_links || fb.mediaLinks;
+                    const links = (fb as any).media_links || (fb as any).mediaLinks;
                     if (links) { // Assuming format(date) might be needed for label, using ID for now
-                        await migrateLinks(links, MEDIA_ORIGIN_TYPES.FEEDBACK_PROFESOR, fb.id, `Feedback del ${new Date(fb.created_at).toLocaleDateString()}`, 'Feedback Profesor');
+                        await migrateLinks(links, MEDIA_ORIGIN_TYPES.FEEDBACK_PROFESOR as any, fb.id, `Feedback del ${new Date(fb.created_at).toLocaleDateString()}`, 'Feedback Profesor');
                     }
                 }
             }
@@ -330,9 +351,9 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
             if (sesiones) {
                 scannedCount += sesiones.length;
                 for (const ses of sesiones) {
-                    const links = ses.media_links || ses.mediaLinks;
+                    const links = (ses as any).media_links || (ses as any).mediaLinks;
                     if (links) {
-                        await migrateLinks(links, MEDIA_ORIGIN_TYPES.FEEDBACK_SESION, ses.id, `Sesión ${ses.sesion_nombre || new Date(ses.created_at).toLocaleDateString()}`, 'Adjunto de Sesión');
+                        await migrateLinks(links, MEDIA_ORIGIN_TYPES.FEEDBACK_SESION as any, ses.id, `Sesión ${(ses as any).sesion_nombre || new Date(ses.created_at).toLocaleDateString()}`, 'Adjunto de Sesión');
                     }
                 }
             }
@@ -344,9 +365,9 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
             if (mensajes) {
                 scannedCount += mensajes.length;
                 for (const msg of mensajes) {
-                    const links = msg.media_links || msg.mediaLinks;
+                    const links = (msg as any).media_links || (msg as any).mediaLinks;
                     if (links) {
-                        await migrateLinks(links, MEDIA_ORIGIN_TYPES.CENTRO_DUDAS, msg.ticket_id, `Mensaje Soporte`, 'Adjunto Soporte');
+                        await migrateLinks(links, MEDIA_ORIGIN_TYPES.CENTRO_DUDAS as any, (msg as any).ticket_id, `Mensaje Soporte`, 'Adjunto Soporte');
                     }
                 }
             }
@@ -355,7 +376,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
             toast.success(`Migración Finalizada. Escaneados: ${scannedCount} items. Agregados: ${addedCount}.`);
             queryClient.invalidateQueries({ queryKey: ['media_assets'] });
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Migration Error:", error);
             toast.error('Error crítico durante la migración: ' + error.message);
         } finally {
@@ -363,7 +384,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
         }
     };
 
-    const getFileTypeFromUrl = (url) => {
+    const getFileTypeFromUrl = (url: string) => {
         if (!url) return MEDIA_FILE_TYPES.OTHER;
         const lower = url.toLowerCase();
         // Robust YouTube detection
@@ -409,7 +430,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
         {
             key: 'type',
             label: 'Tipo',
-            render: (a) => (
+            render: (a: MediaAsset) => (
                 <div className="flex items-center gap-2" title={a.fileType}>
                     {FILE_TYPE_ICONS[a.fileType] || FILE_TYPE_ICONS.other}
                     <span className="text-xs uppercase text-muted-foreground">{a.fileType}</span>
@@ -419,12 +440,12 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
         {
             key: 'name',
             label: 'Nombre / URL',
-            render: (a) => <AssetDisplayName asset={a} deriveDisplayName={deriveAssetDisplayName} />,
+            render: (a: MediaAsset) => <AssetDisplayName asset={a} deriveDisplayName={deriveAssetDisplayName} />,
         },
         {
             key: 'origin',
             label: 'Origen (Vinculado a)',
-            render: (a) => {
+            render: (a: MediaAsset) => {
                 if (!a.originId) return <Badge variant="outline" className="text-xs text-gray-400">No vinculado</Badge>;
 
                 const variant = MEDIA_ORIGIN_BADGE_VARIANTS[a.originType] || "default";
@@ -441,7 +462,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
 
                 return (
                     <div className="flex flex-col">
-                        <Badge variant={variant} className="w-fit mb-1 text-[10px] uppercase">
+                        <Badge variant={(variant as any)} className="w-fit mb-1 text-[10px] uppercase">
                             {label}
                         </Badge>
                         <span className="text-xs truncate max-w-[200px]" title={a.originLabel}>
@@ -454,7 +475,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
         {
             key: 'createdAt',
             label: 'Fecha',
-            render: (a) => (
+            render: (a: MediaAsset) => (
                 <span className="text-xs text-muted-foreground">
                     {a.createdAt ? format(new Date(a.createdAt), "d MMM yyyy, HH:mm", { locale: es }) : '-'}
                 </span>
@@ -463,7 +484,7 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
         {
             key: 'actions',
             label: 'Acciones',
-            render: (a) => (
+            render: (a: MediaAsset) => (
                 <div className="flex items-center gap-2">
                     <Button
                         variant="ghost"
@@ -601,12 +622,17 @@ export default function ContenidoMultimediaPage({ embedded = false }) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <UnifiedTable
-                            columns={columns}
-                            data={filteredAssets}
-                            isLoading={isLoading}
-                            emptyMessage="No se encontraron assets multimedia."
-                        />
+                        {isLoading ? (
+                            <div className="w-full h-32 flex items-center justify-center text-muted-foreground">
+                                Cargando assets...
+                            </div>
+                        ) : (
+                            <UnifiedTable
+                                columns={columns}
+                                data={filteredAssets as MediaAsset[]}
+                                emptyMessage="No se encontraron assets multimedia."
+                            />
+                        )}
                     </CardContent>
                 </Card>
             </div>

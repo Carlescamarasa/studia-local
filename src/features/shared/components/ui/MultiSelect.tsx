@@ -10,9 +10,10 @@ interface MultiSelectProps {
   value: string[];
   onChange: (value: string[]) => void;
   icon?: LucideIcon;
+  placeholder?: string;
 }
 
-export default function MultiSelect({ label, items, value = [], onChange, icon: Icon = Filter }: MultiSelectProps) {
+export default function MultiSelect({ label, items, value = [], onChange, icon: Icon = Filter, placeholder }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
 
   const toggleItem = (itemValue: string) => {
@@ -42,7 +43,7 @@ export default function MultiSelect({ label, items, value = [], onChange, icon: 
       <PopoverContent className="w-96 p-0 z-[280]" align="start">
         <Command>
           <CommandInput
-            placeholder={`Buscar ${label.toLowerCase()}...`}
+            placeholder={placeholder || `Buscar ${label.toLowerCase()}...`}
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}

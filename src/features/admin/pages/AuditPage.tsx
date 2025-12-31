@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useData } from '@/providers/DataProvider';
 
+interface AuditReport {
+    totalSessions: number;
+    sessionsWithoutBlocks: any[];
+    sessionsZeroDuration: any[];
+    sessionsNoRating: any[];
+    durationMismatches: any[];
+    duplicates: any[];
+}
+
 export default function AuditPage() {
     const api = useData();
-    const [report, setReport] = useState(null);
+    const [report, setReport] = useState<AuditReport | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const runAudit = async () => {
@@ -21,14 +30,14 @@ export default function AuditPage() {
 
                 const durationMismatches = sessions.filter(s => {
                     if (!s.registrosBloque) return false;
-                    const blocksDuration = s.registrosBloque.reduce((acc, b) => acc + (b.duracionRealSeg || 0), 0);
+                    const blocksDuration = s.registrosBloque.reduce((acc: number, b: any) => acc + (b.duracionRealSeg || 0), 0);
                     // Allow small difference for floating point or minor inconsistencies (e.g. 1 second)
                     return Math.abs((s.duracionRealSeg || 0) - blocksDuration) > 1;
                 }).map(s => ({
                     id: s.id,
                     sessionDuration: s.duracionRealSeg,
-                    blocksDuration: s.registrosBloque.reduce((acc, b) => acc + (b.duracionRealSeg || 0), 0),
-                    diff: (s.duracionRealSeg || 0) - s.registrosBloque.reduce((acc, b) => acc + (b.duracionRealSeg || 0), 0)
+                    blocksDuration: (s.registrosBloque || []).reduce((acc: number, b: any) => acc + (b.duracionRealSeg || 0), 0),
+                    diff: (s.duracionRealSeg || 0) - (s.registrosBloque || []).reduce((acc: number, b: any) => acc + (b.duracionRealSeg || 0), 0)
                 }));
 
                 // Check for duplicates (same start time within 1 minute)
@@ -57,7 +66,7 @@ export default function AuditPage() {
                     durationMismatches,
                     duplicates
                 });
-                window._auditReport = {
+                (window as any)._auditReport = {
                     totalSessions,
                     sessionsWithoutBlocks,
                     sessionsZeroDuration,
@@ -73,9 +82,9 @@ export default function AuditPage() {
                     durationMismatches,
                     duplicates
                 }));
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Audit failed:', err);
-                setError(err.message);
+                setError(err.message || 'Unknown error');
             } finally {
                 setLoading(false);
             }

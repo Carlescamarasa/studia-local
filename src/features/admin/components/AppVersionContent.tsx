@@ -321,27 +321,27 @@ export default function AppVersionContent() {
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
-                            {/* @ts-ignore */}
+
                             <Table>
-                                {/* @ts-ignore */}
+
                                 <TableHeader>
-                                    {/* @ts-ignore */}
+
                                     <TableRow>
-                                        {/* @ts-ignore */}
+
                                         <TableHead>Versión</TableHead>
-                                        {/* @ts-ignore */}
+
                                         <TableHead>Cambios</TableHead>
-                                        {/* @ts-ignore */}
+
                                         <TableHead>Codename</TableHead>
-                                        {/* @ts-ignore */}
+
                                         <TableHead>Fecha</TableHead>
-                                        {/* @ts-ignore */}
+
                                         <TableHead>Autor</TableHead>
-                                        {/* @ts-ignore */}
+
                                         <TableHead className="text-right">Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                {/* @ts-ignore */}
+
                                 <TableBody>
                                     {history.map((version) => {
                                         const isActive = currentVersion?.id === version.id;
@@ -354,9 +354,9 @@ export default function AppVersionContent() {
                                         const hasNotes = (releaseNotes.items || []).length > 0 || !!version.notes;
 
                                         return (
-                                            /* @ts-ignore */
+
                                             <TableRow key={version.id}>
-                                                {/* @ts-ignore */}
+
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-medium text-[var(--color-text-primary)]">
@@ -370,7 +370,7 @@ export default function AppVersionContent() {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                {/* @ts-ignore */}
+
                                                 <TableCell className="max-w-[250px]">
                                                     {hasNotes ? (
                                                         <div
@@ -386,7 +386,7 @@ export default function AppVersionContent() {
                                                         <span className="text-[var(--color-text-tertiary)] text-sm">—</span>
                                                     )}
                                                 </TableCell>
-                                                {/* @ts-ignore */}
+
                                                 <TableCell>
                                                     {version.codename ? (
                                                         <span className="text-[var(--color-text-secondary)] italic">
@@ -403,7 +403,7 @@ export default function AppVersionContent() {
                                                         {formatDate(version.created_at)}
                                                     </div>
                                                 </TableCell>
-                                                {/* @ts-ignore */}
+
                                                 <TableCell>
                                                     <div className="flex items-center gap-2 text-sm">
                                                         <User className="w-4 h-4 text-[var(--color-text-secondary)]" />
@@ -412,7 +412,7 @@ export default function AppVersionContent() {
                                                         </span>
                                                     </div>
                                                 </TableCell>
-                                                {/* @ts-ignore */}
+
                                                 <TableCell className="text-right">
                                                     {!isActive && (
                                                         <Button

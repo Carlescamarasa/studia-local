@@ -1,0 +1,629 @@
+src/features/admin/components/LevelConfigView.tsx(147,67): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/features/admin/components/MultimediaManager.tsx(31,33): error TS7006: Parameter 'asset' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(133,29): error TS7031: Binding element 'asset' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(133,36): error TS7031: Binding element 'deriveDisplayName' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(197,52): error TS2345: Argument of type 'void' is not assignable to parameter of type 'string'.
+src/features/admin/components/MultimediaManager.tsx(221,41): error TS7006: Parameter 'url' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(238,41): error TS7006: Parameter 'links' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(238,48): error TS7006: Parameter 'originType' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(238,60): error TS7006: Parameter 'originId' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(238,70): error TS7006: Parameter 'originLabel' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(238,83): error TS7006: Parameter 'defaultName' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(256,29): error TS2322: Type 'null' is not assignable to type 'string | undefined'.
+src/features/admin/components/MultimediaManager.tsx(272,43): error TS2551: Property 'media_links' does not exist on type 'Bloque'. Did you mean 'mediaLinks'?
+src/features/admin/components/MultimediaManager.tsx(278,51): error TS2339: Property 'variations' does not exist on type 'Variation[]'.
+src/features/admin/components/MultimediaManager.tsx(283,35): error TS2339: Property 'asset_url' does not exist on type 'Variation'.
+src/features/admin/components/MultimediaManager.tsx(283,60): error TS2339: Property 'asset_url' does not exist on type 'Variation'.
+src/features/admin/components/MultimediaManager.tsx(284,35): error TS2339: Property 'asset_urls' does not exist on type 'Variation'.
+src/features/admin/components/MultimediaManager.tsx(284,65): error TS2339: Property 'asset_urls' does not exist on type 'Variation'.
+src/features/admin/components/MultimediaManager.tsx(284,95): error TS2339: Property 'asset_urls' does not exist on type 'Variation'.
+src/features/admin/components/MultimediaManager.tsx(285,35): error TS2551: Property 'media_links' does not exist on type 'Variation'. Did you mean 'mediaLinks'?
+src/features/admin/components/MultimediaManager.tsx(285,66): error TS2551: Property 'media_links' does not exist on type 'Variation'. Did you mean 'mediaLinks'?
+src/features/admin/components/MultimediaManager.tsx(285,97): error TS2551: Property 'media_links' does not exist on type 'Variation'. Did you mean 'mediaLinks'?
+src/features/admin/components/MultimediaManager.tsx(287,46): error TS2339: Property 'label' does not exist on type 'Variation'.
+src/features/admin/components/MultimediaManager.tsx(287,70): error TS2339: Property 'label' does not exist on type 'Variation'.
+src/features/admin/components/MultimediaManager.tsx(319,38): error TS2551: Property 'media_links' does not exist on type 'FeedbackSemanal'. Did you mean 'mediaLinks'?
+src/features/admin/components/MultimediaManager.tsx(333,39): error TS2551: Property 'media_links' does not exist on type 'RegistroSesion'. Did you mean 'mediaLinks'?
+src/features/admin/components/MultimediaManager.tsx(335,109): error TS2551: Property 'sesion_nombre' does not exist on type 'RegistroSesion'. Did you mean 'sesionNombre'?
+src/features/admin/components/MultimediaManager.tsx(347,39): error TS2551: Property 'media_links' does not exist on type 'SupportMensaje'. Did you mean 'mediaLinks'?
+src/features/admin/components/MultimediaManager.tsx(349,88): error TS2551: Property 'ticket_id' does not exist on type 'SupportMensaje'. Did you mean 'ticketId'?
+src/features/admin/components/MultimediaManager.tsx(360,66): error TS18046: 'error' is of type 'unknown'.
+src/features/admin/components/MultimediaManager.tsx(366,33): error TS7006: Parameter 'url' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(412,22): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(422,22): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(427,22): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(444,32): error TS2322: Type 'string' is not assignable to type '"success" | "default" | "primary" | "secondary" | "destructive" | "outline" | "warning" | "info" | "danger" | "neutral" | undefined'.
+src/features/admin/components/MultimediaManager.tsx(457,22): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(466,22): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/features/admin/components/MultimediaManager.tsx(607,29): error TS2322: Type '{ columns: { key: string; label: string; render: (a: any) => Element; }[]; data: MediaAsset[]; isLoading: boolean; emptyMessage: string; }' is not assignable to type 'IntrinsicAttributes & UnifiedTableProps<MediaAsset>'.
+  Property 'isLoading' does not exist on type 'IntrinsicAttributes & UnifiedTableProps<MediaAsset>'.
+src/features/admin/components/UserModals.tsx(195,33): error TS2322: Type '{ items: { value: string; label: string; }[]; value: string[]; onChange: Dispatch<SetStateAction<string[]>>; placeholder: string; }' is not assignable to type 'IntrinsicAttributes & MultiSelectProps'.
+  Property 'placeholder' does not exist on type 'IntrinsicAttributes & MultiSelectProps'.
+src/features/admin/components/UserTable.tsx(123,21): error TS2322: Type '(ids: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+  Types of parameters 'ids' and 'item' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/features/admin/components/UserTable.tsx(137,21): error TS2322: Type '(ids: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+  Types of parameters 'ids' and 'item' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/features/admin/components/UserTable.tsx(143,21): error TS2322: Type '(ids: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+  Types of parameters 'ids' and 'item' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/features/admin/components/UserTable.tsx(149,21): error TS2322: Type '(ids: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+  Types of parameters 'ids' and 'item' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/features/admin/components/UserTable.tsx(155,21): error TS2322: Type '(ids: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+  Types of parameters 'ids' and 'item' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/features/admin/components/UserTable.tsx(162,21): error TS2322: Type '(ids: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+  Types of parameters 'ids' and 'item' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/features/admin/components/UserTable.tsx(164,17): error TS2322: Type '{ id: string; label: string; icon: React.ForwardRefExoticComponent<Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>; onClick: (ids: string[]) => void; }' is not assignable to type 'TableAction<any[]>'.
+  Types of property 'onClick' are incompatible.
+    Type '(ids: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+      Types of parameters 'ids' and 'item' are incompatible.
+        Type 'any[] | undefined' is not assignable to type 'string[]'.
+          Type 'undefined' is not assignable to type 'string[]'.
+src/features/admin/pages/AuditPage.tsx(30,37): error TS18048: 's.registrosBloque' is possibly 'undefined'.
+src/features/admin/pages/AuditPage.tsx(31,54): error TS18048: 's.registrosBloque' is possibly 'undefined'.
+src/features/admin/pages/AuditPage.tsx(53,21): error TS2353: Object literal may only specify known properties, and 'totalSessions' does not exist in type '(prevState: null) => null'.
+src/features/admin/pages/AuditPage.tsx(60,24): error TS2339: Property '_auditReport' does not exist on type 'Window & typeof globalThis'.
+src/features/admin/pages/AuditPage.tsx(78,26): error TS18046: 'err' is of type 'unknown'.
+src/features/admin/pages/AuditPage.tsx(100,69): error TS2339: Property 'totalSessions' does not exist on type 'never'.
+src/features/admin/pages/AuditPage.tsx(102,59): error TS2339: Property 'sessionsWithoutBlocks' does not exist on type 'never'.
+src/features/admin/pages/AuditPage.tsx(104,69): error TS2339: Property 'sessionsWithoutBlocks' does not exist on type 'never'.
+src/features/admin/pages/AuditPage.tsx(106,59): error TS2339: Property 'sessionsZeroDuration' does not exist on type 'never'.
+src/features/admin/pages/AuditPage.tsx(108,69): error TS2339: Property 'sessionsZeroDuration' does not exist on type 'never'.
+src/features/admin/pages/AuditPage.tsx(110,59): error TS2339: Property 'sessionsNoRating' does not exist on type 'never'.
+src/features/admin/pages/AuditPage.tsx(112,69): error TS2339: Property 'sessionsNoRating' does not exist on type 'never'.
+src/features/admin/pages/AuditPage.tsx(114,59): error TS2339: Property 'durationMismatches' does not exist on type 'never'.
+src/features/admin/pages/AuditPage.tsx(116,69): error TS2339: Property 'durationMismatches' does not exist on type 'never'.
+src/features/admin/pages/AuditPage.tsx(118,59): error TS2339: Property 'duplicates' does not exist on type 'never'.
+src/features/admin/pages/AuditPage.tsx(120,69): error TS2339: Property 'duplicates' does not exist on type 'never'.
+src/features/auth/components/ForgotPasswordForm.tsx(11,38): error TS7031: Binding element 'onSubmit' implicitly has an 'any' type.
+src/features/auth/components/ForgotPasswordForm.tsx(11,48): error TS7031: Binding element 'isLoading' implicitly has an 'any' type.
+src/features/auth/components/ForgotPasswordForm.tsx(11,59): error TS7031: Binding element 'initialEmail' implicitly has an 'any' type.
+src/features/auth/components/ForgotPasswordForm.tsx(11,73): error TS7031: Binding element 'onBack' implicitly has an 'any' type.
+src/features/auth/components/ForgotPasswordForm.tsx(16,31): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/features/auth/components/ForgotPasswordForm.tsx(28,30): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/features/auth/components/ForgotPasswordForm.tsx(42,25): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/auth/components/PublicRoute.tsx(13,39): error TS7031: Binding element 'children' implicitly has an 'any' type.
+src/features/auth/components/RequireAuth.tsx(7,39): error TS7031: Binding element 'children' implicitly has an 'any' type.
+src/features/auth/components/RequireAuth.tsx(23,7): error TS2322: Type 'number' is not assignable to type 'null'.
+src/features/auth/components/RequireAuth.tsx(28,5): error TS2322: Type 'number' is not assignable to type 'null'.
+src/features/auth/components/RequireAuth.tsx(47,11): error TS2322: Type 'number' is not assignable to type 'null'.
+src/features/auth/components/RequireAuth.tsx(51,11): error TS2322: Type 'number' is not assignable to type 'null'.
+src/features/auth/components/RoleBootstrap.tsx(4,41): error TS7031: Binding element 'children' implicitly has an 'any' type.
+src/features/auth/components/roleMap.tsx(13,32): error TS7006: Parameter 'role' implicitly has an 'any' type.
+src/features/auth/components/roleMap.tsx(14,10): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ ADMIN: string; PROF: string; ESTU: string; }'.
+src/features/auth/hooks/useAuthErrors.ts(8,45): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/features/auth/hooks/useAuthErrors.ts(49,54): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/features/auth/hooks/useUserActions.ts(14,46): error TS7031: Binding element 'action' implicitly has an 'any' type.
+src/features/auth/hooks/useUserActions.ts(14,54): error TS7031: Binding element 'userId' implicitly has an 'any' type.
+src/features/auth/hooks/useUserActions.ts(14,62): error TS7031: Binding element 'email' implicitly has an 'any' type.
+src/features/auth/hooks/useUserActions.ts(45,19): error TS18046: 'error' is of type 'unknown'.
+src/features/auth/hooks/useUserActions.ts(52,44): error TS7006: Parameter 'userId' implicitly has an 'any' type.
+src/features/auth/hooks/useUserActions.ts(52,52): error TS7006: Parameter 'email' implicitly has an 'any' type.
+src/features/auth/hooks/useUserActions.ts(56,48): error TS7006: Parameter 'userId' implicitly has an 'any' type.
+src/features/auth/hooks/useUserActions.ts(56,56): error TS7006: Parameter 'email' implicitly has an 'any' type.
+src/features/auth/hooks/useUserActions.ts(60,47): error TS7006: Parameter 'userId' implicitly has an 'any' type.
+src/features/auth/hooks/useUserActions.ts(60,55): error TS7006: Parameter 'email' implicitly has an 'any' type.
+src/features/auth/pages/LoginPage.tsx(45,30): error TS7006: Parameter 'email' implicitly has an 'any' type.
+src/features/auth/pages/LoginPage.tsx(45,37): error TS7006: Parameter 'password' implicitly has an 'any' type.
+src/features/auth/pages/LoginPage.tsx(47,70): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type 'number' is not assignable to parameter of type '(substring: string, ...args: any[]) => string'.
+src/features/auth/pages/LoginPage.tsx(88,39): error TS7006: Parameter 'email' implicitly has an 'any' type.
+src/features/auth/pages/ResetPasswordPage.tsx(72,31): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/auth/pages/ResetPasswordPage.tsx(125,28): error TS18046: 'error' is of type 'unknown'.
+src/features/auth/pages/ResetPasswordPage.tsx(138,25): error TS7031: Binding element 'children' implicitly has an 'any' type.
+src/features/auth/utils/validation.ts(8,31): error TS7006: Parameter 'email' implicitly has an 'any' type.
+src/features/auth/utils/validation.ts(21,37): error TS7006: Parameter 'email' implicitly has an 'any' type.
+src/features/auth/utils/validation.ts(33,40): error TS7006: Parameter 'password' implicitly has an 'any' type.
+src/features/auth/utils/validation.ts(44,42): error TS7006: Parameter 'password' implicitly has an 'any' type.
+src/features/auth/utils/validation.ts(82,25): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/features/auth/utils/validation.ts(93,32): error TS7006: Parameter 'email' implicitly has an 'any' type.
+src/features/calendar/components/EventoImportante.tsx(65,31): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/features/calendar/components/ModalAsignacion.tsx(134,36): error TS2322: Type 'string' is not assignable to type '"success" | "default" | "primary" | "secondary" | "destructive" | "outline" | "warning" | "info" | "danger" | "neutral" | undefined'.
+src/features/calendar/components/ModalCrearEvento.tsx(129,9): error TS2698: Spread types may only be created from object types.
+src/features/calendar/components/ModalCrearEvento.tsx(147,22): error TS2339: Property 'code' does not exist on type 'Error'.
+src/features/calendar/components/ModalCrearEvento.tsx(148,25): error TS2339: Property 'details' does not exist on type 'Error'.
+src/features/calendar/components/ModalCrearEvento.tsx(149,22): error TS2339: Property 'hint' does not exist on type 'Error'.
+src/features/calendar/components/ModalCrearEvento.tsx(152,15): error TS2304: Cannot find name 'eventoData'.
+src/features/calendar/components/ModalCrearEvento.tsx(153,24): error TS2304: Cannot find name 'eventoData'.
+src/features/calendar/components/ModalCrearEvento.tsx(154,19): error TS2304: Cannot find name 'eventoData'.
+src/features/calendar/components/ModalCrearEvento.tsx(162,26): error TS2339: Property 'id' does not exist on type 'void'.
+src/features/calendar/components/ModalCrearEvento.tsx(162,30): error TS2339: Property 'data' does not exist on type 'void'.
+src/features/calendar/components/ModalCrearEvento.tsx(180,25): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/calendar/components/ModalCrearEvento.tsx(242,33): error TS2345: Argument of type '{ id: string; data: { titulo: string; descripcion: string | null; fechaInicio: string; fechaFin: string | null; start_at: string | null; end_at: string | null; all_day: boolean; tipo: string; visiblePara: string[]; }; }' is not assignable to parameter of type 'void'.
+src/features/calendar/components/ModalCrearEvento.tsx(244,28): error TS2345: Argument of type '{ titulo: string; descripcion: string | null; fechaInicio: string; fechaFin: string | null; start_at: string | null; end_at: string | null; all_day: boolean; tipo: string; visiblePara: string[]; }' is not assignable to parameter of type 'void'.
+src/features/calendar/components/ModalCrearEvento.tsx(248,22): error TS7006: Parameter 'rol' implicitly has an 'any' type.
+src/features/calendar/components/utils.ts(313,11): error TS2741: Property 'cerrada' is missing in type '{ borrador: string; publicada: string; archivada: string; en_curso: string; }' but required in type 'Record<"borrador" | "publicada" | "archivada" | "en_curso" | "cerrada", string>'.
+src/features/debug/pages/DebugFormularioRapidoPage.tsx(69,19): error TS2322: Type '{ onClose: () => void; debugInline: boolean; }' is not assignable to type 'IntrinsicAttributes & FormularioRapidoProps'.
+  Property 'debugInline' does not exist on type 'IntrinsicAttributes & FormularioRapidoProps'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(21,29): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/debug/pages/DebugSubidaYTPage.tsx(31,31): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/debug/pages/DebugSubidaYTPage.tsx(61,64): error TS18046: 'parseError' is of type 'unknown'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(107,20): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<null>'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(107,64): error TS18046: 'parseError' is of type 'unknown'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(124,34): error TS2339: Property 'ok' does not exist on type '{}'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(126,19): error TS2345: Argument of type '{}' is not assignable to parameter of type 'SetStateAction<null>'.
+  Type '{}' provides no match for the signature '(prevState: null): null'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(132,32): error TS2339: Property 'message' does not exist on type '{}'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(132,49): error TS2339: Property 'error' does not exist on type '{}'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(133,36): error TS2339: Property 'error' does not exist on type '{}'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(134,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<null>'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(160,18): error TS2345: Argument of type '"Error de red: No se pudo conectar con el servidor. Verifica tu conexión."' is not assignable to parameter of type 'SetStateAction<null>'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(163,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<null>'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(210,49): error TS2339: Property 'name' does not exist on type 'never'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(210,63): error TS2339: Property 'size' does not exist on type 'never'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(330,27): error TS2339: Property 'videoUrl' does not exist on type 'never'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(334,38): error TS2339: Property 'videoUrl' does not exist on type 'never'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(346,29): error TS2339: Property 'videoId' does not exist on type 'never'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(350,35): error TS2339: Property 'videoId' does not exist on type 'never'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(354,29): error TS2339: Property 'message' does not exist on type 'never'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(358,35): error TS2339: Property 'message' does not exist on type 'never'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(362,29): error TS2339: Property 'metadata' does not exist on type 'never'.
+src/features/debug/pages/DebugSubidaYTPage.tsx(366,50): error TS2339: Property 'metadata' does not exist on type 'never'.
+src/features/debug/pages/LevelSystemDebugPage.tsx(11,18): error TS7006: Parameter 'msg' implicitly has an 'any' type.
+src/features/debug/pages/LevelSystemDebugPage.tsx(12,17): error TS2345: Argument of type '(prev: never[]) => { msg: any; type: string; time: string; }[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '(prev: never[]) => { msg: any; type: string; time: string; }[]' is not assignable to type '(prevState: never[]) => never[]'.
+    Type '{ msg: any; type: string; time: string; }[]' is not assignable to type 'never[]'.
+      Type '{ msg: any; type: string; time: string; }' is not assignable to type 'never'.
+src/features/debug/pages/LevelSystemDebugPage.tsx(82,27): error TS18046: 'error' is of type 'unknown'.
+src/features/debug/pages/LevelSystemDebugPage.tsx(108,59): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/debug/pages/LevelSystemDebugPage.tsx(108,97): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/debug/pages/LevelSystemDebugPage.tsx(108,140): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/debug/pages/LevelSystemDebugPage.tsx(109,62): error TS2339: Property 'time' does not exist on type 'never'.
+src/features/debug/pages/LevelSystemDebugPage.tsx(109,79): error TS2339: Property 'msg' does not exist on type 'never'.
+src/features/design/components/DesignPageContent.tsx(1485,25): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/features/design/components/DesignPresets.tsx(28,34): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/features/design/components/DesignPresets.tsx(28,38): error TS7006: Parameter 'name' implicitly has an 'any' type.
+src/features/design/components/DesignPresets.tsx(28,44): error TS7006: Parameter 'description' implicitly has an 'any' type.
+src/features/design/components/DesignPresets.tsx(28,57): error TS7006: Parameter 'config' implicitly has an 'any' type.
+src/features/design/components/DesignPresets.tsx(38,37): error TS18046: 'error' is of type 'unknown'.
+src/features/design/components/DesignPresets.tsx(45,36): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/features/design/components/DesignPresets.tsx(55,37): error TS18046: 'error' is of type 'unknown'.
+src/features/design/components/DesignPresets.tsx(64,33): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/features/design/components/DesignPresets.tsx(85,37): error TS7006: Parameter 'json' implicitly has an 'any' type.
+src/features/design/components/DesignPresets.tsx(103,37): error TS18046: 'error' is of type 'unknown'.
+src/features/design/components/DesignStatusBlock.tsx(10,37): error TS7031: Binding element 'activeTab' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(10,48): error TS7031: Binding element 'onTabChange' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(10,61): error TS7031: Binding element 'tabs' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(86,39): error TS7006: Parameter 'tab' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(120,105): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(121,105): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(122,101): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(136,37): error TS2554: Expected 2 arguments, but got 0.
+src/features/design/components/DesignStatusBlock.tsx(168,54): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(168,57): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(197,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(197,56): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(226,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/design/components/DesignStatusBlock.tsx(226,55): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(79,27): error TS7006: Parameter 'element' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(92,23): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(96,27): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(112,26): error TS7006: Parameter 'element' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(127,45): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(151,27): error TS7006: Parameter 'element' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(178,11): error TS7034: Variable 'results' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/features/design/components/HardcodeFinder.tsx(185,36): error TS2339: Property 'style' does not exist on type 'Element'.
+src/features/design/components/HardcodeFinder.tsx(201,12): error TS7005: Variable 'results' implicitly has an 'any[]' type.
+src/features/design/components/HardcodeFinder.tsx(208,11): error TS7034: Variable 'results' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/features/design/components/HardcodeFinder.tsx(238,12): error TS7005: Variable 'results' implicitly has an 'any[]' type.
+src/features/design/components/HardcodeFinder.tsx(299,23): error TS7006: Parameter 'element' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(308,26): error TS7006: Parameter 'element' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(323,26): error TS7006: Parameter 'element' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(338,33): error TS7006: Parameter 'data' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(352,26): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(359,26): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(406,22): error TS2339: Property 'allIssues' does not exist on type 'never'.
+src/features/design/components/HardcodeFinder.tsx(406,40): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(424,29): error TS2345: Argument of type '{ results: { root: any; count: any; inlineCount: any; tailwindCount: any; issues: any; }[]; allIssues: any[]; totalInline: number; totalTailwind: number; totalIssues: number; }' is not assignable to parameter of type 'SetStateAction<null>'.
+  Type '{ results: { root: any; count: any; inlineCount: any; tailwindCount: any; issues: any; }[]; allIssues: any[]; totalInline: number; totalTailwind: number; totalIssues: number; }' provides no match for the signature '(prevState: null): null'.
+src/features/design/components/HardcodeFinder.tsx(447,42): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(461,25): error TS2339: Property 'results' does not exist on type 'never'.
+src/features/design/components/HardcodeFinder.tsx(461,37): error TS7006: Parameter 'group' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(462,56): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(471,34): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(488,19): error TS7006: Parameter 'group' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(491,45): error TS2339: Property 'results' does not exist on type 'never'.
+src/features/design/components/HardcodeFinder.tsx(549,39): error TS2339: Property 'results' does not exist on type 'never'.
+src/features/design/components/HardcodeFinder.tsx(563,55): error TS2339: Property 'totalIssues' does not exist on type 'never'.
+src/features/design/components/HardcodeFinder.tsx(563,108): error TS2339: Property 'results' does not exist on type 'never'.
+src/features/design/components/HardcodeFinder.tsx(568,50): error TS2339: Property 'totalInline' does not exist on type 'never'.
+src/features/design/components/HardcodeFinder.tsx(571,50): error TS2339: Property 'totalTailwind' does not exist on type 'never'.
+src/features/design/components/HardcodeFinder.tsx(644,51): error TS7006: Parameter 'group' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(644,58): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(668,64): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+src/features/design/components/HardcodeFinder.tsx(668,71): error TS7006: Parameter 'iidx' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(121,27): error TS7006: Parameter 'element' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(134,27): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(156,25): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(180,30): error TS2339: Property 'style' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(181,50): error TS2345: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
+src/features/design/components/HardcodeInspector.tsx(223,28): error TS7006: Parameter 'elements' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(224,22): error TS7006: Parameter 'el' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(236,12): error TS2339: Property 'style' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(236,31): error TS2339: Property 'dataset' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(237,12): error TS2339: Property 'style' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(238,19): error TS2339: Property 'dataset' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(239,19): error TS2339: Property 'dataset' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(306,42): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(309,44): error TS2339: Property 'getBoundingClientRect' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(319,42): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(327,13): error TS2322: Type 'number' is not assignable to type 'null'.
+src/features/design/components/HardcodeInspector.tsx(328,13): error TS2322: Type 'number' is not assignable to type 'null'.
+src/features/design/components/HardcodeInspector.tsx(353,28): error TS2345: Argument of type 'any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type 'any[]' is not assignable to type 'never[]'.
+    Type 'any' is not assignable to type 'never'.
+src/features/design/components/HardcodeInspector.tsx(372,13): error TS7034: Variable 'debounceTimer' implicitly has type 'any' in some locations where its type cannot be determined.
+src/features/design/components/HardcodeInspector.tsx(379,21): error TS7005: Variable 'debounceTimer' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(395,17): error TS7005: Variable 'debounceTimer' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(400,43): error TS7006: Parameter 'colorData' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(422,57): error TS2339: Property 'count' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(430,61): error TS2339: Property 'hardcode' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(430,76): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(432,39): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(432,69): error TS2339: Property 'replacement' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(432,90): error TS2339: Property 'count' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(432,102): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(432,113): error TS2339: Property 'category' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(434,40): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(434,54): error TS2339: Property 'count' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(434,78): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(434,89): error TS2339: Property 'category' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(442,39): error TS2339: Property 'hardcode' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(442,65): error TS2339: Property 'replacement' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(442,88): error TS2339: Property 'category' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(442,107): error TS2339: Property 'url' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(451,45): error TS7006: Parameter 'colorData' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(451,56): error TS7006: Parameter 'cssVar' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(458,29): error TS2345: Argument of type '(prev: never[]) => { url: string; hardcode: any; category: any; type: any; replacement: any; timestamp: number; }[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '(prev: never[]) => { url: string; hardcode: any; category: any; type: any; replacement: any; timestamp: number; }[]' is not assignable to type '(prevState: never[]) => never[]'.
+    Type '{ url: string; hardcode: any; category: any; type: any; replacement: any; timestamp: number; }[]' is not assignable to type 'never[]'.
+      Type '{ url: string; hardcode: any; category: any; type: any; replacement: any; timestamp: number; }' is not assignable to type 'never'.
+src/features/design/components/HardcodeInspector.tsx(459,52): error TS2339: Property 'hardcode' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(470,17): error TS2322: Type '{ url: string; hardcode: any; category: any; type: any; replacement: any; timestamp: number; }' is not assignable to type 'never'.
+src/features/design/components/HardcodeInspector.tsx(477,36): error TS7006: Parameter 'el' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(498,33): error TS2339: Property 'dataset' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(499,16): error TS2339: Property 'style' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(499,37): error TS2339: Property 'dataset' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(500,23): error TS2339: Property 'dataset' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(501,23): error TS2339: Property 'dataset' does not exist on type 'Element'.
+src/features/design/components/HardcodeInspector.tsx(509,49): error TS7006: Parameter 'hardcode' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(510,56): error TS2339: Property 'hardcode' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(513,20): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/features/design/components/HardcodeInspector.tsx(519,73): error TS2339: Property 'count' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(524,38): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(527,61): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(528,63): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(569,13): error TS2322: Type '{ left: never; top: null; right: string; bottom: string; } | { left?: undefined; top?: undefined; right?: undefined; bottom?: undefined; } | { bottom: string; right: string; }' is not assignable to type 'CSSProperties | undefined'.
+  Type '{ left: never; top: null; right: string; bottom: string; }' is not assignable to type 'Properties<string | number, string & {}>'.
+    Types of property 'top' are incompatible.
+      Type 'null' is not assignable to type 'Top<string | number> | undefined'.
+src/features/design/components/HardcodeInspector.tsx(680,62): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(682,40): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+src/features/design/components/HardcodeInspector.tsx(682,57): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(683,54): error TS2339: Property 'hardcode' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(683,72): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(683,80): error TS2339: Property 'replacement' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(684,37): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ background: { var: string; label: string; }[]; color: { var: string; label: string; }[]; border: { var: string; label: string; }[]; shadow: { var: string; label: string; }[]; radius: { var: string; label: string; }[]; }'.
+src/features/design/components/HardcodeInspector.tsx(684,63): error TS2339: Property 'category' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(691,78): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(693,141): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(704,53): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(704,83): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(705,56): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(712,83): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(715,90): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(717,51): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(717,90): error TS2339: Property 'type' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(719,107): error TS2339: Property 'category' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(726,47): error TS2339: Property 'count' does not exist on type 'never'.
+src/features/design/components/HardcodeInspector.tsx(737,55): error TS7006: Parameter 'opt' implicitly has an 'any' type.
+src/features/design/components/HardcodeInspector.tsx(762,77): error TS2339: Property 'color' does not exist on type 'never'.
+src/features/design/components/useDesignDiff.ts(49,41): error TS7006: Parameter 'data' implicitly has an 'any' type.
+src/features/design/components/useDesignDiff.ts(49,47): error TS7006: Parameter 'filename' implicitly has an 'any' type.
+src/features/design/components/useDesignDiff.ts(85,33): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/design/components/useDesignDiff.ts(93,32): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/design/components/useDesignDiff.ts(101,31): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/features/dev/pages/TestLoadingPage.tsx(43,27): error TS7006: Parameter 'key' implicitly has an 'any' type.
+src/features/dev/pages/TestLoadingPage.tsx(50,29): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/dev/pages/TestLoadingPage.tsx(53,34): error TS2339: Property 'nombre' does not exist on type '{}'.
+src/features/dev/pages/TestLoadingPage.tsx(55,14): error TS2339: Property 'email' does not exist on type '{}'.
+src/features/dev/pages/TestLoadingPage.tsx(57,14): error TS2339: Property 'email' does not exist on type '{}'.
+src/features/dev/pages/TestLoadingPage.tsx(60,14): error TS2339: Property 'descripcion' does not exist on type '{}'.
+src/features/dev/pages/TestLoadingPage.tsx(253,49): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ active: "inline-flex items-center rounded-full bg-gradient-to-r from-[var(--color-success)]/10 to-[var(--color-success)]/5 text-[var(--color-success)] border border-[var(--color-success)]/20 text-xs px-2 py-0.5"; pending: "inline-flex items-center rounded-full bg-[var(--color-warning)]/10 text-[var(--color-warning...'.
+  No index signature with a parameter of type 'string' was found on type '{ active: "inline-flex items-center rounded-full bg-gradient-to-r from-[var(--color-success)]/10 to-[var(--color-success)]/5 text-[var(--color-success)] border border-[var(--color-success)]/20 text-xs px-2 py-0.5"; pending: "inline-flex items-center rounded-full bg-[var(--color-warning)]/10 text-[var(--color-warning...'.
+src/features/dev/pages/TestLoadingPage.tsx(254,34): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ active: string; pending: string; completed: string; cancelled: string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ active: string; pending: string; completed: string; cancelled: string; }'.
+src/features/dev/pages/TestLoadingPage.tsx(258,49): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ low: "inline-flex items-center rounded-full bg-[var(--color-info)]/10 text-[var(--color-info)] border border-[var(--color-info)]/20 text-xs px-2 py-0.5"; medium: "inline-flex items-center rounded-full bg-[var(--color-warning)]/10 text-[var(--color-warning)] border border-[var(--color-warning)]/20 text-xs px-2 py-0...'.
+  No index signature with a parameter of type 'string' was found on type '{ low: "inline-flex items-center rounded-full bg-[var(--color-info)]/10 text-[var(--color-info)] border border-[var(--color-info)]/20 text-xs px-2 py-0.5"; medium: "inline-flex items-center rounded-full bg-[var(--color-warning)]/10 text-[var(--color-warning)] border border-[var(--color-warning)]/20 text-xs px-2 py-0...'.
+src/features/dev/pages/TestLoadingPage.tsx(259,34): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ low: string; medium: string; high: string; critical: string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ low: string; medium: string; high: string; critical: string; }'.
+src/features/dev/pages/TestLoadingPage.tsx(337,37): error TS2339: Property 'nombre' does not exist on type '{}'.
+src/features/dev/pages/TestLoadingPage.tsx(351,37): error TS2339: Property 'email' does not exist on type '{}'.
+src/features/dev/pages/TestLoadingPage.tsx(367,37): error TS2339: Property 'descripcion' does not exist on type '{}'.
+src/features/editor/components/BloquesTab.tsx(91,38): error TS2345: Argument of type 'Bloque' is not assignable to parameter of type 'SetStateAction<null>'.
+  Type 'Bloque' provides no match for the signature '(prevState: null): null'.
+src/features/editor/components/BloquesTab.tsx(116,11): error TS2322: Type '{ bloque: null; onClose: () => void; }' is not assignable to type 'IntrinsicAttributes & ExerciseEditorProps'.
+  Property 'bloque' does not exist on type 'IntrinsicAttributes & ExerciseEditorProps'.
+src/features/editor/components/EjerciciosTab.tsx(52,11): error TS7034: Variable 'vars' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/features/editor/components/EjerciciosTab.tsx(59,28): error TS7053: Element implicitly has an 'any' type because expression of type '"CA" | "CB" | "TC" | "TM" | "FM" | "VC" | "AD"' can't be used to index type '{ CA: { label: string; color: string; }; CB: { label: string; color: string; }; TC: { label: string; color: string; }; FM: { label: string; color: string; }; VC: { label: string; color: string; }; AD: { label: string; color: string; }; }'.
+  Property 'TM' does not exist on type '{ CA: { label: string; color: string; }; CB: { label: string; color: string; }; TC: { label: string; color: string; }; FM: { label: string; color: string; }; VC: { label: string; color: string; }; AD: { label: string; color: string; }; }'.
+src/features/editor/components/EjerciciosTab.tsx(60,33): error TS2551: Property 'duracion_seg' does not exist on type 'Bloque'. Did you mean 'duracionSeg'?
+src/features/editor/components/EjerciciosTab.tsx(69,21): error TS7005: Variable 'vars' implicitly has an 'any[]' type.
+src/features/editor/components/EjerciciosTab.tsx(88,28): error TS2339: Property 'raw' does not exist on type 'never'.
+src/features/editor/components/EjerciciosTab.tsx(108,30): error TS2339: Property 'variations' does not exist on type 'never'.
+src/features/editor/components/EjerciciosTab.tsx(111,26): error TS2345: Argument of type '{ id: any; nombre: any; code: any; tipo: any; duracionSeg: any; instrucciones: any; indicadorLogro: any; materialesRequeridos: any; mediaLinks: any; elementosOrdenados: any; piezaRefId: any; profesorId: any; skillTags: any; targetPPMs: any; content: any; variations: any; }' is not assignable to parameter of type 'SetStateAction<null>'.
+  Type '{ id: any; nombre: any; code: any; tipo: any; duracionSeg: any; instrucciones: any; indicadorLogro: any; materialesRequeridos: any; mediaLinks: any; elementosOrdenados: any; piezaRefId: any; profesorId: any; skillTags: any; targetPPMs: any; content: any; variations: any; }' provides no match for the signature '(prevState: null): null'.
+src/features/editor/components/EjerciciosTab.tsx(118,39): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/features/editor/components/EjerciciosTab.tsx(148,52): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ CA: { label: string; color: string; }; CB: { label: string; color: string; }; TC: { label: string; color: string; }; FM: { label: string; color: string; }; VC: { label: string; color: string; }; AD: { label: string; color: string; }; }'.
+  No index signature with a parameter of type 'string' was found on type '{ CA: { label: string; color: string; }; CB: { label: string; color: string; }; TC: { label: string; color: string; }; FM: { label: string; color: string; }; VC: { label: string; color: string; }; AD: { label: string; color: string; }; }'.
+src/features/editor/components/EjerciciosTab.tsx(174,23): error TS2322: Type 'string' is not assignable to type 'number'.
+src/features/editor/components/EjerciciosTab.tsx(180,51): error TS2345: Argument of type '{ id: string; title: string; type: "CA" | "CB" | "TC" | "TM" | "FM" | "VC" | "AD"; category: any; dur: number; asset: string; variations: any[]; raw: Bloque; code: string; }' is not assignable to parameter of type 'null | undefined'.
+src/features/editor/components/EjerciciosTab.tsx(193,46): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'SetStateAction<null>'.
+  Type 'string' is not assignable to type 'SetStateAction<null>'.
+src/features/editor/components/EjerciciosTab.tsx(207,32): error TS2551: Property 'media_links' does not exist on type 'Bloque'. Did you mean 'mediaLinks'?
+src/features/editor/components/EjerciciosTab.tsx(229,87): error TS2345: Argument of type '{ id: string; title: string; type: "CA" | "CB" | "TC" | "TM" | "FM" | "VC" | "AD"; category: any; dur: number; asset: string; variations: any[]; raw: Bloque; code: string; }' is not assignable to parameter of type 'null | undefined'.
+src/features/editor/components/EjerciciosTab.tsx(243,25): error TS2322: Type 'string' is not assignable to type 'number'.
+src/features/editor/components/PiezasTab.tsx(33,47): error TS2345: Argument of type 'void' is not assignable to parameter of type 'string'.
+src/features/editor/components/PiezasTab.tsx(43,9): error TS2698: Spread types may only be created from object types.
+src/features/editor/components/PiezasTab.tsx(44,26): error TS2339: Property 'nombre' does not exist on type 'void'.
+src/features/editor/components/PiezasTab.tsx(45,36): error TS2339: Property 'id' does not exist on type 'EffectiveUserContextValue'.
+src/features/editor/components/PiezasTab.tsx(69,23): error TS7006: Parameter 'pieza' implicitly has an 'any' type.
+src/features/editor/components/PiezasTab.tsx(74,31): error TS7006: Parameter 'pieza' implicitly has an 'any' type.
+src/features/editor/components/PiezasTab.tsx(80,28): error TS7006: Parameter 'pieza' implicitly has an 'any' type.
+src/features/editor/components/PiezasTab.tsx(156,28): error TS2322: Type 'string' is not assignable to type '"success" | "default" | "primary" | "secondary" | "destructive" | "outline" | "warning" | "info" | "danger" | "neutral" | undefined'.
+src/features/editor/components/PiezasTab.tsx(170,75): error TS18048: 'ids' is possibly 'undefined'.
+src/features/editor/components/PiezasTab.tsx(179,53): error TS18048: 'ids' is possibly 'undefined'.
+src/features/editor/components/PiezasTab.tsx(179,72): error TS18048: 'ids' is possibly 'undefined'.
+src/features/editor/components/PiezasTab.tsx(180,23): error TS18048: 'ids' is possibly 'undefined'.
+src/features/editor/components/PiezasTab.tsx(183,49): error TS2345: Argument of type 'string' is not assignable to parameter of type 'void'.
+src/features/editor/components/PiezasTab.tsx(210,32): error TS2322: Type 'string' is not assignable to type '"success" | "default" | "primary" | "secondary" | "destructive" | "outline" | "warning" | "info" | "danger" | "neutral" | undefined'.
+src/features/editor/components/PlanesTab.tsx(32,62): error TS2345: Argument of type 'void' is not assignable to parameter of type 'string'.
+src/features/editor/components/PlanesTab.tsx(42,9): error TS2698: Spread types may only be created from object types.
+src/features/editor/components/PlanesTab.tsx(43,25): error TS2339: Property 'nombre' does not exist on type 'void'.
+src/features/editor/components/PlanesTab.tsx(44,36): error TS2339: Property 'id' does not exist on type 'EffectiveUserContextValue'.
+src/features/editor/components/PlanesTab.tsx(69,23): error TS7006: Parameter 'plan' implicitly has an 'any' type.
+src/features/editor/components/PlanesTab.tsx(74,25): error TS7006: Parameter 'plan' implicitly has an 'any' type.
+src/features/editor/components/PlanesTab.tsx(80,28): error TS7006: Parameter 'plan' implicitly has an 'any' type.
+src/features/editor/components/PlanesTab.tsx(152,37): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ GEN: string; LIG: string; RIT: string; ART: string; 'S&A': string; }'.
+src/features/editor/components/PlanesTab.tsx(152,67): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ GEN: string; SON: string; FLX: string; MOT: string; ART: string; COG: string; }'.
+src/features/editor/components/PlanesTab.tsx(165,75): error TS18048: 'ids' is possibly 'undefined'.
+src/features/editor/components/PlanesTab.tsx(174,53): error TS18048: 'ids' is possibly 'undefined'.
+src/features/editor/components/PlanesTab.tsx(174,71): error TS18048: 'ids' is possibly 'undefined'.
+src/features/editor/components/PlanesTab.tsx(175,23): error TS18048: 'ids' is possibly 'undefined'.
+src/features/editor/components/PlanesTab.tsx(206,43): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ GEN: string; LIG: string; RIT: string; ART: string; 'S&A': string; }'.
+src/features/editor/components/PlanesTab.tsx(207,30): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ GEN: string; SON: string; FLX: string; MOT: string; ART: string; COG: string; }'.
+src/features/editor/components/SessionEditor.tsx(960,32): error TS2322: Type '(event: DragEndEvent) => void' is not assignable to type '(result: DragResult) => void'.
+  Types of parameters 'event' and 'result' are incompatible.
+    Type 'DragResult' is missing the following properties from type 'DragEndEvent': activatorEvent, collisions, delta
+src/features/editor/pages/EditorPage.tsx(20,22): error TS2339: Property 'rolPersonalizado' does not exist on type 'EffectiveUserContextValue'.
+src/features/estudio/components/Metronomo.tsx(9,54): error TS7031: Binding element 'onPpmChange' implicitly has an 'any' type.
+src/features/estudio/components/Metronomo.tsx(31,60): error TS2551: Property 'webkitAudioContext' does not exist on type 'Window & typeof globalThis'. Did you mean 'AudioContext'?
+src/features/estudio/components/Metronomo.tsx(32,9): error TS2322: Type 'AudioContext' is not assignable to type 'null'.
+src/features/estudio/components/Metronomo.tsx(35,41): error TS2339: Property 'close' does not exist on type 'never'.
+src/features/estudio/components/Metronomo.tsx(48,24): error TS7006: Parameter 'time' implicitly has an 'any' type.
+src/features/estudio/components/Metronomo.tsx(49,21): error TS18047: 'audioContextRef.current' is possibly 'null'.
+src/features/estudio/components/Metronomo.tsx(50,26): error TS18047: 'audioContextRef.current' is possibly 'null'.
+src/features/estudio/components/Metronomo.tsx(53,26): error TS18047: 'audioContextRef.current' is possibly 'null'.
+src/features/estudio/components/Metronomo.tsx(63,42): error TS18047: 'audioContextRef.current' is possibly 'null'.
+src/features/estudio/components/Metronomo.tsx(67,9): error TS2322: Type 'number' is not assignable to type 'null'.
+src/features/estudio/components/Metronomo.tsx(72,17): error TS18047: 'audioContextRef.current' is possibly 'null'.
+src/features/estudio/components/Metronomo.tsx(73,17): error TS18047: 'audioContextRef.current' is possibly 'null'.
+src/features/estudio/components/Metronomo.tsx(75,39): error TS18047: 'audioContextRef.current' is possibly 'null'.
+src/features/estudio/components/Metronomo.tsx(95,24): error TS7006: Parameter 'delta' implicitly has an 'any' type.
+src/features/estudio/components/ModalFinalizarSesion.tsx(123,25): error TS2322: Type 'Dispatch<SetStateAction<string[]>>' is not assignable to type '(value: (string | MediaItem)[]) => void'.
+  Types of parameters 'value' and 'value' are incompatible.
+    Type '(string | MediaItem)[]' is not assignable to type 'SetStateAction<string[]>'.
+      Type '(string | MediaItem)[]' is not assignable to type 'string[]'.
+        Type 'string | MediaItem' is not assignable to type 'string'.
+          Type 'MediaItem' is not assignable to type 'string'.
+src/features/estudio/components/PianoPanel.tsx(38,24): error TS7031: Binding element 'text' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(69,18): error TS7006: Parameter 'semitonesFromA4' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(79,29): error TS7006: Parameter 'pianoKeyMidi' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(79,43): error TS7006: Parameter 'pianoKey' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(186,23): error TS7031: Binding element 'note' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(218,26): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ C: number; D: number; E: number; F: number; G: number; A: number; B: number; }'.
+src/features/estudio/components/PianoPanel.tsx(279,38): error TS7031: Binding element 'isOpen' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(279,46): error TS7031: Binding element 'onClose' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(296,31): error TS2339: Property 'scrollLeft' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(336,64): error TS2551: Property 'webkitAudioContext' does not exist on type 'Window & typeof globalThis'. Did you mean 'AudioContext'?
+src/features/estudio/components/PianoPanel.tsx(338,13): error TS2322: Type 'AudioContext' is not assignable to type 'null'.
+src/features/estudio/components/PianoPanel.tsx(352,41): error TS2339: Property 'close' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(361,54): error TS2339: Property 'currentTime' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(376,24): error TS7006: Parameter 'note' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(376,30): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(386,37): error TS2339: Property 'state' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(387,37): error TS2339: Property 'resume' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(391,56): error TS2339: Property 'name' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(408,45): error TS2339: Property 'createOscillator' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(409,50): error TS2339: Property 'createGain' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(415,50): error TS2339: Property 'destination' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(417,45): error TS2339: Property 'currentTime' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(433,23): error TS7006: Parameter 'note' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(433,29): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(446,21): error TS18047: 'audioContextRef.current' is possibly 'null'.
+src/features/estudio/components/PianoPanel.tsx(472,25): error TS7006: Parameter 'direction' implicitly has an 'any' type.
+src/features/estudio/components/PianoPanel.tsx(474,77): error TS2339: Property 'name' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(486,9): error TS2554: Expected 2 arguments, but got 1.
+src/features/estudio/components/PianoPanel.tsx(701,63): error TS2339: Property 'concertMidi' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(702,72): error TS2339: Property 'concertMidi' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(707,40): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'F#3': number[]; G3: number[]; 'G#3': number[]; Ab3: number[]; A3: number[]; 'A#3': number[]; Bb3: number[]; B3: number[]; C4: number[]; 'C#4': number[]; Db4: number[]; D4: number[]; 'D#4': number[]; Eb4: number[]; E4: number[]; F4: number[]; 'F#4': number[]; ... 25 more ...; C6: number[]; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'F#3': number[]; G3: number[]; 'G#3': number[]; Ab3: number[]; A3: number[]; 'A#3': number[]; Bb3: number[]; B3: number[]; C4: number[]; 'C#4': number[]; Db4: number[]; D4: number[]; 'D#4': number[]; Eb4: number[]; E4: number[]; F4: number[]; 'F#4': number[]; ... 25 more ...; C6: number[]; }'.
+src/features/estudio/components/PianoPanel.tsx(707,90): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'F#3': number[]; G3: number[]; 'G#3': number[]; Ab3: number[]; A3: number[]; 'A#3': number[]; Bb3: number[]; B3: number[]; C4: number[]; 'C#4': number[]; Db4: number[]; D4: number[]; 'D#4': number[]; Eb4: number[]; E4: number[]; F4: number[]; 'F#4': number[]; ... 25 more ...; C6: number[]; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'F#3': number[]; G3: number[]; 'G#3': number[]; Ab3: number[]; A3: number[]; 'A#3': number[]; Bb3: number[]; B3: number[]; C4: number[]; 'C#4': number[]; Db4: number[]; D4: number[]; 'D#4': number[]; Eb4: number[]; E4: number[]; F4: number[]; 'F#4': number[]; ... 25 more ...; C6: number[]; }'.
+src/features/estudio/components/PianoPanel.tsx(737,44): error TS2339: Property 'concertMidi' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(740,94): error TS2339: Property 'concertMidi' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(750,40): error TS2339: Property 'concertMidi' does not exist on type 'never'.
+src/features/estudio/components/PianoPanel.tsx(753,90): error TS2339: Property 'concertMidi' does not exist on type 'never'.
+src/features/estudio/components/ResumenFinal.tsx(289,33): error TS2322: Type 'Dispatch<SetStateAction<string[]>>' is not assignable to type '(value: (string | MediaItem)[]) => void'.
+  Types of parameters 'value' and 'value' are incompatible.
+    Type '(string | MediaItem)[]' is not assignable to type 'SetStateAction<string[]>'.
+      Type '(string | MediaItem)[]' is not assignable to type 'string[]'.
+        Type 'string | MediaItem' is not assignable to type 'string'.
+          Type 'MediaItem' is not assignable to type 'string'.
+src/features/estudio/components/sessionSequence.tsx(11,32): error TS7006: Parameter 'sesion' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(14,46): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(14,49): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(26,39): error TS7006: Parameter 'sesion' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(28,58): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(32,15): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(33,12): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(34,29): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(41,30): error TS7006: Parameter 'sesion' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(50,38): error TS7006: Parameter 'sesion' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(57,13): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(58,14): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(58,19): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(61,47): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(61,52): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(62,40): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(62,45): error TS7006: Parameter 'code' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(63,33): error TS7006: Parameter 'x' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(75,25): error TS7006: Parameter 'array' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(87,36): error TS7006: Parameter 'ronda' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(95,34): error TS7006: Parameter 'sesion' implicitly has an 'any' type.
+src/features/estudio/components/sessionSequence.tsx(97,35): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/features/library/pages/BibliotecaPage.tsx(94,21): error TS2719: Type 'TabItem[]' is not assignable to type 'TabItem[]'. Two different types with this name exist, but they are unrelated.
+  Type 'TabItem' is not assignable to type 'TabItem'. Two different types with this name exist, but they are unrelated.
+    Types of property 'icon' are incompatible.
+      Type 'ElementType<any, keyof IntrinsicElements>' is not assignable to type 'ComponentType<{ className?: string | undefined; }> | undefined'.
+        Type '"symbol"' is not assignable to type 'ComponentType<{ className?: string | undefined; }> | undefined'.
+src/features/local/pages/LocalPage.tsx(29,29): error TS7006: Parameter 'userId' implicitly has an 'any' type.
+src/features/local/pages/LocalPage.tsx(52,23): error TS2339: Property 'message' does not exist on type '{}'.
+src/features/local/pages/LocalPage.tsx(53,22): error TS2339: Property 'code' does not exist on type '{}'.
+src/features/local/pages/LocalPage.tsx(55,31): error TS18046: 'error' is of type 'unknown'.
+src/features/local/pages/LocalPage.tsx(67,23): error TS2339: Property 'message' does not exist on type '{}'.
+src/features/local/pages/LocalPage.tsx(68,22): error TS2339: Property 'code' does not exist on type '{}'.
+src/features/local/pages/LocalPage.tsx(70,31): error TS18046: 'error' is of type 'unknown'.
+src/features/local/pages/LocalPage.tsx(93,23): error TS2339: Property 'message' does not exist on type '{}'.
+src/features/local/pages/LocalPage.tsx(94,22): error TS2339: Property 'code' does not exist on type '{}'.
+src/features/local/pages/LocalPage.tsx(96,31): error TS18046: 'error' is of type 'unknown'.
+src/features/local/pages/LocalPage.tsx(153,43): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ ADMIN: string; PROF: string; ESTU: string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ ADMIN: string; PROF: string; ESTU: string; }'.
+src/features/local/pages/LocalPage.tsx(161,79): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ ADMIN: string; PROF: string; ESTU: string; }'.
+src/features/local/pages/LocalPage.tsx(209,12): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ ADMIN: { title: string; url: string; icon: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>; }[]; PROF: { ...; }[]; ESTU: { ...; }[]; }'.
+src/features/local/pages/LocalPage.tsx(209,40): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/features/reports/pages/ReportesPage.tsx(443,33): error TS2322: Type '(selectedIds: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+  Types of parameters 'selectedIds' and 'item' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/features/reports/pages/ReportesPage.tsx(448,33): error TS2322: Type '(selectedIds: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+  Types of parameters 'selectedIds' and 'item' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/features/reports/pages/ReportesPage.tsx(453,33): error TS2322: Type '(selectedIds: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+  Types of parameters 'selectedIds' and 'item' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/features/reports/pages/ReportesPage.tsx(458,33): error TS2322: Type '(selectedIds: string[]) => void' is not assignable to type '(item?: any[] | undefined) => void'.
+  Types of parameters 'selectedIds' and 'item' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/features/reports/pages/ReportesPage.tsx(463,33): error TS2322: Type '"danger"' is not assignable to type '"link" | "default" | "secondary" | "destructive" | "outline" | "ghost" | undefined'.
+src/features/support/components/MarkdownPage.tsx(44,26): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ README: string; alumno: string; profesor: string; admin: string; faq: string; hotkeys: string; videos: string; tecnico: string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ README: string; alumno: string; profesor: string; admin: string; faq: string; hotkeys: string; videos: string; tecnico: string; }'.
+src/features/support/components/MarkdownPage.tsx(58,27): error TS18046: 'markdownContent' is of type 'unknown'.
+src/features/support/components/MarkdownPage.tsx(60,12): error TS7006: Parameter 'match' implicitly has an 'any' type.
+src/features/support/components/MarkdownPage.tsx(60,19): error TS7006: Parameter 'params' implicitly has an 'any' type.
+src/features/support/components/MarkdownPage.tsx(70,20): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<string>'.
+src/features/support/components/MarkdownPage.tsx(73,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<null>'.
+src/features/support/components/MarkdownPage.tsx(73,51): error TS18046: 'err' is of type 'unknown'.
+src/features/support/components/MarkdownPage.tsx(84,28): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/support/components/MarkdownPage.tsx(84,31): error TS7006: Parameter 'href' implicitly has an 'any' type.
+src/features/support/components/MarkdownPage.tsx(199,26): error TS2339: Property 'inline' does not exist on type 'ClassAttributes<HTMLElement> & HTMLAttributes<HTMLElement> & ExtraProps'.
+src/features/support/components/MarkdownPage.tsx(287,65): error TS7053: Element implicitly has an 'any' type because expression of type '"data-url"' can't be used to index type '{ ref?: LegacyRef<HTMLDivElement> | undefined; key?: Key | null | undefined; defaultChecked?: boolean | undefined; defaultValue?: string | number | readonly string[] | undefined; ... 260 more ...; onTransitionEndCapture?: TransitionEventHandler<...> | undefined; }'.
+  Property 'data-url' does not exist on type '{ ref?: LegacyRef<HTMLDivElement> | undefined; key?: Key | null | undefined; defaultChecked?: boolean | undefined; defaultValue?: string | number | readonly string[] | undefined; ... 260 more ...; onTransitionEndCapture?: TransitionEventHandler<...> | undefined; }'.
+src/features/support/components/MarkdownPage.tsx(288,69): error TS7053: Element implicitly has an 'any' type because expression of type '"data-title"' can't be used to index type '{ ref?: LegacyRef<HTMLDivElement> | undefined; key?: Key | null | undefined; defaultChecked?: boolean | undefined; defaultValue?: string | number | readonly string[] | undefined; ... 260 more ...; onTransitionEndCapture?: TransitionEventHandler<...> | undefined; }'.
+  Property 'data-title' does not exist on type '{ ref?: LegacyRef<HTMLDivElement> | undefined; key?: Key | null | undefined; defaultChecked?: boolean | undefined; defaultValue?: string | number | readonly string[] | undefined; ... 260 more ...; onTransitionEndCapture?: TransitionEventHandler<...> | undefined; }'.
+src/features/support/components/VideoEmbed.tsx(8,38): error TS7031: Binding element 'url' implicitly has an 'any' type.
+src/features/support/components/VideoEmbed.tsx(8,43): error TS7031: Binding element 'title' implicitly has an 'any' type.
+src/features/support/pages/AyudaPage.tsx(84,28): error TS7006: Parameter 'newTab' implicitly has an 'any' type.
+src/features/support/pages/SoportePage.tsx(78,5): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataOptions<unknown, Error, unknown, (string | undefined)[]>, queryClient?: QueryClient | undefined): DefinedUseQueryResult<unknown, Error>', gave the following error.
+    Object literal may only specify known properties, and 'onError' does not exist in type 'DefinedInitialDataOptions<unknown, Error, unknown, (string | undefined)[]>'.
+  Overload 2 of 3, '(options: UndefinedInitialDataOptions<SupportTicket[], Error, SupportTicket[], (string | undefined)[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Object literal may only specify known properties, and 'onError' does not exist in type 'UndefinedInitialDataOptions<SupportTicket[], Error, SupportTicket[], (string | undefined)[]>'.
+  Overload 3 of 3, '(options: UseQueryOptions<SupportTicket[], Error, SupportTicket[], (string | undefined)[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Object literal may only specify known properties, and 'onError' does not exist in type 'UseQueryOptions<SupportTicket[], Error, SupportTicket[], (string | undefined)[]>'.
+src/features/support/pages/SoportePage.tsx(78,15): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/features/support/pages/SoportePage.tsx(109,27): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<null>'.
+src/features/support/pages/SoportePage.tsx(143,20): error TS2339: Property 'ticketId' does not exist on type 'void'.
+src/features/support/pages/SoportePage.tsx(143,30): error TS2339: Property 'alumnoId' does not exist on type 'void'.
+src/features/support/pages/SoportePage.tsx(158,33): error TS2345: Argument of type '{ ticketId: never; alumnoId: string; }' is not assignable to parameter of type 'void'.
+src/features/support/pages/SoportePage.tsx(184,7): error TS2322: Type 'string' is not assignable to type '"sonido" | "otro" | "duda_general" | "tecnica" | "pieza" | "ritmo" | null'.
+src/features/support/pages/SoportePage.tsx(215,34): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/features/support/pages/SoportePage.tsx(242,27): error TS7006: Parameter 'estado' implicitly has an 'any' type.
+src/features/support/pages/SoportePage.tsx(255,23): error TS7006: Parameter 'dateString' implicitly has an 'any' type.
+src/features/support/pages/SoportePage.tsx(297,33): error TS2339: Property 'length' does not exist on type '{}'.
+src/features/support/pages/SoportePage.tsx(299,26): error TS2339: Property 'map' does not exist on type '{}'.
+src/features/support/pages/SoportePage.tsx(299,31): error TS7006: Parameter 'ticket' implicitly has an 'any' type.
+src/features/support/pages/SoportePage.tsx(373,43): error TS2339: Property '_profesorNombre' does not exist on type 'SupportTicket'.
+src/features/support/pages/SoportePage.tsx(374,96): error TS2339: Property '_profesorNombre' does not exist on type 'SupportTicket'.
+src/features/support/pages/SoportePage.tsx(447,47): error TS2339: Property '_autorNombre' does not exist on type 'SupportMensaje'.
+src/features/support/pages/SoportePage.tsx(448,63): error TS2339: Property '_autorNombre' does not exist on type 'SupportMensaje'.
+src/features/support/pages/SoportePage.tsx(465,61): error TS2345: Argument of type 'string[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type 'string[]' is not assignable to type 'never[]'.
+    Type 'string' is not assignable to type 'never'.
+src/features/support/pages/SoportePage.tsx(466,61): error TS2345: Argument of type 'number' is not assignable to parameter of type 'SetStateAction<null>'.
+src/features/support/pages/SoportePage.tsx(510,25): error TS2322: Type 'Dispatch<SetStateAction<never[]>>' is not assignable to type '(value: (string | MediaItem)[]) => void'.
+  Types of parameters 'value' and 'value' are incompatible.
+    Type '(string | MediaItem)[]' is not assignable to type 'SetStateAction<never[]>'.
+      Type '(string | MediaItem)[]' is not assignable to type 'never[]'.
+        Type 'string | MediaItem' is not assignable to type 'never'.
+          Type 'string' is not assignable to type 'never'.
+src/features/support/pages/SoportePage.tsx(513,25): error TS2322: Type 'Dispatch<SetStateAction<null>>' is not assignable to type '(file: File | null) => void'.
+  Types of parameters 'value' and 'file' are incompatible.
+    Type 'File | null' is not assignable to type 'SetStateAction<null>'.
+      Type 'File' is not assignable to type 'SetStateAction<null>'.
+        Type 'File' provides no match for the signature '(prevState: null): null'.
+src/features/ui/Layout.tsx(124,62): error TS2339: Property 'handleAuthError' does not exist on type 'AuthContextValue'.
+src/features/ui/Layout.tsx(162,30): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/ui/Layout.tsx(221,38): error TS2339: Property 'focus' does not exist on type 'never'.
+src/features/ui/Layout.tsx(243,24): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/ui/Layout.tsx(261,31): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/features/ui/Layout.tsx(261,31): error TS2345: Argument of type '(prev: any) => boolean' is not assignable to parameter of type 'boolean'.
+src/features/ui/Layout.tsx(332,26): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'toggle-sidebar': () => void; 'toggle-theme': () => void; 'toggle-hotkeys-modal': () => void; logout: () => void; 'go-studia': () => void; 'go-week': () => void; 'go-stats-estu': () => void; 'go-calendar-estu': () => void; ... 8 more ...; 'go-design': () => void; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'toggle-sidebar': () => void; 'toggle-theme': () => void; 'toggle-hotkeys-modal': () => void; logout: () => void; 'go-studia': () => void; 'go-week': () => void; 'go-stats-estu': () => void; 'go-calendar-estu': () => void; ... 8 more ...; 'go-design': () => void; }'.
+src/features/ui/Layout.tsx(349,21): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/ui/Layout.tsx(353,21): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/features/ui/Layout.tsx(385,13): error TS2345: Argument of type '() => () => string' is not assignable to parameter of type 'EffectCallback'.
+  Type '() => string' is not assignable to type 'void | Destructor'.
+    Type '() => string' is not assignable to type 'Destructor'.
+      Type 'string' is not assignable to type 'void | { [UNDEFINED_VOID_ONLY]: never; }'.
+src/features/ui/Layout.tsx(478,20): error TS2339: Property 'message' does not exist on type '{}'.
+src/features/ui/Layout.tsx(479,18): error TS2339: Property 'message' does not exist on type '{}'.
+src/features/ui/Layout.tsx(480,18): error TS2339: Property 'message' does not exist on type '{}'.
+src/features/ui/Layout.tsx(481,18): error TS2339: Property 'code' does not exist on type '{}'.
+src/features/ui/Layout.tsx(482,18): error TS2339: Property 'status' does not exist on type '{}'.
+src/features/ui/Layout.tsx(483,18): error TS2339: Property 'status' does not exist on type '{}'.
+src/features/ui/Layout.tsx(545,6): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/features/ui/Layout.tsx(556,18): error TS2339: Property 'message' does not exist on type '{}'.
+src/features/ui/Layout.tsx(557,16): error TS2339: Property 'message' does not exist on type '{}'.
+src/features/ui/Layout.tsx(558,16): error TS2339: Property 'status' does not exist on type '{}'.
+src/features/ui/Layout.tsx(598,11): error TS2322: Type '{ full_name: string | null; email: string | null; id: string | null; }' is not assignable to type '{ full_name?: string | undefined; }'.
+  Types of property 'full_name' are incompatible.
+    Type 'string | null' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+src/features/ui/Layout.tsx(599,11): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/features/ui/Layout.tsx(628,11): error TS2322: Type 'string' is not assignable to type 'number'.
+src/features/ui/Layout.tsx(662,35): error TS2339: Property 'nivelTecnico' does not exist on type '{ full_name: string | null; email: string | null; id: string | null; }'.
+src/features/ui/Layout.tsx(664,56): error TS2339: Property 'nivelTecnico' does not exist on type '{ full_name: string | null; email: string | null; id: string | null; }'.
+src/features/ui/Layout.tsx(664,89): error TS2339: Property 'nivel' does not exist on type '{ full_name: string | null; email: string | null; id: string | null; }'.
+src/features/ui/Layout.tsx(690,20): error TS18046: 'groupItems' is of type 'unknown'.
+src/features/ui/Layout.tsx(690,36): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/features/ui/Layout.tsx(1146,11): error TS2322: Type '{ children: (boolean | Element)[]; className: string; style: { marginLeft: string; }; "aria-hidden": boolean; inert: string | undefined; tabIndex: number | undefined; }' is not assignable to type 'DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>'.
+  Property 'inert' does not exist on type 'DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>'.

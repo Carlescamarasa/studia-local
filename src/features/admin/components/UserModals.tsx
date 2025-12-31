@@ -181,15 +181,14 @@ export default function UserModals({
                     <div className="space-y-4 py-4">
                         {/* @ts-ignore */}
                         <FormField label="Estudiantes">
-                            {/* @ts-ignore */}
                             <MultiSelect
+                                label="Estudiantes"
                                 items={users
                                     .filter(u => (u.rolPersonalizado || u.role) === 'ESTU')
                                     .map(e => ({
                                         value: e.id,
                                         label: `${getNombreVisible(e)}${e.email ? ` (${e.email})` : ''}`.trim(),
                                     }))}
-                                // @ts-ignore
                                 value={estudiantesSeleccionados}
                                 onChange={setEstudiantesSeleccionados}
                                 placeholder="Buscar estudiantes..."

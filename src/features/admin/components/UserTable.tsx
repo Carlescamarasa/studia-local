@@ -120,8 +120,9 @@ export default function UserTable({
                     id: 'assign_profesor_bulk',
                     label: 'Asignar profesor',
                     icon: UserIcon,
-                    onClick: (ids: string[]) => {
-                        const selectedUsers = users.filter((u: User) => ids.includes(u.id));
+                    onClick: (ids?: any[]) => {
+                        const castIds = (ids || []) as string[];
+                        const selectedUsers = users.filter((u: User) => castIds.includes(u.id));
                         const students = selectedUsers.filter((u: User) => (u.rolPersonalizado || u.role) === 'ESTU');
                         if (students.length > 0) {
                             bulkActions.onBulkAssignProfesor(students.map((u: User) => u.id));
@@ -134,42 +135,43 @@ export default function UserTable({
                     id: 'send_magic_link_bulk',
                     label: 'Enviar enlace mágico',
                     icon: Mail,
-                    onClick: bulkActions.onBulkSendMagicLink,
+                    onClick: (ids?: any[]) => bulkActions.onBulkSendMagicLink((ids || []) as string[]),
                 },
                 {
                     id: 'send_reset_password_bulk',
                     label: 'Enviar reset password',
                     icon: KeyRound,
-                    onClick: bulkActions.onBulkSendResetPassword,
+                    onClick: (ids?: any[]) => bulkActions.onBulkSendResetPassword((ids || []) as string[]),
                 },
                 {
                     id: 'pause_bulk',
                     label: 'Pausar acceso',
                     icon: Pause,
-                    onClick: (ids: string[]) => bulkActions.onBulkToggleActive(ids, false),
+                    onClick: (ids?: any[]) => bulkActions.onBulkToggleActive(ids as string[], false),
                 },
                 {
                     id: 'resume_bulk',
                     label: 'Reanudar acceso',
                     icon: Play,
-                    onClick: (ids: string[]) => bulkActions.onBulkToggleActive(ids, true),
+                    onClick: (ids?: any[]) => bulkActions.onBulkToggleActive((ids || []) as string[], true),
                 },
                 {
                     id: 'export',
                     label: 'Exportar CSV',
                     // @ts-ignore - UnifiedTable icon type mismatch
                     icon: FileDownIcon,
-                    onClick: bulkActions.onBulkExport,
+                    onClick: (ids?: any[]) => bulkActions.onBulkExport((ids || []) as string[]),
                 },
                 ...(realRole === 'ADMIN' ? [{
                     id: 'delete_bulk',
                     label: 'Eliminar usuarios',
                     icon: Trash2,
-                    onClick: (ids: string[]) => {
-                        const toDelete = users.filter(u => ids.includes(u.id) && u.id !== realUserId);
+                    onClick: (ids?: any[]) => {
+                        const castIds = (ids || []) as string[];
+                        const toDelete = users.filter(u => castIds.includes(u.id) && u.id !== realUserId);
                         if (toDelete.length > 0) {
                             onDelete(toDelete);
-                        } else if (ids.length > 0) {
+                        } else if (castIds.length > 0) {
                             toast.error('No puedes eliminar tu propia cuenta');
                         }
                     },

@@ -33,15 +33,39 @@ import {
 } from "@/features/shared/components/ui/tooltip"
 import { Info, ChevronDown, Pencil } from "lucide-react"
 
+interface LevelConfig {
+    level: number;
+    minXpFlex?: number;
+    minXpMotr?: number;
+    minXpArt?: number;
+    minEvalSound?: number;
+    minEvalCog?: number;
+    evidenceWindowDays?: number;
+    [key: string]: any;
+}
+
+interface Criterion {
+    id: string;
+    level: number;
+    skill: string;
+    source: string;
+    description: string;
+    required: boolean;
+    evidenceRequired?: number;
+    evidenceDays?: number;
+    created_at?: string;
+    [key: string]: any;
+}
+
 export default function LevelConfigView() {
     const [loading, setLoading] = useState(true);
-    const [levels, setLevels] = useState([]);
-    const [criteria, setCriteria] = useState([]);
+    const [levels, setLevels] = useState<LevelConfig[]>([]);
+    const [criteria, setCriteria] = useState<Criterion[]>([]);
     const [activeLevel, setActiveLevel] = useState('1');
     const [viewMode, setViewMode] = useState('edit'); // 'edit', 'compare'
     const [importModalOpen, setImportModalOpen] = useState(false);
-    const [importCandidates, setImportCandidates] = useState([]);
-    const [selectedImportIds, setSelectedImportIds] = useState([]);
+    const [importCandidates, setImportCandidates] = useState<Criterion[]>([]);
+    const [selectedImportIds, setSelectedImportIds] = useState<string[]>([]);
 
     const queryClient = useQueryClient();
     const { data: levelsData, isLoading: levelsLoading } = useLevelsConfig();
@@ -50,7 +74,7 @@ export default function LevelConfigView() {
     useEffect(() => {
         if (levelsData) {
             // Ensure we have configs for levels 1-10
-            const fullLevels = [];
+            const fullLevels: LevelConfig[] = [];
             for (let i = 1; i <= 10; i++) {
                 const existing = levelsData.find(l => l.level === i);
                 if (existing) {
@@ -73,7 +97,7 @@ export default function LevelConfigView() {
 
     // Modal edit states for criteria
     const [editModalOpen, setEditModalOpen] = useState(false);
-    const [editingCriteria, setEditingCriteria] = useState(null);
+    const [editingCriteria, setEditingCriteria] = useState<Criterion | null>(null);
     const [editDraft, setEditDraft] = useState({ skill: '', source: '', description: '', required: false });
 
     // Responsive state: <1024 uses Drawer, >=1024 uses Dialog
@@ -106,13 +130,13 @@ export default function LevelConfigView() {
         }
     };
 
-    const handleLevelChange = (level, field, value) => {
+    const handleLevelChange = (level: number, field: string, value: any) => {
         setLevels(prev => prev.map(l =>
             l.level === level ? { ...l, [field]: value } : l
         ));
     };
 
-    const saveLevelConfig = async (levelConfig) => {
+    const saveLevelConfig = async (levelConfig: LevelConfig) => {
         try {
             // Check if exists to decide create or update
             const existing = await localDataClient.entities.LevelConfig.list();
@@ -120,7 +144,7 @@ export default function LevelConfigView() {
 
             if (match) {
                 // Use level as the ID for update, as defined in remoteDataAPI
-                await localDataClient.entities.LevelConfig.update(levelConfig.level, levelConfig);
+                await localDataClient.entities.LevelConfig.update(String(levelConfig.level), levelConfig);
             } else {
                 await localDataClient.entities.LevelConfig.create(levelConfig);
             }
@@ -136,7 +160,7 @@ export default function LevelConfigView() {
         }
     };
 
-    const addCriteria = async (level) => {
+    const addCriteria = async (level: number) => {
         const newCriteria = {
             level,
             skill: 'Flexibilidad',
@@ -144,11 +168,11 @@ export default function LevelConfigView() {
             description: 'Nuevo criterio',
             required: true,
             evidenceRequired: 3,
-            evidenceDays: 14
+            evidenceDays: 14 as any
         };
 
         try {
-            const created = await localDataClient.entities.LevelKeyCriteria.create(newCriteria);
+            const created = await localDataClient.entities.LevelKeyCriteria.create(newCriteria as any);
             setCriteria(prev => [...prev, created]);
             toast.success('Criterio añadido');
         } catch (error) {
@@ -156,7 +180,7 @@ export default function LevelConfigView() {
         }
     };
 
-    const updateCriteria = async (id, updates) => {
+    const updateCriteria = async (id: string, updates: any) => {
         try {
             const updated = await localDataClient.entities.LevelKeyCriteria.update(id, updates);
             setCriteria(prev => prev.map(c => c.id === id ? updated : c));
@@ -165,7 +189,7 @@ export default function LevelConfigView() {
         }
     };
 
-    const deleteCriteria = async (id) => {
+    const deleteCriteria = async (id: string) => {
         if (!confirm('¿Eliminar criterio?')) return;
         try {
             await localDataClient.entities.LevelKeyCriteria.delete(id);
@@ -177,7 +201,7 @@ export default function LevelConfigView() {
     };
 
     // Modal edit handlers
-    const openCriteriaModal = (criterio) => {
+    const openCriteriaModal = (criterio: Criterion) => {
         setEditingCriteria(criterio);
         setEditDraft({
             skill: criterio.skill || '',
@@ -202,7 +226,7 @@ export default function LevelConfigView() {
     };
 
 
-    const normalizeText = (text) => {
+    const normalizeText = (text: string) => {
         return text ? text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
     };
 
@@ -210,22 +234,28 @@ export default function LevelConfigView() {
         const currentLvl = parseInt(activeLevel);
         const prevLvl = currentLvl - 1;
 
-        if (prevLvl < 1) return null;
+        if (prevLvl < 1) return {};
 
         const currentItems = criteria.filter(c => c.level === currentLvl);
         const prevItems = criteria.filter(c => c.level === prevLvl);
 
+        interface ComparisonData {
+            new: Criterion[];
+            removed: Criterion[];
+            similar: { current: Criterion; previous: Criterion }[];
+        }
+
         // Group by skill
         const skills = ['Flexibilidad', 'Motricidad', 'Articulación', 'Sonido', 'Cognición'];
-        const comparison = {};
+        const comparison: Record<string, ComparisonData> = {};
 
         skills.forEach(skill => {
             const currentSkillItems = currentItems.filter(c => c.skill === skill);
             const prevSkillItems = prevItems.filter(c => c.skill === skill);
 
-            const newItems = [];
-            const removedItems = [];
-            const similarItems = [];
+            const newItems: Criterion[] = [];
+            const removedItems: Criterion[] = [];
+            const similarItems: { current: Criterion; previous: Criterion }[] = [];
 
             // Find new and similar
             currentSkillItems.forEach(curr => {
@@ -355,10 +385,10 @@ export default function LevelConfigView() {
         }
     };
 
-    const renderDescriptionWithTags = (text) => {
+    const renderDescriptionWithTags = (text: string) => {
         if (!text) return "";
         const parts = text.split(/(#\w+)/g);
-        return parts.map((part, i) => {
+        return parts.map((part: string, i: number) => {
             if (part.startsWith('#')) {
                 return <Badge key={i} variant="secondary" className="mr-1 text-xs">{part}</Badge>;
             }
@@ -479,7 +509,7 @@ export default function LevelConfigView() {
                             // XP Comparison Logic
                             const currentLvl = parseInt(activeLevel);
                             const prevLvl = currentLvl - 1;
-                            const prevConfig = levels.find(l => l.level === prevLvl) || { minXpFlex: 0, minXpMotr: 0, minXpArt: 0 };
+                            const prevConfig = levels.find(l => l.level === prevLvl) || { minXpFlex: 0, minXpMotr: 0, minXpArt: 0, level: prevLvl } as LevelConfig;
                             const currConfig = levels.find(l => l.level === currentLvl);
 
                             const xpFields = [
@@ -500,8 +530,8 @@ export default function LevelConfigView() {
                                         <CardContent>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 {xpFields.map(field => {
-                                                    const prevVal = prevConfig[field.key] || 0;
-                                                    const currVal = currConfig?.[field.key] || 0;
+                                                    const prevVal = (prevConfig as any)[field.key] || 0;
+                                                    const currVal = (currConfig as any)?.[field.key] || 0;
                                                     const diff = currVal - prevVal;
                                                     const isIncrease = diff > 0;
 
@@ -732,7 +762,7 @@ export default function LevelConfigView() {
                         <CardHeader>
                             <CardTitle className="flex flex-wrap justify-between items-center gap-2">
                                 <span className="text-base">{isLastLevel ? `Requisitos de XP para completar Nivel ${currentLevelNum}` : `Requisitos de XP para ascender a Nivel ${nextLevelNum}`}</span>
-                                <Button size="sm" onClick={() => saveLevelConfig(currentLevelConfig)} className="text-xs sm:text-sm whitespace-nowrap">
+                                <Button size="sm" onClick={() => currentLevelConfig && saveLevelConfig(currentLevelConfig)} disabled={!currentLevelConfig} className="text-xs sm:text-sm whitespace-nowrap">
                                     <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                                     <span className="hidden xs:inline">Guardar Configuración</span>
                                     <span className="xs:hidden">Guardar</span>
