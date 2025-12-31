@@ -1,4 +1,3 @@
-// src/api/localDataClient.ts
 import { localUsers } from '../local-data/localUsers';
 import { AsignacionesAPI } from '../data/asignacionesClient';
 import { BloquesAPI } from '../data/bloquesClient';
@@ -13,69 +12,118 @@ import { EvaluacionesAPI } from '../data/evaluacionesClient';
 import { getStoredUserId, setStoredUserId, clearStoredUserId } from '../data/authClient';
 import { createRemoteDataAPI } from './remoteDataAPI';
 import { supabase } from '../lib/supabaseClient';
+import {
+    Asignacion,
+    Bloque,
+    FeedbackSemanal,
+    Pieza,
+    Plan,
+    RegistroBloque,
+    RegistroSesion,
+    StudiaUser,
+    EventoCalendario,
+    EvaluacionTecnica,
+    LevelConfig,
+    LevelKeyCriteria,
+    StudentCriteriaStatus,
+    StudentLevelHistory,
+    StudentXPTotal,
+    MediaAsset,
+    StudentBackpackItem
+} from '../features/shared/types/domain';
 
 // Types from .d.ts
-export interface EntityAPI {
-    list: (sort?: string, options?: any) => Promise<any[]>;
-    get: (id: string) => Promise<any>;
-    filter: (filters: any, limit?: number | null) => Promise<any[]>;
-    create: (data: any) => Promise<any>;
-    update: (id: string, updates: any) => Promise<any>;
+// Types from .d.ts
+export interface EntityAPI<T = any> {
+    list: (sort?: string, options?: Record<string, unknown>) => Promise<T[]>;
+    get: (id: string) => Promise<T | null>;
+    filter: (filters: Record<string, unknown>, limit?: number | null) => Promise<T[]>;
+    create: (data: Partial<T>) => Promise<T>;
+    update: (id: string, updates: Partial<T>) => Promise<T>;
     delete: (id: string) => Promise<{ success: boolean }>;
-    bulkCreate?: (items: any[]) => Promise<any[]>;
+    bulkCreate?: (items: Partial<T>[]) => Promise<T[]>;
 }
 
 export interface LocalDataClient {
     auth: {
-        me: () => Promise<any>;
-        getCurrentUser: () => any;
-        login: (credentials: any) => Promise<{ user: any; success: boolean }>;
+        me: () => Promise<StudiaUser | null>;
+        getCurrentUser: () => StudiaUser | null;
+        login: (credentials: { email?: string; userId?: string; password?: string }) => Promise<{ user: StudiaUser; success: boolean }>;
         logout: () => Promise<{ success: boolean }>;
-        updateMe: (data: any, effectiveUserId?: string | null) => Promise<any>;
+        updateMe: (data: Partial<StudiaUser>, effectiveUserId?: string | null) => Promise<StudiaUser>;
     };
     entities: {
-        User: EntityAPI;
-        Asignacion: EntityAPI;
-        Bloque: EntityAPI;
-        FeedbackSemanal: EntityAPI;
-        Pieza: EntityAPI;
-        Plan: EntityAPI;
-        RegistroBloque: EntityAPI;
-        RegistroSesion: EntityAPI;
-        EventoCalendario: EntityAPI;
-        EvaluacionTecnica: EntityAPI;
-        LevelConfig: EntityAPI;
-        LevelKeyCriteria: EntityAPI;
-        StudentCriteriaStatus: EntityAPI;
-        StudentLevelHistory: EntityAPI;
-        StudentXPTotal: EntityAPI;
-        StudentBackpack: EntityAPI;
-        MediaAsset: EntityAPI;
-        [key: string]: EntityAPI;
+        User: EntityAPI<StudiaUser>;
+        Asignacion: EntityAPI<Asignacion>;
+        Bloque: EntityAPI<Bloque>;
+        FeedbackSemanal: EntityAPI<FeedbackSemanal>;
+        Pieza: EntityAPI<Pieza>;
+        Plan: EntityAPI<Plan>;
+        RegistroBloque: EntityAPI<RegistroBloque>;
+        RegistroSesion: EntityAPI<RegistroSesion>;
+        EventoCalendario: EntityAPI<EventoCalendario>;
+        EvaluacionTecnica: EntityAPI<EvaluacionTecnica>;
+        LevelConfig: EntityAPI<LevelConfig>;
+        LevelKeyCriteria: EntityAPI<LevelKeyCriteria>;
+        StudentCriteriaStatus: EntityAPI<StudentCriteriaStatus>;
+        StudentLevelHistory: EntityAPI<StudentLevelHistory>;
+        StudentXPTotal: EntityAPI<StudentXPTotal>;
+        StudentBackpack: EntityAPI<StudentBackpackItem>;
+        MediaAsset: EntityAPI<MediaAsset>;
+        [key: string]: EntityAPI<any>;
     };
-    getCalendarSummary: (startDate: Date, endDate: Date, userId?: string) => Promise<any>;
-    getProgressSummary: (studentId?: string) => Promise<any>;
-    getSeedStats: () => Promise<any>;
+    getCalendarSummary: (startDate: Date, endDate: Date, userId?: string) => Promise<{
+        registrosSesion: RegistroSesion[];
+        feedbacksSemanal: FeedbackSemanal[];
+        asignaciones: Asignacion[];
+        eventosCalendario: EventoCalendario[];
+    }>;
+    getProgressSummary: (studentId?: string) => Promise<{
+        xpTotals: StudentXPTotal[];
+        evaluacionesTecnicas: EvaluacionTecnica[];
+        feedbacksSemanal: FeedbackSemanal[];
+        registrosSesion: RegistroSesion[];
+    }>;
+    getSeedStats: () => Promise<{
+        usersCount: number;
+        usersAdmin: number;
+        usersProf: number;
+        usersEstu: number;
+        piezas: number;
+        planes: number;
+        bloques: number;
+        asignaciones: number;
+        registrosSesion: number;
+        registrosBloques: number;
+        feedbacks: number;
+    }>;
 }
 
 // Internal data reference interface
 interface LocalDataRef {
-    asignaciones: any[];
-    bloques: any[];
-    feedbacksSemanal: any[];
-    piezas: any[];
-    planes: any[];
-    registrosBloque: any[];
-    registrosSesion: any[];
-    studentBackpack: any[];
-    eventosCalendario: any[];
-    mediaAssets: any[];
-    usuarios: any[];
-    levelsConfig?: any[];
-    levelKeyCriteria?: any[];
-    studentCriteriaStatus?: any[];
-    studentLevelHistory?: any[];
-    studentXpTotal?: any[];
+    asignaciones: Asignacion[];
+    bloques: Bloque[];
+    feedbacksSemanal: FeedbackSemanal[];
+    piezas: Pieza[];
+    planes: Plan[];
+    registrosBloque: RegistroBloque[];
+    registrosSesion: RegistroSesion[];
+    studentBackpack: StudentBackpackItem[];
+    eventosCalendario: EventoCalendario[];
+    mediaAssets: MediaAsset[];
+    usuarios: (StudiaUser & {
+        nombreCompleto?: string;
+        first_name?: string;
+        last_name?: string;
+        rolPersonalizado?: string;
+        estado?: string;
+        fechaRegistro?: string;
+    })[];
+    levelsConfig?: LevelConfig[];
+    levelKeyCriteria?: LevelKeyCriteria[];
+    studentCriteriaStatus?: StudentCriteriaStatus[];
+    studentLevelHistory?: StudentLevelHistory[];
+    studentXpTotal?: StudentXPTotal[];
     _loading: boolean;
     [key: string]: any;
 }
@@ -102,7 +150,7 @@ export function setLocalDataRef(data: Partial<LocalDataRef>) {
 }
 
 // API legada: helpers de usuario actual usados directamente desde varias vistas
-export function getCurrentUser() {
+export function getCurrentUser(): (StudiaUser & { nombreCompleto?: string }) | null {
     // Si hay una sesión de Supabase activa, devolver null
     if (typeof window !== 'undefined' && window.localStorage) {
         try {
@@ -124,7 +172,7 @@ export function getCurrentUser() {
     }
 
     const user = localDataRef.usuarios.find(u => u.id === storedUserId);
-    if (user) return user;
+    if (user) return user as (StudiaUser & { nombreCompleto?: string });
 
     return null;
 }
@@ -205,8 +253,66 @@ const entityToAPIKey: Record<string, string> = {
 };
 
 // Helper para crear entidades con métodos CRUD apoyadas en la capa de datos
-function createEntityAPI(entityName: string, dataKey: string, entityApi: () => Promise<any[]>): EntityAPI {
+function createEntityAPI<T>(
+    entityName: string,
+    dataKey: string,
+    entityApi: () => Promise<T[]>
+): EntityAPI<T> {
     const apiKey = entityToAPIKey[entityName];
+
+    const apiMap: Record<string, {
+        create?: Function;
+        update?: Function;
+        delete?: Function;
+        bulkCreate?: Function;
+    }> = {
+        'Asignacion': {
+            create: AsignacionesAPI.createAsignacion,
+            update: AsignacionesAPI.updateAsignacion,
+            delete: AsignacionesAPI.deleteAsignacion
+        },
+        'Bloque': {
+            create: BloquesAPI.createBloque,
+            update: BloquesAPI.updateBloque,
+            delete: BloquesAPI.deleteBloque
+        },
+        'FeedbackSemanal': {
+            create: FeedbacksSemanalAPI.createFeedbackSemanal,
+            update: FeedbacksSemanalAPI.updateFeedbackSemanal,
+            delete: FeedbacksSemanalAPI.deleteFeedbackSemanal
+        },
+        'Pieza': {
+            create: PiezasAPI.createPieza,
+            update: PiezasAPI.updatePieza,
+            delete: PiezasAPI.deletePieza
+        },
+        'Plan': {
+            create: PlanesAPI.createPlan,
+            update: PlanesAPI.updatePlan,
+            delete: PlanesAPI.deletePlan
+        },
+        'RegistroBloque': {
+            create: RegistrosBloqueAPI.createRegistroBloque,
+            update: RegistrosBloqueAPI.updateRegistroBloque,
+            delete: RegistrosBloqueAPI.deleteRegistroBloque,
+            bulkCreate: (RegistrosBloqueAPI as any).bulkCreateRegistrosBloque
+        },
+        'RegistroSesion': {
+            create: RegistrosSesionAPI.createRegistroSesion,
+            update: RegistrosSesionAPI.updateRegistroSesion,
+            delete: RegistrosSesionAPI.deleteRegistroSesion
+        },
+        'EventoCalendario': {
+            create: EventosCalendarioAPI.createEventoCalendario,
+            update: EventosCalendarioAPI.updateEventoCalendario,
+            delete: EventosCalendarioAPI.deleteEventoCalendario
+        },
+        'EvaluacionTecnica': {
+            create: EvaluacionesAPI.createEvaluacionTecnica,
+            update: EvaluacionesAPI.updateEvaluacionTecnica,
+            delete: EvaluacionesAPI.deleteEvaluacionTecnica
+        },
+    };
 
     return {
         list: async (sort = '', options = {}) => {
@@ -222,12 +328,16 @@ function createEntityAPI(entityName: string, dataKey: string, entityApi: () => P
                 attempts++;
             }
 
-            let data = [...(await entityApi())];
+            const rawData = await entityApi();
+            const data = [...rawData];
+
             if (sort.startsWith('-')) {
                 const field = sort.slice(1);
                 data.sort((a, b) => {
-                    if (a[field] < b[field]) return 1;
-                    if (a[field] > b[field]) return -1;
+                    const valA = (a as any)[field];
+                    const valB = (b as any)[field];
+                    if (valA < valB) return 1;
+                    if (valA > valB) return -1;
                     return 0;
                 });
             }
@@ -240,7 +350,10 @@ function createEntityAPI(entityName: string, dataKey: string, entityApi: () => P
             }
 
             const data = await entityApi();
-            return data.find(item => item.id === id) || null;
+            return data.find(item => {
+                const typedItem = item as any;
+                return (typedItem.id !== undefined ? typedItem.id === id : typedItem.level === id);
+            }) || null;
         },
         filter: async (filters = {}, limit = null) => {
             const api = getDataAPI();
@@ -248,9 +361,10 @@ function createEntityAPI(entityName: string, dataKey: string, entityApi: () => P
                 return await api[apiKey].filter(filters, limit);
             }
 
-            let data = [...(await entityApi())];
+            const rawData = await entityApi();
+            let data = [...rawData];
             Object.keys(filters).forEach(key => {
-                data = data.filter(item => item[key] === filters[key]);
+                data = data.filter(item => (item as any)[key] === (filters as any)[key]);
             });
             if (limit) data = data.slice(0, limit);
             return data;
@@ -261,18 +375,7 @@ function createEntityAPI(entityName: string, dataKey: string, entityApi: () => P
                 return await api[apiKey].create(data);
             }
 
-            const apiCreate =
-                entityName === 'Asignacion' ? AsignacionesAPI.createAsignacion :
-                    entityName === 'Bloque' ? BloquesAPI.createBloque :
-                        entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.createFeedbackSemanal :
-                            entityName === 'Pieza' ? PiezasAPI.createPieza :
-                                entityName === 'Plan' ? PlanesAPI.createPlan :
-                                    entityName === 'RegistroBloque' ? RegistrosBloqueAPI.createRegistroBloque :
-                                        entityName === 'RegistroSesion' ? RegistrosSesionAPI.createRegistroSesion :
-                                            entityName === 'EventoCalendario' ? EventosCalendarioAPI.createEventoCalendario :
-                                                entityName === 'EvaluacionTecnica' ? EvaluacionesAPI.createEvaluacionTecnica :
-                                                    null;
-
+            const apiCreate = apiMap[entityName]?.create;
             if (!apiCreate) {
                 throw new Error(`API create no definida para entidad ${entityName}`);
             }
@@ -291,28 +394,20 @@ function createEntityAPI(entityName: string, dataKey: string, entityApi: () => P
                 return await api[apiKey].update(id, updates);
             }
 
-            const apiUpdate =
-                entityName === 'Asignacion' ? AsignacionesAPI.updateAsignacion :
-                    entityName === 'Bloque' ? BloquesAPI.updateBloque :
-                        entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.updateFeedbackSemanal :
-                            entityName === 'Pieza' ? PiezasAPI.updatePieza :
-                                entityName === 'Plan' ? PlanesAPI.updatePlan :
-                                    entityName === 'RegistroBloque' ? RegistrosBloqueAPI.updateRegistroBloque :
-                                        entityName === 'RegistroSesion' ? RegistrosSesionAPI.updateRegistroSesion :
-                                            entityName === 'EventoCalendario' ? EventosCalendarioAPI.updateEventoCalendario :
-                                                entityName === 'EvaluacionTecnica' ? EvaluacionesAPI.updateEvaluacionTecnica :
-                                                    null;
-
+            const apiUpdate = apiMap[entityName]?.update;
             if (!apiUpdate) {
                 throw new Error(`API update no definida para entidad ${entityName}`);
             }
 
             const updated = await apiUpdate(id, updates);
-            const index = Array.isArray(localDataRef[dataKey])
-                ? localDataRef[dataKey].findIndex((item: any) => item.id === id)
-                : -1;
-            if (index !== -1) {
-                localDataRef[dataKey][index] = updated;
+            const list = localDataRef[dataKey];
+            if (Array.isArray(list)) {
+                const index = list.findIndex((item: any) => {
+                    return (item.id !== undefined ? item.id === id : item.level === id);
+                });
+                if (index !== -1) {
+                    list[index] = updated;
+                }
             }
             return updated;
         },
@@ -322,36 +417,18 @@ function createEntityAPI(entityName: string, dataKey: string, entityApi: () => P
                 return await api[apiKey].delete(id);
             }
 
-            const apiDelete =
-                entityName === 'Asignacion' ? AsignacionesAPI.deleteAsignacion :
-                    entityName === 'Bloque' ? BloquesAPI.deleteBloque :
-                        entityName === 'FeedbackSemanal' ? FeedbacksSemanalAPI.deleteFeedbackSemanal :
-                            entityName === 'Pieza' ? PiezasAPI.deletePieza :
-                                entityName === 'Plan' ? PlanesAPI.deletePlan :
-                                    entityName === 'RegistroBloque' ? RegistrosBloqueAPI.deleteRegistroBloque :
-                                        entityName === 'RegistroSesion' ? RegistrosSesionAPI.deleteRegistroSesion :
-                                            entityName === 'EventoCalendario' ? EventosCalendarioAPI.deleteEventoCalendario :
-                                                entityName === 'EvaluacionTecnica' ? EvaluacionesAPI.createEvaluacionTecnica : // Wait, wait... delete? Check!
-                                                    null;
-
-            // Let's re-verify the delete function mapping from original JS.
-            // JS Line 293: entityName === 'EvaluacionTecnica' ? EvaluacionesAPI.deleteEvaluacionTecnica : null;
-            // Wait, I messed up in my mental draft.
-
-            if (!apiDelete && entityName !== 'EvaluacionTecnica') {
+            const apiDelete = apiMap[entityName]?.delete;
+            if (!apiDelete) {
                 throw new Error(`API delete no definida para entidad ${entityName}`);
             }
 
-            const finalDelete = entityName === 'EvaluacionTecnica' ? (EvaluacionesAPI as any).deleteEvaluacionTecnica : apiDelete;
+            await apiDelete(id);
 
-            if (!finalDelete) {
-                throw new Error(`API delete no definida para entidad ${entityName}`);
-            }
-
-            await finalDelete(id);
-
-            if (Array.isArray(localDataRef[dataKey])) {
-                localDataRef[dataKey] = localDataRef[dataKey].filter((item: any) => item.id !== id);
+            const list = localDataRef[dataKey];
+            if (Array.isArray(list)) {
+                localDataRef[dataKey] = list.filter((item: any) => {
+                    return (item.id !== undefined ? item.id !== id : item.level !== id);
+                });
             }
             return { success: true };
         },
@@ -361,10 +438,7 @@ function createEntityAPI(entityName: string, dataKey: string, entityApi: () => P
                 return await api[apiKey].bulkCreate(items);
             }
 
-            const apiBulkCreate =
-                entityName === 'RegistroBloque' ? (RegistrosBloqueAPI as any).bulkCreateRegistrosBloque :
-                    null;
-
+            const apiBulkCreate = apiMap[entityName]?.bulkCreate;
             if (apiBulkCreate) {
                 const newItems = await apiBulkCreate(items);
                 if (!Array.isArray(localDataRef[dataKey])) {
@@ -374,10 +448,20 @@ function createEntityAPI(entityName: string, dataKey: string, entityApi: () => P
                 return newItems;
             }
 
-            const created = [];
-            const currentAPI = createEntityAPI(entityName, dataKey, entityApi);
+            const created: T[] = [];
+            // Re-using the internal create logic is better but we need to avoid recursion or ensure it's shallow.
+            // For bulk, let's just use the apiCreate which we already found.
+            const apiCreate = apiMap[entityName]?.create;
+            if (!apiCreate) {
+                throw new Error(`API create (for bulk) no definida para entidad ${entityName}`);
+            }
+
             for (const item of items) {
-                const newItem = await currentAPI.create(item);
+                const newItem = await apiCreate(item);
+                if (!Array.isArray(localDataRef[dataKey])) {
+                    localDataRef[dataKey] = [];
+                }
+                localDataRef[dataKey].push(newItem);
                 created.push(newItem);
             }
             return created;
@@ -488,16 +572,17 @@ export const localDataClient: LocalDataClient = {
                 }
                 const usuarios = localDataRef.usuarios || [];
                 return usuarios.map(u => {
-                    if (u.nombreCompleto && u.nombreCompleto.trim()) {
-                        return u;
+                    const typedU = u as any;
+                    if (typedU.nombreCompleto && typedU.nombreCompleto.trim()) {
+                        return u as StudiaUser;
                     }
                     let nombreCompleto = null;
-                    if (u.full_name && u.full_name.trim()) {
-                        nombreCompleto = u.full_name.trim();
-                    } else if (u.first_name || u.last_name) {
-                        nombreCompleto = [u.first_name, u.last_name].filter(Boolean).join(' ').trim();
-                    } else if (u.email) {
-                        const emailStr = String(u.email);
+                    if (typedU.full_name && typedU.full_name.trim()) {
+                        nombreCompleto = typedU.full_name.trim();
+                    } else if (typedU.first_name || typedU.last_name) {
+                        nombreCompleto = [typedU.first_name, typedU.last_name].filter(Boolean).join(' ').trim();
+                    } else if (typedU.email) {
+                        const emailStr = String(typedU.email);
                         if (emailStr.includes('@')) {
                             const parteLocal = emailStr.split('@')[0];
                             const isLikelyId = /^[a-f0-9]{24}$/i.test(parteLocal) || /^u_[a-z0-9_]+$/i.test(parteLocal);
@@ -513,14 +598,14 @@ export const localDataClient: LocalDataClient = {
                             nombreCompleto = emailStr;
                         }
                     } else {
-                        nombreCompleto = `Usuario ${u.id || 'Nuevo'}`;
+                        nombreCompleto = `Usuario ${typedU.id || 'Nuevo'}`;
                     }
-                    const finalFullName = (u.full_name && u.full_name.trim()) || (nombreCompleto && nombreCompleto.trim()) || '';
+                    const finalFullName = (typedU.full_name && typedU.full_name.trim()) || (nombreCompleto && nombreCompleto.trim()) || '';
                     return {
                         ...u,
                         nombreCompleto: nombreCompleto,
                         full_name: finalFullName,
-                    };
+                    } as unknown as StudiaUser;
                 });
             },
             get: async (id) => {
@@ -528,7 +613,7 @@ export const localDataClient: LocalDataClient = {
                 if (api) {
                     return await api.usuarios.get(id);
                 }
-                return localDataRef.usuarios.find(u => u.id === id);
+                return localDataRef.usuarios.find(u => u.id === id) as StudiaUser || null;
             },
             filter: async (filters = {}) => {
                 const api = getDataAPI();
@@ -537,23 +622,24 @@ export const localDataClient: LocalDataClient = {
                 }
                 let users = [...localDataRef.usuarios];
                 Object.keys(filters).forEach(key => {
-                    users = users.filter(u => u[key] === filters[key]);
+                    users = users.filter(u => (u as any)[key] === filters[key]);
                 });
-                return users;
+                return users as unknown as StudiaUser[];
             },
             create: async (data) => {
                 const api = getDataAPI();
                 if (api) {
                     return await api.usuarios.create(data);
                 }
-                let nombreCompleto = data.nombreCompleto;
+                const typedData = data as any;
+                let nombreCompleto = typedData.nombreCompleto;
                 if (!nombreCompleto || !nombreCompleto.trim()) {
-                    if (data.full_name && data.full_name.trim()) {
-                        nombreCompleto = data.full_name.trim();
-                    } else if (data.first_name || data.last_name) {
-                        nombreCompleto = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
-                    } else if (data.email) {
-                        const emailStr = String(data.email);
+                    if (typedData.full_name && typedData.full_name.trim()) {
+                        nombreCompleto = typedData.full_name.trim();
+                    } else if (typedData.first_name || typedData.last_name) {
+                        nombreCompleto = [typedData.first_name, typedData.last_name].filter(Boolean).join(' ').trim();
+                    } else if (typedData.email) {
+                        const emailStr = String(typedData.email);
                         if (emailStr.includes('@')) {
                             const parteLocal = emailStr.split('@')[0];
                             nombreCompleto = parteLocal
@@ -564,19 +650,24 @@ export const localDataClient: LocalDataClient = {
                             nombreCompleto = emailStr;
                         }
                     } else {
-                        nombreCompleto = `Usuario ${data.id || 'Nuevo'}`;
+                        nombreCompleto = `Usuario ${typedData.id || 'Nuevo'}`;
                     }
                 }
 
                 const newUser = {
                     ...data,
-                    id: data.id || `u_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    id: typedData.id || `u_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                     nombreCompleto: nombreCompleto,
-                    full_name: data.full_name || nombreCompleto,
-                };
+                    full_name: typedData.full_name || nombreCompleto,
+                    email: typedData.email || '',
+                    role: typedData.role || 'ESTU',
+                    is_active: typedData.is_active !== undefined ? typedData.is_active : true,
+                    created_at: typedData.created_at || new Date().toISOString(),
+                    updated_at: typedData.updated_at || new Date().toISOString(),
+                } as any;
                 localDataRef.usuarios.push(newUser);
                 await UsuariosAPI.createUsuario(newUser);
-                return newUser;
+                return newUser as StudiaUser;
             },
             update: async (id, data) => {
                 const api = getDataAPI();
@@ -588,7 +679,7 @@ export const localDataClient: LocalDataClient = {
                 const updated = { ...localDataRef.usuarios[index], ...data };
                 localDataRef.usuarios[index] = updated;
                 await UsuariosAPI.updateUsuario(id, data);
-                return updated;
+                return updated as unknown as StudiaUser;
             },
             delete: async (id) => {
                 const api = getDataAPI();
@@ -602,14 +693,14 @@ export const localDataClient: LocalDataClient = {
                 return { success: true };
             },
         },
-        Asignacion: createEntityAPI('Asignacion', 'asignaciones', async () => AsignacionesAPI.getAllAsignaciones()),
-        Bloque: createEntityAPI('Bloque', 'bloques', async () => BloquesAPI.getAllBloques()),
-        FeedbackSemanal: createEntityAPI('FeedbackSemanal', 'feedbacksSemanal', async () => FeedbacksSemanalAPI.getAllFeedbacksSemanal()),
-        Pieza: createEntityAPI('Pieza', 'piezas', async () => PiezasAPI.getAllPiezas()),
-        Plan: createEntityAPI('Plan', 'planes', async () => PlanesAPI.getAllPlanes()),
-        RegistroBloque: createEntityAPI('RegistroBloque', 'registrosBloque', async () => RegistrosBloqueAPI.getAllRegistrosBloque()),
+        Asignacion: createEntityAPI<Asignacion>('Asignacion', 'asignaciones', async () => AsignacionesAPI.getAllAsignaciones() as any),
+        Bloque: createEntityAPI<Bloque>('Bloque', 'bloques', async () => BloquesAPI.getAllBloques() as any),
+        FeedbackSemanal: createEntityAPI<FeedbackSemanal>('FeedbackSemanal', 'feedbacksSemanal', async () => FeedbacksSemanalAPI.getAllFeedbacksSemanal() as any),
+        Pieza: createEntityAPI<Pieza>('Pieza', 'piezas', async () => PiezasAPI.getAllPiezas() as any),
+        Plan: createEntityAPI<Plan>('Plan', 'planes', async () => PlanesAPI.getAllPlanes() as any),
+        RegistroBloque: createEntityAPI<RegistroBloque>('RegistroBloque', 'registrosBloque', async () => RegistrosBloqueAPI.getAllRegistrosBloque() as any),
         RegistroSesion: {
-            ...createEntityAPI('RegistroSesion', 'registrosSesion', async () => RegistrosSesionAPI.getAllRegistrosSesion()),
+            ...createEntityAPI<RegistroSesion>('RegistroSesion', 'registrosSesion', async () => RegistrosSesionAPI.getAllRegistrosSesion() as any),
             list: async (sort = '') => {
                 const api = getDataAPI();
                 if (api) {
@@ -622,7 +713,7 @@ export const localDataClient: LocalDataClient = {
                     attempts++;
                 }
 
-                let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())];
+                let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())] as any[];
                 const bloques = localDataRef.registrosBloque || [];
 
                 sesiones = sesiones.map((s: any) => ({
@@ -638,7 +729,7 @@ export const localDataClient: LocalDataClient = {
                         return 0;
                     });
                 }
-                return sesiones;
+                return sesiones as RegistroSesion[];
             },
             get: async (id) => {
                 const api = getDataAPI();
@@ -655,7 +746,7 @@ export const localDataClient: LocalDataClient = {
                 return {
                     ...sesionWithId,
                     registrosBloque: bloques.filter((b: any) => b.registroSesionId === sesionWithId.id)
-                };
+                } as RegistroSesion;
             },
             filter: async (filters = {}, limit = null) => {
                 const api = getDataAPI();
@@ -663,7 +754,7 @@ export const localDataClient: LocalDataClient = {
                     return await api.registrosSesion.filter(filters, limit);
                 }
 
-                let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())];
+                let sesiones = [...(await RegistrosSesionAPI.getAllRegistrosSesion())] as any[];
                 Object.keys(filters).forEach(key => {
                     sesiones = sesiones.filter((s: any) => s[key] === (filters as Record<string, unknown>)[key]);
                 });
@@ -675,18 +766,18 @@ export const localDataClient: LocalDataClient = {
                 }));
 
                 if (limit) sesiones = sesiones.slice(0, limit);
-                return sesiones;
+                return sesiones as RegistroSesion[];
             }
         },
-        EventoCalendario: createEntityAPI('EventoCalendario', 'eventosCalendario', async () => EventosCalendarioAPI.getAllEventosCalendario()),
-        EvaluacionTecnica: createEntityAPI('EvaluacionTecnica', 'evaluaciones', async () => EvaluacionesAPI.getEvaluacionesTecnicas()),
-        LevelConfig: createEntityAPI('LevelConfig', 'levelsConfig', async () => localDataRef.levelsConfig || []),
-        LevelKeyCriteria: createEntityAPI('LevelKeyCriteria', 'levelKeyCriteria', async () => localDataRef.levelKeyCriteria || []),
-        StudentCriteriaStatus: createEntityAPI('StudentCriteriaStatus', 'studentCriteriaStatus', async () => localDataRef.studentCriteriaStatus || []),
-        StudentLevelHistory: createEntityAPI('StudentLevelHistory', 'studentLevelHistory', async () => localDataRef.studentLevelHistory || []),
-        StudentXPTotal: createEntityAPI('StudentXPTotal', 'studentXpTotal', async () => localDataRef.studentXpTotal || []),
-        StudentBackpack: createEntityAPI('StudentBackpack', 'studentBackpack', async () => localDataRef.studentBackpack || []),
-        MediaAsset: createEntityAPI('MediaAsset', 'mediaAssets', async () => localDataRef.mediaAssets || []),
+        EventoCalendario: createEntityAPI<EventoCalendario>('EventoCalendario', 'eventosCalendario', async () => EventosCalendarioAPI.getAllEventosCalendario() as any),
+        EvaluacionTecnica: createEntityAPI<EvaluacionTecnica>('EvaluacionTecnica', 'evaluaciones', async () => EvaluacionesAPI.getEvaluacionesTecnicas() as any),
+        LevelConfig: createEntityAPI<LevelConfig>('LevelConfig', 'levelsConfig', async () => (localDataRef.levelsConfig as any) || []),
+        LevelKeyCriteria: createEntityAPI<LevelKeyCriteria>('LevelKeyCriteria', 'levelKeyCriteria', async () => (localDataRef.levelKeyCriteria as any) || []),
+        StudentCriteriaStatus: createEntityAPI<StudentCriteriaStatus>('StudentCriteriaStatus', 'studentCriteriaStatus', async () => (localDataRef.studentCriteriaStatus as any) || []),
+        StudentLevelHistory: createEntityAPI<StudentLevelHistory>('StudentLevelHistory', 'studentLevelHistory', async () => (localDataRef.studentLevelHistory as any) || []),
+        StudentXPTotal: createEntityAPI<StudentXPTotal>('StudentXPTotal', 'studentXpTotal', async () => (localDataRef.studentXpTotal as any) || []),
+        StudentBackpack: createEntityAPI<StudentBackpackItem>('StudentBackpack', 'studentBackpack', async () => (localDataRef.studentBackpack as any) || []),
+        MediaAsset: createEntityAPI<MediaAsset>('MediaAsset', 'mediaAssets', async () => (localDataRef.mediaAssets as any) || []),
     },
 
     getCalendarSummary: async (startDate, endDate, userId) => {
@@ -706,14 +797,15 @@ export const localDataClient: LocalDataClient = {
 
         const feedbacks = await localDataClient.entities.FeedbackSemanal.list();
         const feedbacksFiltrados = feedbacks.filter(f => {
-            const date = f.created_at || f.createdAt;
+            const date = f.created_at;
             return date >= startISO && date <= endISO &&
                 (!userId || f.alumnoId === userId);
         });
 
         const asignaciones = await localDataClient.entities.Asignacion.list();
         const asignacionesFiltradas = asignaciones.filter(a => {
-            return a.fechaAsignacion >= startISO && a.fechaAsignacion <= endISO &&
+            const date = a.semanaInicioISO || (a as any).fechaAsignacion;
+            return date >= startISO && date <= endISO &&
                 (!userId || a.alumnoId === userId);
         });
 
@@ -738,7 +830,7 @@ export const localDataClient: LocalDataClient = {
 
         const xpTotals = await localDataClient.entities.StudentXPTotal.list();
         const xpFiltrados = studentId
-            ? xpTotals.filter(x => x.studentId === studentId || x.student_id === studentId)
+            ? xpTotals.filter(x => x.studentId === studentId)
             : xpTotals;
 
         const evaluaciones = await localDataClient.entities.EvaluacionTecnica.list();

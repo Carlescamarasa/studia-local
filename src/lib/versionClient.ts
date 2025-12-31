@@ -1,11 +1,31 @@
 import { supabase } from './supabaseClient';
 
+interface VersionHistory {
+  id: string;
+  version: string;
+  codename: string | null;
+  notes: string | null;
+  author_id: string | null;
+  created_at: string;
+  commit_hash?: string;
+  git_author?: string;
+  build_date?: string;
+  release_notes?: Record<string, unknown> | null;
+  author?: { id: string; full_name: string } | null;
+}
+
+interface AppMeta {
+  id: string;
+  current_version_id: string | null;
+  updated_at: string;
+}
+
 interface UpsertVersionParams {
   version: string;
   commit_hash?: string;
   git_author?: string;
   build_date?: string;
-  release_notes?: object;
+  release_notes?: Record<string, unknown>;
   author_id?: string;
 }
 
@@ -24,7 +44,7 @@ export const versionClient = {
    * Obtiene la versión actual activa
    * @returns {Promise<Object|null>} Objeto version_history con la versión activa o null
    */
-  async getCurrentVersion() {
+  async getCurrentVersion(): Promise<VersionHistory | null> {
     try {
       // Obtener app_meta con la versión actual
       const { data: appMeta, error: metaError } = await supabase
@@ -58,7 +78,7 @@ export const versionClient = {
         throw versionError;
       }
 
-      return version;
+      return version as VersionHistory;
     } catch (error) {
       throw error;
     }
@@ -68,7 +88,7 @@ export const versionClient = {
    * Lista todo el historial de versiones ordenado por fecha descendente
    * @returns {Promise<Array>} Array de objetos version_history
    */
-  async listHistory() {
+  async listHistory(): Promise<VersionHistory[]> {
     try {
       // Primero obtener las versiones
       const { data: versions, error: versionsError } = await supabase
@@ -80,10 +100,10 @@ export const versionClient = {
       if (!versions || versions.length === 0) return [];
 
       // Obtener los IDs de autores únicos
-      const authorIds = [...new Set(versions.map(v => v.author_id).filter(Boolean))];
+      const authorIds = [...new Set(versions.map(v => v.author_id).filter(Boolean))] as string[];
 
       // Obtener los perfiles de los autores
-      let authorsMap = new Map();
+      const authorsMap = new Map<string, { id: string; full_name: string }>();
       if (authorIds.length > 0) {
         const { data: authors, error: authorsError } = await supabase
           .from('profiles')
@@ -101,7 +121,7 @@ export const versionClient = {
       return versions.map(version => ({
         ...version,
         author: version.author_id ? authorsMap.get(version.author_id) || null : null,
-      }));
+      })) as VersionHistory[];
     } catch (error) {
       throw error;
     }
@@ -116,7 +136,7 @@ export const versionClient = {
    * @param {string} params.authorId - ID del autor (auth.uid())
    * @returns {Promise<Object>} Versión creada
    */
-  async createVersion({ version, codename, notes, authorId }: CreateVersionParams) {
+  async createVersion({ version, codename, notes, authorId }: CreateVersionParams): Promise<VersionHistory> {
     try {
       const { data, error } = await supabase
         .from('version_history')
@@ -130,7 +150,7 @@ export const versionClient = {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as VersionHistory;
     } catch (error) {
       throw error;
     }
@@ -141,7 +161,7 @@ export const versionClient = {
    * @param {string} versionId - ID de la versión a activar
    * @returns {Promise<Object>} app_meta actualizado
    */
-  async activateVersion(versionId: string) {
+  async activateVersion(versionId: string): Promise<AppMeta> {
     try {
       // Primero verificar que la versión existe
       const { data: version, error: versionError } = await supabase
@@ -172,7 +192,7 @@ export const versionClient = {
           .single();
 
         if (createError) throw createError;
-        return newMeta;
+        return newMeta as AppMeta;
       }
 
       // Actualizar app_meta usando el ID del registro existente
@@ -187,7 +207,7 @@ export const versionClient = {
         .single();
 
       if (metaError) throw metaError;
-      return appMeta;
+      return appMeta as AppMeta;
     } catch (error) {
       throw error;
     }
@@ -204,7 +224,7 @@ export const versionClient = {
    * @param {string} [params.author_id] - ID del usuario que sincroniza
    * @returns {Promise<Object>} Versión upsertada
    */
-  async upsertVersion({ version, commit_hash, git_author, build_date, release_notes, author_id }: UpsertVersionParams) {
+  async upsertVersion({ version, commit_hash, git_author, build_date, release_notes, author_id }: UpsertVersionParams): Promise<VersionHistory> {
     try {
       // Intentar encontrar si ya existe por el campo 'version'
       const { data: existing, error: findError } = await supabase
@@ -213,7 +233,7 @@ export const versionClient = {
         .eq('version', version)
         .maybeSingle();
 
-      const payload: Record<string, any> = {
+      const payload: Record<string, unknown> = {
         version: version.trim(),
         commit_hash,
         git_author,
@@ -249,7 +269,7 @@ export const versionClient = {
         result = data;
       }
 
-      return result;
+      return result as VersionHistory;
     } catch (error) {
       throw error;
     }

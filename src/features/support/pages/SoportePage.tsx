@@ -118,7 +118,7 @@ function SoportePageContent() {
   });
 
   // Mutación para crear ticket
-  const createTicketMutation = useMutation({
+  const createTicketMutation = useMutation<SupportTicket, Error, Parameters<typeof createTicket>[0]>({
     mutationFn: createTicket,
     onSuccess: (newTicket) => {
       queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
@@ -127,15 +127,15 @@ function SoportePageContent() {
       setNewTicketTitle("");
       toast.success('Ticket creado correctamente');
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast.error(`Error al crear ticket: ${error.message}`);
     },
   });
 
   // Mutación para crear mensaje
-  const createMensajeMutation = useMutation({
+  const createMensajeMutation = useMutation<SupportMensaje, Error, Parameters<typeof createMensaje>[0]>({
     mutationFn: createMensaje,
-    onSuccess: async (mensaje) => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['support-mensajes', selectedTicketId] });
       queryClient.invalidateQueries({ queryKey: ['support-ticket', selectedTicketId] });
       queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
@@ -145,7 +145,7 @@ function SoportePageContent() {
       setUploadingVideo(false);
       toast.success('Mensaje enviado');
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast.error(`Error al enviar mensaje: ${error.message}`);
       setUploadingVideo(false);
     },
@@ -603,7 +603,7 @@ function SoportePageContent() {
                 <select
                   id="ticket-tipo"
                   value={newTicketTipo || ""}
-                  onChange={(e) => setNewTicketTipo(e.target.value as any)}
+                  onChange={(e) => setNewTicketTipo(e.target.value as SupportTicket['tipo'])}
                   className={componentStyles.controls.inputDefault}
                 >
                   <option value="duda_general">Duda general</option>

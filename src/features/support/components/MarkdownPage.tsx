@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import VideoEmbed from './VideoEmbed';
 
 // Cargar todos los archivos markdown usando import.meta.glob
-const markdownModules = import.meta.glob('/src/help/*.md', {
+const markdownModules = import.meta.glob<string>('/src/help/*.md', {
   query: '?raw',
   import: 'default',
   eager: false
@@ -68,9 +68,10 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
         );
 
         setContent(markdownContent as string);
-      } catch (err: any) {
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         console.error('[MarkdownPage] Error cargando markdown:', err);
-        setError(`Error al cargar el contenido: ${err.message}`);
+        setError(`Error al cargar el contenido: ${message}`);
         setContent('');
       } finally {
         setLoading(false);
@@ -128,7 +129,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
         rehypePlugins={[rehypeRaw]}
         components={{
           // Estilizar enlaces
-          a: ({ node, href, children, ...props }: any) => {
+          a: ({ node, href, children, ...props }) => {
             // Si es un email, abrir el cliente de correo
             if (href?.startsWith('mailto:')) {
               return (
@@ -154,7 +155,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             );
           },
           // Estilizar títulos
-          h1: ({ node, children, ...props }: any) => (
+          h1: ({ node, children, ...props }) => (
             <h1
               className="text-3xl font-bold text-[var(--color-text-primary)] mt-8 mb-4 pb-2 border-b border-[var(--color-border-default)]"
               {...props}
@@ -162,7 +163,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               {children}
             </h1>
           ),
-          h2: ({ node, children, ...props }: any) => (
+          h2: ({ node, children, ...props }) => (
             <h2
               className="text-2xl font-semibold text-[var(--color-text-primary)] mt-6 mb-3"
               {...props}
@@ -170,7 +171,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               {children}
             </h2>
           ),
-          h3: ({ node, children, ...props }: any) => (
+          h3: ({ node, children, ...props }) => (
             <h3
               className="text-xl font-semibold text-[var(--color-text-primary)] mt-4 mb-2"
               {...props}
@@ -179,24 +180,25 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             </h3>
           ),
           // Estilizar listas
-          ul: ({ node, children, ...props }: any) => (
+          ul: ({ node, children, ...props }) => (
             <ul className="list-disc list-inside space-y-2 my-4 text-[var(--color-text-primary)]" {...props}>
               {children}
             </ul>
           ),
-          ol: ({ node, children, ...props }: any) => (
+          ol: ({ node, children, ...props }) => (
             <ol className="list-decimal list-inside space-y-2 my-4 text-[var(--color-text-primary)]" {...props}>
               {children}
             </ol>
           ),
           // Estilizar párrafos
-          p: ({ node, children, ...props }: any) => (
+          p: ({ node, children, ...props }) => (
             <p className="text-[var(--color-text-primary)] leading-relaxed my-3" {...props}>
               {children}
             </p>
           ),
           // Estilizar código inline
-          code: ({ node, inline, children, ...props }: any) => {
+          code: ({ node, children, className, ...props }) => {
+            const inline = !className;
             if (inline) {
               return (
                 <code
@@ -217,7 +219,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             );
           },
           // Estilizar tablas
-          table: ({ node, children, ...props }: any) => (
+          table: ({ node, children, ...props }) => (
             <div className="overflow-x-auto my-4">
               <table
                 className="min-w-full border-collapse border border-[var(--color-border-default)] rounded-lg"
@@ -227,22 +229,22 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               </table>
             </div>
           ),
-          thead: ({ node, children, ...props }: any) => (
+          thead: ({ node, children, ...props }) => (
             <thead className="bg-[var(--color-surface-muted)]" {...props}>
               {children}
             </thead>
           ),
-          tbody: ({ node, children, ...props }: any) => (
+          tbody: ({ node, children, ...props }) => (
             <tbody {...props}>
               {children}
             </tbody>
           ),
-          tr: ({ node, children, ...props }: any) => (
+          tr: ({ node, children, ...props }) => (
             <tr className="border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]/50" {...props}>
               {children}
             </tr>
           ),
-          th: ({ node, children, ...props }: any) => (
+          th: ({ node, children, ...props }) => (
             <th
               className="px-4 py-2 text-left font-semibold text-[var(--color-text-primary)] border border-[var(--color-border-default)]"
               {...props}
@@ -250,7 +252,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               {children}
             </th>
           ),
-          td: ({ node, children, ...props }: any) => (
+          td: ({ node, children, ...props }) => (
             <td
               className="px-4 py-2 text-[var(--color-text-primary)] border border-[var(--color-border-default)]"
               {...props}
@@ -259,7 +261,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             </td>
           ),
           // Estilizar blockquotes
-          blockquote: ({ node, children, ...props }: any) => (
+          blockquote: ({ node, children, ...props }) => (
             <blockquote
               className="border-l-4 border-[var(--color-primary)] pl-4 py-2 my-4 italic text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]/50 rounded-r"
               {...props}
@@ -268,24 +270,24 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             </blockquote>
           ),
           // Estilizar strong/bold
-          strong: ({ node, children, ...props }: any) => (
+          strong: ({ node, children, ...props }) => (
             <strong className="font-bold text-[var(--color-text-primary)]" {...props}>
               {children}
             </strong>
           ),
           // Estilizar em/italic
-          em: ({ node, children, ...props }: any) => (
+          em: ({ node, children, ...props }) => (
             <em className="italic text-[var(--color-text-primary)]" {...props}>
               {children}
             </em>
           ),
           // Procesar divs con clase video-embed como componentes VideoEmbed
-          div: ({ node, className, ...props }: any) => {
+          div: ({ node, className, ...props }) => {
             const classStr = typeof className === 'string' ? className : '';
             if (classStr.includes('video-embed')) {
               // Extraer data attributes del nodo HTML
-              const dataUrl = node?.properties?.['data-url'] || props['data-url'] || '';
-              const dataTitle = node?.properties?.['data-title'] || props['data-title'] || '';
+              const dataUrl = (node as any)?.properties?.['data-url'] || (props as Record<string, any>)['data-url'] || '';
+              const dataTitle = (node as any)?.properties?.['data-title'] || (props as Record<string, any>)['data-title'] || '';
               // Decodificar HTML entities
               const url = typeof dataUrl === 'string' ? dataUrl.replace(/&quot;/g, '"') : '';
               const title = typeof dataTitle === 'string' ? dataTitle.replace(/&quot;/g, '"') : '';

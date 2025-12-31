@@ -45,6 +45,8 @@ import logoLTS from "@/assets/Logo_LTS.svg";
 import RoleBootstrap from "@/features/auth/components/RoleBootstrap";
 import { useAuth } from "@/auth/AuthProvider";
 import { isAuthError } from "@/lib/authHelpers";
+import { StudiaUser } from "@/features/shared/types/domain";
+import { UserEntity } from "@/features/shared/hooks/useUsers";
 import { SidebarProvider, useSidebar } from "@/features/shared/components/ui/SidebarState";
 import {
   Tooltip,
@@ -177,7 +179,11 @@ function LayoutContent() {
   // which is sufficient. Forcing refetch on every mount causes unnecessary requests.
 
   // Usar profile si está disponible (tiene datos más frescos de Supabase)
-  const displayUser: any = profile || effectiveUserDisplay;
+  const displayUser = (profile || {
+    ...effectiveUserDisplay,
+    nivelTecnico: 1,
+    nivel: null,
+  }) as UserEntity;
 
   // console.log('DEBUG: Layout displayUser:', displayUser);
   // console.log('DEBUG: Layout nivelTecnico:', displayUser?.nivelTecnico);
@@ -476,9 +482,9 @@ function LayoutContent() {
         if (err?.message?.includes('CORS') ||
           err?.message?.includes('NetworkError') ||
           err?.message?.includes('No hay sesión activa') ||
-          err?.code === 'PGRST301' ||
-          err?.status === 401 ||
-          err?.status === 403) {
+          (err as any)?.code === 'PGRST301' ||
+          (err as any)?.status === 401 ||
+          (err as any)?.status === 403) {
           return { nuevos: 0, enRevision: 0 };
         }
         // Solo loguear errores inesperados
@@ -552,10 +558,10 @@ function LayoutContent() {
     } catch (error) {
       // Si es un error de sesión faltante o expirada, es válido continuar
       // El objetivo es cerrar sesión y si no hay sesión, ya estamos en el estado deseado
-      const err = error as any;
+      const err = error as Error;
       if (err?.message?.includes('Auth session missing') ||
         err?.message?.includes('JWT expired') ||
-        err?.status === 403) {
+        (err as any)?.status === 403) {
         // No mostrar error si simplemente no hay sesión
       } else {
         console.error("Error al cerrar sesión:", error);
@@ -595,7 +601,7 @@ function LayoutContent() {
       >
         <SystemTopBar
           isImpersonating={isImpersonating}
-          effectiveUser={effectiveUserDisplay as any}
+          effectiveUser={effectiveUserDisplay as { full_name: string; email: string; id: string;[key: string]: unknown }}
           effectiveRole={effectiveRole || ''}
           stopImpersonation={stopImpersonation}
           isMobile={isMobile}
@@ -624,7 +630,7 @@ function LayoutContent() {
           aria-hidden={isMobile && !abierto}
           data-open={abierto}
           data-viewport={viewport}
-          {...({ inert: isMobile && !abierto ? "" : undefined } as any)}
+          {...({ inert: isMobile && !abierto ? "" : undefined } as React.HTMLAttributes<HTMLElement>)}
           tabIndex={-1}
           className={`
             z-[200] flex flex-col sidebar-modern
@@ -661,7 +667,7 @@ function LayoutContent() {
                     </p>
                     {displayUser?.nivelTecnico && userRole === 'ESTU' && (
                       <div className="mt-0.5">
-                        <LevelBadge level={displayUser.nivelTecnico} label={displayUser.nivel} />
+                        <LevelBadge level={displayUser.nivelTecnico} label={displayUser.nivel || undefined} />
                       </div>
                     )}
                   </div>
@@ -1143,7 +1149,7 @@ function LayoutContent() {
             marginLeft: !isMobile ? (abierto ? 'var(--sidebar-width, 16rem)' : '4rem') : '0',
           }}
           aria-hidden={isMobile && abierto}
-          {...({ inert: isMobile && abierto ? "" : undefined } as any)}
+          {...({ inert: isMobile && abierto ? "" : undefined } as React.HTMLAttributes<HTMLElement>)}
           tabIndex={isMobile && abierto ? -1 : undefined}
         >
 

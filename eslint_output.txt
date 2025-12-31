@@ -1,0 +1,1173 @@
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/scripts/cleanup_sessions.ts
+  8:14  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/scripts/migrate-skills-to-registros.ts
+  10:66  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/scripts/seed_practice.ts
+  10:41  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/App.tsx
+  14:9  error  Parsing error: Unexpected token global
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/Router.tsx
+  53:3  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/appDataAPI.ts
+  8:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/errorReportsAPI.ts
+  9:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/integrations.ts
+  6:30  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/localDataAPI.ts
+  8:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/localDataClient.ts
+  18:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/remote/api.ts
+  2:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/remote/asignaciones.ts
+  11:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/remote/bloques.ts
+  6:38  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/remote/client.ts
+  15:44  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/remote/feedbacksSemanal.ts
+  6:53  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/remote/id.ts
+  4:34  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/remote/piezas.ts
+  4:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/remote/planes.ts
+  3:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/remote/sesiones.ts
+  4:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/remote/utils.ts
+  5:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/api/userAdmin.ts
+  15:39  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/auth/AuthProvider.tsx
+  13:42  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/auth/authUserCache.ts
+  5:19  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/asignacionesClient.ts
+  7:23  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/authClient.ts
+  6:21  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/bloquesClient.ts
+  7:18  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/designControlsMap.ts
+  81:47  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/evaluacionesClient.ts
+  10:30  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/eventosCalendarioClient.ts
+  5:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/feedbacksSemanalClient.ts
+  6:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/localStorageClient.ts
+  11:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/piezasClient.ts
+  7:17  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/planesClient.ts
+  7:17  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/registrosBloqueClient.ts
+  7:26  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/registrosSesionClient.ts
+  7:26  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/supportTicketsClient.ts
+  6:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/data/usuariosClient.ts
+  7:19  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/design/componentStyles.ts
+  73:3  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/design/designSystem.ts
+  120:3  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/AppVersionContent.tsx
+  20:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/DesignContent.tsx
+  9:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/ImportExportContent.tsx
+  8:12  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/LevelConfigContent.tsx
+  9:12  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/LevelConfigView.tsx
+  36:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/MultimediaContent.tsx
+  8:12  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/MultimediaManager.tsx
+  7:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/UserModals.tsx
+  29:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/UserTable.tsx
+  9:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/maintenance/CriticalIssues.tsx
+  8:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/maintenance/LogsDrawer.tsx
+  6:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/maintenance/MaintenancePanel.tsx
+  14:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/maintenance/ModeToggle.tsx
+  4:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/maintenance/SeedsPanel.tsx
+  4:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/maintenance/SyntheticSchoolYearCard.tsx
+  13:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/maintenance/TestCategory.tsx
+  7:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/maintenance/TestEvidence.tsx
+  13:3  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/components/maintenance/TestsPanel.tsx
+  13:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/hooks/useLevelsConfig.ts
+  4:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/pages/AuditPage.tsx
+  4:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/pages/ConfiguracionPage.tsx
+  36:35  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/pages/UsuariosPage.tsx
+  50:51  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/admin/services/userService.ts
+  5:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/components/AsignacionesActivas.tsx
+  16:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/components/AsignacionesArchivadas.tsx
+  13:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/components/CrearAsignacionWizard.tsx
+  28:6  error  Parsing error: Unexpected token FocoKey
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/components/FormularioRapido.tsx
+  6:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/components/StudentSearchBar.tsx
+  8:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/components/StudentSearchBarAsync.tsx
+  10:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/hooks/index.ts
+  3:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/hooks/useAsignaciones.ts
+  8:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/pages/AdaptarAsignacionPage.tsx
+  30:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/pages/AsignacionDetallePage.tsx
+  102:28  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/asignaciones/pages/AsignacionesPage.tsx
+  40:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/components/CreateUserModal.tsx
+  23:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/components/ForgotPasswordForm.tsx
+  11:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/components/InviteUserModal.tsx
+  19:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/components/LoginForm.tsx
+  14:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/components/PublicRoute.tsx
+  13:49  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/components/RequireAuth.tsx
+  7:49  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/components/RequireRole.tsx
+  9:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/components/RoleBootstrap.tsx
+  4:51  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/components/SignUpForm.tsx
+  11:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/components/roleMap.tsx
+  13:36  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/hooks/useAuthErrors.ts
+  8:50  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/hooks/useCreateUser.ts
+  5:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/hooks/useLoginForm.ts
+  6:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/hooks/useRateLimit.ts
+  7:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/hooks/useUserActions.ts
+  14:69  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/pages/InvitationPage.tsx
+  28:61  error  Parsing error: Unexpected token >>
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/pages/LoginPage.tsx
+  45:35  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/pages/ResetPasswordPage.tsx
+  72:32  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/types.ts
+  4:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/auth/utils/validation.ts
+  8:36  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/EventoAsignacion.tsx
+  10:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/EventoFeedback.tsx
+  10:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/EventoImportante.tsx
+  2:63  error  Parsing error: Unexpected token TipoEventoImportante
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/EventoSesion.tsx
+  12:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/ModalAsignacion.tsx
+  18:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/ModalCrearEvento.tsx
+  21:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/ModalEventoResumen.tsx
+  11:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/ModalSesion.tsx
+  17:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/VistaLista.tsx
+  28:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/VistaMes.tsx
+  28:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/VistaSemana.tsx
+  28:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/components/utils.ts
+  26:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/hooks/useCalendarSummary.ts
+  4:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/calendar/pages/CalendarioPage.tsx
+  30:6  error  Parsing error: Unexpected token TipoEvento
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/cuaderno/components/AsignacionesTab.tsx
+  43:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/cuaderno/components/CuadernoAsignacionesTab.tsx
+  4:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/cuaderno/components/CuadernoContent.tsx
+  19:6  error  Parsing error: Unexpected token TabValue
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/cuaderno/components/CuadernoEstudiantesTab.tsx
+  25:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/cuaderno/components/CuadernoHeader.tsx
+  9:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/cuaderno/components/CuadernoTabs.tsx
+  5:6  error  Parsing error: Unexpected token TabValue
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/cuaderno/components/EstudianteCard.tsx
+  19:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/cuaderno/pages/CuadernoPage.tsx
+  12:9  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/cuaderno/utils/constants.ts
+  5:24  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/dashboard/pages/HoyPage.tsx
+  64:28  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/dashboard/pages/IndexPage.tsx
+  36:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/debug/pages/DebugFormularioRapidoPage.tsx
+  41:7  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/debug/pages/DebugSubidaYTPage.tsx
+  14:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/debug/pages/LevelSystemDebugPage.tsx
+  7:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/design/components/BasePresets.ts
+  14:35  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/design/components/DesignControls.tsx
+  35:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/design/components/DesignPageContent.tsx
+  30:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/design/components/DesignPresets.tsx
+  28:36  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/design/components/DesignProvider.tsx
+  59:23  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/design/components/DesignStatusBlock.tsx
+  10:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/design/components/HardcodeFinder.tsx
+  25:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/design/components/HardcodeInspector.tsx
+  121:34  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/design/components/designConfig.ts
+  11:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/design/components/useDesignDiff.ts
+  10:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/dev/pages/TestLoadingPage.tsx
+  25:76  error  Parsing error: Unexpected token >>
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/components/BloquesTab.tsx
+  45:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/components/EjerciciosTab.tsx
+  53:15  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/components/ExerciseEditor.tsx
+  31:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/components/PieceEditor.tsx
+  25:55  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/components/PiezasTab.tsx
+  34:26  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/components/PlanEditor.tsx
+  34:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/components/PlanesTab.tsx
+  33:20  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/components/SessionEditor.tsx
+  31:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/components/WeekEditor.tsx
+  14:63  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/pages/EditorPage.tsx
+  20:22  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/editor/types.ts
+  2:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/components/CronometroCompacto.tsx
+  5:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/components/ItinerarioMini.tsx
+  4:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/components/MenuToggleButton.tsx
+  11:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/components/Metronomo.tsx
+  9:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/components/ModalCancelar.tsx
+  7:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/components/ModalFinalizarSesion.tsx
+  12:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/components/PianoPanel.tsx
+  13:59  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/components/ResumenFinal.tsx
+  20:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/components/TimelineProgreso.tsx
+  3:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/components/sessionSequence.tsx
+  11:38  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/hooks/useBloques.ts
+  3:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/hooks/useRegistrosBloque.ts
+  16:60  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/pages/StudiaConceptPage.tsx
+  38:6  error  Parsing error: Unexpected token ExerciseTypeKey
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/estudio/pages/StudiaPage.tsx
+  92:9  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/exercises/hooks/useExercisesData.ts
+  47:34  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/exercises/pages/EjerciciosPage.tsx
+  75:26  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/components/Dashboard/ActionCard.tsx
+  15:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/components/ImportExportView.tsx
+  15:9  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/components/ImportReviewPanel.tsx
+  11:83  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/components/TemplateDownloadModal.tsx
+  9:66  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/components/UnifiedExportPanel.tsx
+  13:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/components/UnifiedImportModal.tsx
+  16:110  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/components/WizardModal.tsx
+  22:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/registry.ts
+  9:28  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/services/ResolutionService.ts
+  6:23  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/utils/csvHelpers.ts
+  4:30  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/importExport/utils/importPipeline.ts
+  7:48  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/library/pages/BibliotecaPage.tsx
+  12:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/local/pages/LocalPage.tsx
+  30:35  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/planning/pages/PlanesPage.tsx
+  8:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/CompactCard.tsx
+  8:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/ComparativaEstudiantes.tsx
+  12:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/EvolucionPPMChart.tsx
+  20:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/FeedbackTab.tsx
+  13:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/FeedbackUnificadoTab.tsx
+  18:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/HabilidadesRadarChart.tsx
+  14:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/HabilidadesTrabajadas.tsx
+  6:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/HabilidadesView.tsx
+  39:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/HeatmapActividad.tsx
+  12:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/HeatmapFranjas.tsx
+  13:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/KpiTile.tsx
+  8:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/MochilaViewContent.tsx
+  10:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/ProgresoPage.tsx
+  120:14  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/ProgresoPorPieza.tsx
+  13:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/ProgresoTab.tsx
+  19:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/RatingStarsMetric.tsx
+  9:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/ResumenTab.tsx
+  12:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/StatCard.tsx
+  8:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/StatTile.tsx
+  7:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/StatsDateHeader.tsx
+  8:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/StreakMetric.tsx
+  8:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/TiposBloquesTab.tsx
+  7:17  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/TopEjercicioModal.tsx
+  8:17  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/TopEjerciciosTab.tsx
+  10:17  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/components/TotalXPDisplay.tsx
+  9:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/hooks/index.ts
+  20:10  error  Parsing error: Unexpected token AggregateLevelGoalsResult
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/hooks/useEstadisticas.ts
+  9:22  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/hooks/useEvaluacionesTecnicas.ts
+  10:39  error  Parsing error: Unexpected token ]
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/hooks/useFeedbacksSemanal.ts
+  3:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/hooks/useHabilidadesStats.ts
+  6:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/hooks/useStudentSkillsData.ts
+  6:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/hooks/useStudentSkillsRadar.ts
+  5:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/hooks/useXP.ts
+  5:25  error  Parsing error: Unexpected token UserEntity
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/pages/MochilaPage.tsx
+  19:42  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/pages/SemanaPage.tsx
+  33:16  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/pages/SemanasPage.tsx
+  8:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/utils/chartHelpers.ts
+  6:19  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/progreso/utils/progresoUtils.ts
+  24:30  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/qa/pages/QAVisualPage.tsx
+  17:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/repertoire/pages/PiezasPage.tsx
+  8:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/reports/pages/ReportesPage.tsx
+  20:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/sessions/pages/SesionesPage.tsx
+  8:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/ClickableContainer.tsx
+  3:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/CustomAudioPlayer.tsx
+  7:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/ErrorBoundary.tsx
+  8:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/GlobalErrorReportHandler.tsx
+  4:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/HotkeysModal.tsx
+  17:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/LevelBadge.tsx
+  4:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/PerfilModal.tsx
+  38:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/PeriodHeader.tsx
+  7:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/ReportErrorButton.tsx
+  18:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/ReportErrorButtonInTimer.tsx
+  19:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/ReportErrorModal.tsx
+  40:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/ReportsLink.tsx
+  11:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/RowActionsMenu.tsx
+  11:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/ScreenshotEditor.tsx
+  12:3  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/SupportTicketsBadge.tsx
+  39:7  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/SystemTopBar.tsx
+  6:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/TabBoundary.tsx
+  6:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/TablePagination.tsx
+  21:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/UserActionsMenu.tsx
+  58:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/common/WeekNavigator.tsx
+  7:16  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/dnd/DndProvider.tsx
+  18:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/dnd/SortableItem.tsx
+  5:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/Alert.tsx
+  12:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/Badge.d.ts
+  3:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/Badge.tsx
+  15:2  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/Card.d.ts
+  3:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/Card.tsx
+  12:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/EmptyState.tsx
+  5:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/FormField.tsx
+  18:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/LoadingSpinner.tsx
+  17:2  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/PageHeader.d.ts
+  2:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/PageHeader.tsx
+  20:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/Skeleton.tsx
+  5:6  error  Parsing error: Unexpected token SkeletonVariant
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/SkipLink.tsx
+  5:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ds/Tabs.tsx
+  5:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/feedback/ModalFeedbackDetalle.tsx
+  21:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/feedback/ModalFeedbackSemanal.tsx
+  39:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/icons/NoteIcons.tsx
+  4:5  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/media/AudioPlayer.tsx
+  5:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/media/MediaEmbed.tsx
+  17:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/media/MediaIconButton.tsx
+  7:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/media/MediaLinksBadges.tsx
+  7:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/media/MediaLinksInput.tsx
+  31:34  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/media/MediaPreviewModal.tsx
+  20:38  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/media/MediaViewer.tsx
+  8:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/media/SimpleLightbox.tsx
+  5:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/study/SessionContentView.tsx
+  7:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/tables/UnifiedTable.tsx
+  28:31  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/DateRangePicker.tsx
+  12:25  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/MultiSelect.tsx
+  7:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/SegmentedTabs.tsx
+  5:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/SidebarState.tsx
+  4:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/accordion.tsx
+  10:51  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/alert-dialog.tsx
+  14:6  error  Parsing error: Unexpected token AlertDialogOverlayProps
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/alert.tsx
+  24:3  error  Parsing error: Identifier 'React' has already been declared
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/avatar.tsx
+  9:48  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/breadcrumb.tsx
+  9:3  error  Parsing error: Identifier 'React' has already been declared
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/button.tsx
+  3:20  error  Parsing error: Unexpected token VariantProps
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/calendar.tsx
+  8:6  error  Parsing error: Unexpected token CalendarProps
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/card.tsx
+  7:5  error  Parsing error: Identifier 'React' has already been declared
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/carousel.tsx
+  2:33  error  Parsing error: Unexpected token UseEmblaCarouselType
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/chart.tsx
+  12:3  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/checkbox.tsx
+  8:52  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/command.tsx
+  9:44  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/context-menu.tsx
+  19:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/dialog.tsx
+  18:88  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/drawer.tsx
+  9:6  error  Parsing error: Unexpected token DrawerProps
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/dropdown-menu.tsx
+  14:60  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/form.tsx
+  10:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/hover-card.tsx
+  13:54  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/input-otp.tsx
+  8:36  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/input.tsx
+  5:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/label.tsx
+  3:20  error  Parsing error: Unexpected token VariantProps
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/menubar.tsx
+  11:2  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/navigation-menu.tsx
+  9:56  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/pagination.tsx
+  10:2  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/popover.tsx
+  12:6  error  Parsing error: Unexpected token PopoverContentProps
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/progress.tsx
+  9:50  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/radio-group.tsx
+  7:52  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/resizable.tsx
+  8:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/scroll-area.tsx
+  7:52  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/select.tsx
+  11:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/separator.tsx
+  7:51  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/sheet.tsx
+  4:20  error  Parsing error: Unexpected token VariantProps
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/sidebar.tsx
+  27:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/slider.tsx
+  7:50  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/sonner.tsx
+  3:34  error  Parsing error: Unexpected token ToasterProps
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/switch.tsx
+  7:51  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/table.tsx
+  7:3  error  Parsing error: Identifier 'React' has already been declared
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/tabs.tsx
+  9:46  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/textarea.tsx
+  5:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/toggle-group.tsx
+  10:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/toggle.tsx
+  3:20  error  Parsing error: Unexpected token VariantProps
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/components/ui/tooltip.tsx
+  10:54  error  Parsing error: Unexpected token ,
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/hooks/useTargetUser.ts
+  9:25  error  Parsing error: Unexpected token UserEntity
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/hooks/useUpdateUserMutation.ts
+  11:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/hooks/useUsers.ts
+  6:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/services/backpackDerivedStatus.ts
+  6:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/services/backpackService.ts
+  5:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/services/xpService.ts
+  8:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/types/domain.ts
+  11:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/utils/appMeta.tsx
+  1:9  error  Parsing error: Unexpected token global
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/utils/auditor.tsx
+  24:31  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/utils/dateUtils.ts
+  12:23  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/utils/helpers.tsx
+  16:30  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/utils/importResolvers.tsx
+  7:23  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/utils/media.tsx
+  16:3  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/shared/utils/tz.tsx
+  24:35  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/support/components/MarkdownPage.tsx
+  16:17  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/support/components/VideoEmbed.tsx
+  8:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/support/pages/AyudaPage.tsx
+  38:16  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/support/pages/SoportePage.tsx
+  47:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/support/pages/SoporteProfPage.tsx
+  41:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/ui/Layout.tsx
+  162:31  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/ui/NotFound.tsx
+  13:9  error  Parsing error: Unexpected token <
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/features/user/pages/PerfilPage.tsx
+  61:33  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/hooks/useAppVersion.ts
+  10:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/hooks/useCurrentProfile.ts
+  3:25  error  Parsing error: Unexpected token UserEntity
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/hooks/useDockToFooterOffset.ts
+  3:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/hooks/useErrorReportsCount.ts
+  6:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/hooks/useExerciseVariations.ts
+  16:42  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/hooks/useHotkeysModal.tsx
+  6:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/hooks/useMediaQuery.tsx
+  3:36  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/hooks/usePendingSupportTicketsCount.ts
+  70:18  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/hooks/useStudentBackpack.ts
+  5:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/lib/authHelpers.ts
+  12:34  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/lib/authPasswordHelpers.ts
+  15:54  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/lib/getServerVersion.ts
+  47:27  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/lib/queryKeys.ts
+  11:46  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/lib/routes.ts
+  38:37  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/lib/storageUpload.ts
+  39:36  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/lib/supabaseDebug.ts
+  10:17  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/lib/utils.ts
+  1:21  error  Parsing error: Unexpected token ClassValue
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/lib/versionClient.ts
+  3:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/local-data/LocalDataProvider.tsx
+  19:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/local-data/rebuildLocalData.ts
+  23:37  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/local-data/seedLocalData.ts
+  26:30  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/local-data/verifyLocalData.ts
+  17:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/main.tsx
+  16:66  error  Parsing error: Unexpected token as
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/providers/DataProvider.tsx
+  9:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/providers/EffectiveUserProvider.tsx
+  25:51  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/services/manualSessionService.ts
+  7:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/types/data.types.ts
+  3:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/debugOverflow.ts
+  7:18  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/hotkeys.ts
+  32:40  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/index.ts
+  4:39  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/levelLogic.ts
+  29:50  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/log.ts
+  20:18  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/musicTransposition.ts
+  39:44  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/ppm.ts
+  23:8  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/runDesignWalkthrough.ts
+  14:9  error  Parsing error: Unexpected token global
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/seeds/syntheticSchoolYear2025_26.ts
+  27:10  error  Parsing error: Unexpected token TimeSlot
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/syntheticDataGenerator.ts
+  13:13  error  Parsing error: Unexpected token seed
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/testContract.ts
+  5:8  error  Parsing error: Unexpected token type
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/testRegistry.ts
+  8:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/tests/dbTests.ts
+  6:63  error  Parsing error: Unexpected token TestContext
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/tests/routesTests.ts
+  5:63  error  Parsing error: Unexpected token TestContext
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/tests/storageTests.ts
+  7:63  error  Parsing error: Unexpected token TestContext
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/uploadVideoToYouTube.ts
+  5:8  error  Parsing error: Unexpected token interface
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/utils/variationUtils.ts
+  8:13  error  Parsing error: Unexpected token {
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/src/vite-env.d.ts
+  3:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/supabase/functions/_shared/rateLimit.ts
+  6:1  error  Parsing error: The keyword 'interface' is reserved
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/supabase/functions/create-user/index.ts
+  176:25  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/supabase/functions/delete-user/index.ts
+  9:40  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/supabase/functions/get-user-emails/index.ts
+  272:19  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/supabase/functions/upload-youtube/index.ts
+  14:32  error  Parsing error: Unexpected token :
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/supabase/functions/user-actions/index.ts
+  185:34  error  Parsing error: Unexpected token !
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/tailwind.config.js
+    2:1   error  'module' is not defined   no-undef
+  115:12  error  'require' is not defined  no-undef
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/tests/integration/admin-users-list.test.js
+   79:15  error  'process' is not defined                            no-undef
+   81:22  error  'process' is not defined                            no-undef
+   81:55  error  'process' is not defined                            no-undef
+   82:27  error  'process' is not defined                            no-undef
+   82:65  error  'process' is not defined                            no-undef
+   83:21  error  'process' is not defined                            no-undef
+   84:24  error  'process' is not defined                            no-undef
+   96:3   error  'process' is not defined                            no-undef
+  146:21  error  'authData' is assigned a value but never used       no-unused-vars
+  155:9   error  'authenticated' is assigned a value but never used  no-unused-vars
+  294:5   error  'process' is not defined                            no-undef
+  297:5   error  'process' is not defined                            no-undef
+  300:5   error  'process' is not defined                            no-undef
+  307:3   error  'process' is not defined                            no-undef
+
+/Users/carlescamarasabotella/Documents/LTS/studia-local/studia-local/vite.config.js
+  14:16  error  'process' is not defined    no-undef
+  34:25  error  '__dirname' is not defined  no-undef
+
+✖ 400 problems (400 errors, 0 warnings)
+
