@@ -5,9 +5,18 @@ import { createPortal } from "react-dom";
 import MediaEmbed from "./MediaEmbed";
 import { MediaKind } from "@/features/shared/utils/media";
 
-export default function MediaViewer({ media, onClose }) {
+interface MediaViewerProps {
+  media: {
+    url: string;
+    originalUrl?: string;
+    kind?: string;
+  } | null;
+  onClose: () => void;
+}
+
+export default function MediaViewer({ media, onClose }: MediaViewerProps) {
   useEffect(() => {
-    const handleEsc = (e) => {
+    const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
       }
@@ -48,8 +57,9 @@ export default function MediaViewer({ media, onClose }) {
             alt="Media adjunta"
             className="max-h-[80vh] max-w-[90vw] object-contain"
             onError={(e) => {
-              e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>';
-              e.target.alt = 'Error al cargar imagen';
+              const target = e.target as HTMLImageElement;
+              target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>';
+              target.alt = 'Error al cargar imagen';
             }}
           />
         );
@@ -61,7 +71,8 @@ export default function MediaViewer({ media, onClose }) {
             autoPlay
             className="max-h-[80vh] max-w-[90vw]"
             onError={(e) => {
-              e.target.innerHTML = '<p style="color:white">Error al cargar video</p>';
+              const target = e.target as HTMLVideoElement;
+              target.outerHTML = '<p style="color:white">Error al cargar video</p>';
             }}
           >
             <source src={media.url} />
@@ -77,7 +88,8 @@ export default function MediaViewer({ media, onClose }) {
               autoPlay
               className="w-full max-w-md"
               onError={(e) => {
-                e.target.innerHTML = '<p style="color:white">Error al cargar audio</p>';
+                const target = e.target as HTMLAudioElement;
+                target.outerHTML = '<p style="color:white">Error al cargar audio</p>';
               }}
             >
               <source src={media.url} />
@@ -93,7 +105,8 @@ export default function MediaViewer({ media, onClose }) {
             className="w-[90vw] h-[80vh] bg-[var(--color-surface-elevated)] rounded-[var(--radius-card)] shadow-card"
             title="PDF Viewer"
             onError={(e) => {
-              e.target.innerHTML = '<p>Error al cargar PDF</p>';
+              const target = e.target as HTMLIFrameElement;
+              target.outerHTML = '<p>Error al cargar PDF</p>';
             }}
           />
         );

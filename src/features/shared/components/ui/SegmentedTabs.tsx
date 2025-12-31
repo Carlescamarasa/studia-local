@@ -2,14 +2,26 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { componentStyles } from "@/design/componentStyles";
 
+interface TabOption {
+  value: string;
+  label: string;
+}
+
+interface SegmentedTabsProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: TabOption[];
+  className?: string;
+}
+
 /**
  * SegmentedTabs - Tabs tipo pill conectadas 100% al Design System
  * Responde a: radius, densidad, focus, y colores brand
  * Estados: hover, focus, active (seleccionado)
  */
-export default function SegmentedTabs({ value, onChange, options, className = "" }) {
+export default function SegmentedTabs({ value, onChange, options, className = "" }: SegmentedTabsProps) {
   return (
-    <div 
+    <div
       className={cn(componentStyles.components.tabsSegmentedContainer, className)}
       role="tablist"
       aria-label="Pestañas de navegación"

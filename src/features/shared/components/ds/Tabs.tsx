@@ -173,6 +173,7 @@ export function Tabs({
       if (!activeButton || !sliderRef.current) return;
 
       const container = containerRef.current;
+      if (!container) return;
       const containerRect = container.getBoundingClientRect();
       const buttonRect = activeButton.getBoundingClientRect();
 

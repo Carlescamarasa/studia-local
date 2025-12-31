@@ -2,7 +2,15 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
-export default function SimpleLightbox({ open, src, alt, onClose, type = 'image' }) {
+interface SimpleLightboxProps {
+    open: boolean;
+    src: string;
+    alt?: string;
+    onClose: () => void;
+    type?: 'image' | 'pdf';
+}
+
+export default function SimpleLightbox({ open, src, alt, onClose, type = 'image' }: SimpleLightboxProps) {
     // Block scroll when open
     useEffect(() => {
         if (open) {
@@ -18,7 +26,7 @@ export default function SimpleLightbox({ open, src, alt, onClose, type = 'image'
     // Handle ESC key
     useEffect(() => {
         if (!open) return;
-        const handleKeyDown = (e) => {
+        const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 onClose();
             }
@@ -51,8 +59,8 @@ export default function SimpleLightbox({ open, src, alt, onClose, type = 'image'
             {/* Content Container */}
             <div
                 className={`relative flex items-center justify-center outline-none ${isPdf
-                        ? 'w-full h-full max-w-[95vw] max-h-[90vh] bg-white rounded-lg shadow-2xl p-0 overflow-hidden'
-                        : 'max-w-[95vw] max-h-[90vh]'
+                    ? 'w-full h-full max-w-[95vw] max-h-[90vh] bg-white rounded-lg shadow-2xl p-0 overflow-hidden'
+                    : 'max-w-[95vw] max-h-[90vh]'
                     }`}
                 onClick={(e) => e.stopPropagation()}
             >

@@ -4,11 +4,17 @@ import { resolveMedia, MediaKind } from '@/features/shared/utils/media';
 import { Button } from '@/features/shared/components/ui/button';
 import { componentStyles } from '@/design/componentStyles';
 
+interface MediaIconButtonProps {
+  url: string;
+  onOpen: (url: string) => void;
+  className?: string;
+}
+
 /**
  * Componente que muestra un icono clickeable para un medio
  * Al hacer clic, se ejecuta onOpen con la URL
  */
-export default function MediaIconButton({ url, onOpen, className = '' }) {
+export default function MediaIconButton({ url, onOpen, className = '' }: MediaIconButtonProps) {
   const media = resolveMedia(url);
   const label = getMediaLabel(url);
   const Icon = () => <MediaIcon url={url} className="w-5 h-5" />;

@@ -84,7 +84,7 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
     const profesores = usuarios.filter(u => u.rolPersonalizado === 'PROF');
 
     // Mutations
-    const toggleActiveMutation = useMutation({
+    const toggleActiveMutation = useMutation<{ success: boolean }, Error, { userId: string; isActive: boolean }>({
         mutationFn: async ({ userId, isActive }) => {
             await setProfileActive(userId, isActive);
             return { success: true };
@@ -97,7 +97,7 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
         onError: (error) => toast.error(error.message),
     });
 
-    const assignProfesorMutation = useMutation({
+    const assignProfesorMutation = useMutation<unknown, Error, { userId: string; profesorId: string | null }>({
         mutationFn: async ({ userId, profesorId }) => {
             return localDataClient.entities.User.update(userId, {
                 profesorAsignadoId: profesorId || null,
@@ -112,7 +112,7 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
         onError: (error) => toast.error(error.message),
     });
 
-    const deleteUserMutation = useMutation({
+    const deleteUserMutation = useMutation<unknown, Error, string>({
         mutationFn: async (userId) => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.access_token) throw new Error('No hay sesión activa');
@@ -167,7 +167,7 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
                     await sendPasswordResetAdmin(user.email);
                     toast.success('Email de recuperación enviado');
                 } catch (error) {
-                    toast.error(error.message);
+                    toast.error((error as Error).message);
                 }
             },
         });
@@ -255,7 +255,7 @@ export default function UserActionsMenu({ user, usuarios = [], onRefresh, compac
     }
 
     // Eliminar usuario - ADMIN only (not self)
-    if (isAdmin && user.id !== effectiveUser?.id) {
+    if (isAdmin && user.id !== effectiveUser?.effectiveUserId) {
         actions.push({
             id: 'delete_user',
             label: 'Eliminar usuario',
