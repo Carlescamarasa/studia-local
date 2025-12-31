@@ -6,14 +6,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import VideoEmbed from './VideoEmbed';
 
 // Cargar todos los archivos markdown usando import.meta.glob
-const markdownModules = import.meta.glob('/src/help/*.md', { 
+const markdownModules = import.meta.glob('/src/help/*.md', {
   query: '?raw',
   import: 'default',
-  eager: false 
+  eager: false
 });
 
 // Mapeo de slugs a nombres de archivo
-const slugToFile = {
+const slugToFile: Record<string, string> = {
   'README': '/src/help/README.md',
   'alumno': '/src/help/alumno.md',
   'profesor': '/src/help/profesor.md',
@@ -28,10 +28,10 @@ const slugToFile = {
  * Componente que renderiza un archivo Markdown desde /src/help
  * @param {string} slug - Nombre del archivo sin extensión (ej: 'alumno', 'profesor', etc.)
  */
-export default function MarkdownPage({ slug = 'README' }) {
+export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -52,12 +52,12 @@ export default function MarkdownPage({ slug = 'README' }) {
         }
 
         let markdownContent = await loadFile();
-        
+
         // Procesar componentes personalizados antes de renderizar
         // Sintaxis: [video:URL:Título opcional]
-        markdownContent = markdownContent.replace(
+        markdownContent = (markdownContent as unknown as string).replace(
           /\[video:([^\]]+)\]/g,
-          (match, params) => {
+          (match: string, params: string) => {
             const [url, ...titleParts] = params.split(':');
             const title = titleParts.length > 0 ? titleParts.join(':') : '';
             // Escapar HTML para evitar problemas de seguridad
@@ -67,8 +67,8 @@ export default function MarkdownPage({ slug = 'README' }) {
           }
         );
 
-        setContent(markdownContent);
-      } catch (err) {
+        setContent(markdownContent as string);
+      } catch (err: any) {
         console.error('[MarkdownPage] Error cargando markdown:', err);
         setError(`Error al cargar el contenido: ${err.message}`);
         setContent('');
@@ -81,7 +81,7 @@ export default function MarkdownPage({ slug = 'README' }) {
   }, [slug]);
 
   // Manejar enlaces internos entre documentos
-  const handleLinkClick = (e, href) => {
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     // Si es un enlace interno a otro .md
     if (href.endsWith('.md')) {
       e.preventDefault();
@@ -128,7 +128,7 @@ export default function MarkdownPage({ slug = 'README' }) {
         rehypePlugins={[rehypeRaw]}
         components={{
           // Estilizar enlaces
-          a: ({ node, href, children, ...props }) => {
+          a: ({ node, href, children, ...props }: any) => {
             // Si es un email, abrir el cliente de correo
             if (href?.startsWith('mailto:')) {
               return (
@@ -154,7 +154,7 @@ export default function MarkdownPage({ slug = 'README' }) {
             );
           },
           // Estilizar títulos
-          h1: ({ node, children, ...props }) => (
+          h1: ({ node, children, ...props }: any) => (
             <h1
               className="text-3xl font-bold text-[var(--color-text-primary)] mt-8 mb-4 pb-2 border-b border-[var(--color-border-default)]"
               {...props}
@@ -162,7 +162,7 @@ export default function MarkdownPage({ slug = 'README' }) {
               {children}
             </h1>
           ),
-          h2: ({ node, children, ...props }) => (
+          h2: ({ node, children, ...props }: any) => (
             <h2
               className="text-2xl font-semibold text-[var(--color-text-primary)] mt-6 mb-3"
               {...props}
@@ -170,7 +170,7 @@ export default function MarkdownPage({ slug = 'README' }) {
               {children}
             </h2>
           ),
-          h3: ({ node, children, ...props }) => (
+          h3: ({ node, children, ...props }: any) => (
             <h3
               className="text-xl font-semibold text-[var(--color-text-primary)] mt-4 mb-2"
               {...props}
@@ -179,24 +179,24 @@ export default function MarkdownPage({ slug = 'README' }) {
             </h3>
           ),
           // Estilizar listas
-          ul: ({ node, children, ...props }) => (
+          ul: ({ node, children, ...props }: any) => (
             <ul className="list-disc list-inside space-y-2 my-4 text-[var(--color-text-primary)]" {...props}>
               {children}
             </ul>
           ),
-          ol: ({ node, children, ...props }) => (
+          ol: ({ node, children, ...props }: any) => (
             <ol className="list-decimal list-inside space-y-2 my-4 text-[var(--color-text-primary)]" {...props}>
               {children}
             </ol>
           ),
           // Estilizar párrafos
-          p: ({ node, children, ...props }) => (
+          p: ({ node, children, ...props }: any) => (
             <p className="text-[var(--color-text-primary)] leading-relaxed my-3" {...props}>
               {children}
             </p>
           ),
           // Estilizar código inline
-          code: ({ node, inline, children, ...props }) => {
+          code: ({ node, inline, children, ...props }: any) => {
             if (inline) {
               return (
                 <code
@@ -217,7 +217,7 @@ export default function MarkdownPage({ slug = 'README' }) {
             );
           },
           // Estilizar tablas
-          table: ({ node, children, ...props }) => (
+          table: ({ node, children, ...props }: any) => (
             <div className="overflow-x-auto my-4">
               <table
                 className="min-w-full border-collapse border border-[var(--color-border-default)] rounded-lg"
@@ -227,22 +227,22 @@ export default function MarkdownPage({ slug = 'README' }) {
               </table>
             </div>
           ),
-          thead: ({ node, children, ...props }) => (
+          thead: ({ node, children, ...props }: any) => (
             <thead className="bg-[var(--color-surface-muted)]" {...props}>
               {children}
             </thead>
           ),
-          tbody: ({ node, children, ...props }) => (
+          tbody: ({ node, children, ...props }: any) => (
             <tbody {...props}>
               {children}
             </tbody>
           ),
-          tr: ({ node, children, ...props }) => (
+          tr: ({ node, children, ...props }: any) => (
             <tr className="border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]/50" {...props}>
               {children}
             </tr>
           ),
-          th: ({ node, children, ...props }) => (
+          th: ({ node, children, ...props }: any) => (
             <th
               className="px-4 py-2 text-left font-semibold text-[var(--color-text-primary)] border border-[var(--color-border-default)]"
               {...props}
@@ -250,7 +250,7 @@ export default function MarkdownPage({ slug = 'README' }) {
               {children}
             </th>
           ),
-          td: ({ node, children, ...props }) => (
+          td: ({ node, children, ...props }: any) => (
             <td
               className="px-4 py-2 text-[var(--color-text-primary)] border border-[var(--color-border-default)]"
               {...props}
@@ -259,7 +259,7 @@ export default function MarkdownPage({ slug = 'README' }) {
             </td>
           ),
           // Estilizar blockquotes
-          blockquote: ({ node, children, ...props }) => (
+          blockquote: ({ node, children, ...props }: any) => (
             <blockquote
               className="border-l-4 border-[var(--color-primary)] pl-4 py-2 my-4 italic text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]/50 rounded-r"
               {...props}
@@ -268,19 +268,19 @@ export default function MarkdownPage({ slug = 'README' }) {
             </blockquote>
           ),
           // Estilizar strong/bold
-          strong: ({ node, children, ...props }) => (
+          strong: ({ node, children, ...props }: any) => (
             <strong className="font-bold text-[var(--color-text-primary)]" {...props}>
               {children}
             </strong>
           ),
           // Estilizar em/italic
-          em: ({ node, children, ...props }) => (
+          em: ({ node, children, ...props }: any) => (
             <em className="italic text-[var(--color-text-primary)]" {...props}>
               {children}
             </em>
           ),
           // Procesar divs con clase video-embed como componentes VideoEmbed
-          div: ({ node, className, ...props }) => {
+          div: ({ node, className, ...props }: any) => {
             const classStr = typeof className === 'string' ? className : '';
             if (classStr.includes('video-embed')) {
               // Extraer data attributes del nodo HTML

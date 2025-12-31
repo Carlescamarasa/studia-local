@@ -399,6 +399,7 @@ export interface EventoCalendario {
   tipo: 'encuentro' | 'masterclass' | 'colectiva' | 'otro';
   creadoPorId: string; // ID del usuario que creó el evento
   visiblePara: UserRole[]; // Roles que pueden verlo
+  mediaLinks?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -628,4 +629,17 @@ export interface StudentBackpackItem {
   createdAt: string;
   updatedAt: string;
 }
+
+/**
+ * Item multimedia genérico para uso en UI
+ * Puede representar un enlace simple o un objeto con metadatos
+ */
+export interface MediaItem {
+  url: string;
+  type?: 'image' | 'video' | 'audio' | 'document' | 'other';
+  title?: string;
+  thumbnail?: string;
+  [key: string]: any;
+}
+
 

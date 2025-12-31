@@ -42,9 +42,9 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleLogin = async (email, password) => {
+  const handleLogin = async (email: string, password: string) => {
     if (rateLimit.isLocked) {
-      toast.error(authMessages.rateLimit.locked.replace('{minutes}', rateLimit.getRemainingTime()));
+      toast.error(authMessages.rateLimit.locked.replace('{minutes}', String(rateLimit.getRemainingTime())));
       return;
     }
 
@@ -85,7 +85,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleForgotPassword = async (email) => {
+  const handleForgotPassword = async (email: string) => {
     setIsResetting(true);
 
     try {

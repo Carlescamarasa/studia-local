@@ -11,14 +11,23 @@ import { toast } from "sonner";
 import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import RequireRole from "@/features/auth/components/RequireRole";
 
-function DebugSubidaYTPageContent() {
-  const [file, setFile] = useState(null);
-  const [metaText, setMetaText] = useState("");
-  const [status, setStatus] = useState('idle'); // 'idle' | 'uploading' | 'success' | 'error'
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+interface UploadResult {
+  ok: boolean;
+  message?: string;
+  error?: string;
+  videoUrl?: string;
+  videoId?: string;
+  metadata?: any;
+}
 
-  const handleFileChange = (e) => {
+function DebugSubidaYTPageContent() {
+  const [file, setFile] = useState<File | null>(null);
+  const [metaText, setMetaText] = useState("");
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [result, setResult] = useState<UploadResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
@@ -28,7 +37,7 @@ function DebugSubidaYTPageContent() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!file) {
@@ -57,7 +66,7 @@ function DebugSubidaYTPageContent() {
           if (typeof metadataObj !== 'object' || metadataObj === null || Array.isArray(metadataObj)) {
             throw new Error('La metadata debe ser un objeto JSON válido');
           }
-        } catch (parseError) {
+        } catch (parseError: any) {
           toast.error(`Error en el formato JSON de metadata: ${parseError.message}`);
           setStatus('idle');
           return;
@@ -94,12 +103,12 @@ function DebugSubidaYTPageContent() {
       // });
 
       // Intentar parsear JSON
-      let json = {};
+      let json: any = {};
       const contentType = res.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         try {
           json = await res.json();
-        } catch (parseError) {
+        } catch (parseError: any) {
           console.error('[DebugSubidaYT] Error parseando JSON de respuesta:', parseError);
           const text = await res.text().catch(() => '');
           console.error('[DebugSubidaYT] Respuesta como texto:', text);
@@ -230,7 +239,7 @@ function DebugSubidaYTPageContent() {
   "ticket_id": "uuid-de-ticket"
 }`}
                   value={metaText}
-                  onChange={(e) => setMetaText(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMetaText(e.target.value)}
                   disabled={status === 'uploading'}
                   className={`${componentStyles.controls.inputDefault} font-mono text-sm`}
                   rows={8}

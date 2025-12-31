@@ -69,7 +69,7 @@ export default function ResetPasswordPage() {
     return () => clearTimeout(errorTimer);
   }, [navigate, user, authLoading]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!password.trim()) {
@@ -120,7 +120,7 @@ export default function ResetPasswordPage() {
           navigate('/login', { replace: true });
         }
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       log.error('Error al actualizar contraseña:', error);
       const errorMessage = error.message?.toLowerCase() || '';
 
@@ -135,7 +135,7 @@ export default function ResetPasswordPage() {
     }
   };
 
-  const PageLayout = ({ children }) => (
+  const PageLayout = ({ children }: { children: React.ReactNode }) => (
     <div
       className={componentStyles.auth.loginPageContainer}
       style={{

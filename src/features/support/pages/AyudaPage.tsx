@@ -81,7 +81,7 @@ export default function AyudaPage() {
     },
   ];
 
-  const handleTabChange = (newTab) => {
+  const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
     setSearchParams({ tab: newTab }, { replace: true });
   };

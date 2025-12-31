@@ -5,7 +5,12 @@ import React from 'react';
  * @param {string} url - URL del vídeo (YouTube, Vimeo, etc.)
  * @param {string} title - Título del vídeo (opcional)
  */
-export default function VideoEmbed({ url, title }) {
+interface VideoEmbedProps {
+  url: string;
+  title?: string;
+}
+
+export default function VideoEmbed({ url, title }: VideoEmbedProps) {
   if (!url) return null;
 
   // Detectar tipo de vídeo y generar embed URL

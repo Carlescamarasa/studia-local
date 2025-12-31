@@ -44,6 +44,20 @@ import {
   DialogTitle,
   DialogDescription
 } from "@/features/shared/components/ui/dialog";
+import type { SupportTicket, SupportMensaje, MediaItem } from "@/features/shared/types/domain";
+
+// Extended types for UI with extra fields from the client mapper
+interface SupportTicketUI extends SupportTicket {
+  _alumnoNombre?: string | null;
+  _profesorNombre?: string | null;
+}
+
+interface SupportMensajeUI extends SupportMensaje {
+  _autorNombre?: string | null;
+}
+
+// MediaItem can be string or object in some contexts, normalizing here for safety
+type MediaType = string | MediaItem;
 
 function SoportePageContent() {
   // ===== TODOS LOS HOOKS AL PRINCIPIO - SIEMPRE EN EL MISMO ORDEN =====
@@ -53,50 +67,52 @@ function SoportePageContent() {
   const queryClient = useQueryClient();
 
   // Hooks de estado
-  const [selectedTicketId, setSelectedTicketId] = useState(null);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
   const [newTicketTitle, setNewTicketTitle] = useState("");
-  const [newTicketTipo, setNewTicketTipo] = useState('duda_general');
+  const [newTicketTipo, setNewTicketTipo] = useState<SupportTicket['tipo']>('duda_general');
   const [messageText, setMessageText] = useState("");
-  const [videoFile, setVideoFile] = useState(null);
-  const [mediaLinks, setMediaLinks] = useState([]);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [mediaLinks, setMediaLinks] = useState<MediaType[]>([]);
   const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [selectedMediaIndex, setSelectedMediaIndex] = useState(null);
-  const [selectedMediaLinks, setSelectedMediaLinks] = useState([]);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
+  const [selectedMediaLinks, setSelectedMediaLinks] = useState<(string | MediaItem)[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
 
   // Hooks de React Query - SIEMPRE se declaran, usando 'enabled' para controlar la ejecución
   // Obtener tickets del alumno (incluyen nombres de perfiles en la consulta)
-  const { data: tickets, isLoading: loadingTickets } = useQuery({
+  const { data: tickets, isLoading: loadingTickets, error: ticketsError } = useQuery<SupportTicketUI[], Error>({
     queryKey: ['support-tickets', user?.id],
-    queryFn: () => {
+    queryFn: async () => {
       if (!user?.id) throw new Error('Usuario no disponible');
-      return getTicketsByAlumno(user.id);
+      return (await getTicketsByAlumno(user.id)) as SupportTicketUI[];
     },
     enabled: !!user && !!profile,
     retry: false,
-    onError: (error) => {
-      console.error('[Soporte] Error cargando tickets:', error);
-      // No mostrar toast aquí para evitar spam si las tablas no existen aún
-    },
   });
 
+  useEffect(() => {
+    if (ticketsError) {
+      console.error('[Soporte] Error cargando tickets:', ticketsError);
+    }
+  }, [ticketsError]);
+
   // Obtener ticket seleccionado
-  const { data: selectedTicket } = useQuery({
+  const { data: selectedTicket } = useQuery<SupportTicketUI, Error>({
     queryKey: ['support-ticket', selectedTicketId],
-    queryFn: () => {
+    queryFn: async () => {
       if (!selectedTicketId) throw new Error('Ticket ID no disponible');
-      return getTicketById(selectedTicketId);
+      return (await getTicketById(selectedTicketId)) as SupportTicketUI;
     },
     enabled: !!selectedTicketId && !!user && !!profile,
   });
 
   // Obtener mensajes del ticket seleccionado
-  const { data: mensajes, isLoading: loadingMensajes } = useQuery({
+  const { data: mensajes, isLoading: loadingMensajes } = useQuery<SupportMensajeUI[], Error>({
     queryKey: ['support-mensajes', selectedTicketId],
-    queryFn: () => {
+    queryFn: async () => {
       if (!selectedTicketId) throw new Error('Ticket ID no disponible');
-      return getMensajesByTicket(selectedTicketId);
+      return (await getMensajesByTicket(selectedTicketId)) as SupportMensajeUI[];
     },
     enabled: !!selectedTicketId && !!user && !!profile,
   });
@@ -111,7 +127,7 @@ function SoportePageContent() {
       setNewTicketTitle("");
       toast.success('Ticket creado correctamente');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(`Error al crear ticket: ${error.message}`);
     },
   });
@@ -129,7 +145,7 @@ function SoportePageContent() {
       setUploadingVideo(false);
       toast.success('Mensaje enviado');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(`Error al enviar mensaje: ${error.message}`);
       setUploadingVideo(false);
     },
@@ -140,14 +156,14 @@ function SoportePageContent() {
 
   // Mutación para eliminar ticket
   const deleteTicketMutation = useMutation({
-    mutationFn: ({ ticketId, alumnoId }) => deleteTicket(ticketId, alumnoId),
+    mutationFn: ({ ticketId, alumnoId }: { ticketId: string; alumnoId: string }) => deleteTicket(ticketId, alumnoId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
       setSelectedTicketId(null);
       setShowDeleteConfirm(false);
       toast.success('Conversación eliminada');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(`Error al eliminar: ${error.message}`);
       setShowDeleteConfirm(false);
     },
@@ -197,7 +213,16 @@ function SoportePageContent() {
     setUploadingVideo(true);
 
     try {
-      let finalMediaLinks = [...mediaLinks]; // Incluir enlaces multimedia manuales
+      let finalMediaLinks: string[] = []; // Inicializar como array de strings vacio
+
+      // Normalizar mediaLinks (state) a string[]
+      if (mediaLinks.length > 0) {
+        finalMediaLinks = mediaLinks.map(link => {
+          if (typeof link === 'string') return link;
+          if (link && typeof link === 'object' && link.url) return link.url;
+          return '';
+        }).filter(Boolean);
+      }
 
       // Si hay vídeo, subirlo primero
       if (videoFile) {
@@ -239,7 +264,7 @@ function SoportePageContent() {
     }
   };
 
-  const getEstadoBadge = (estado) => {
+  const getEstadoBadge = (estado: string) => {
     switch (estado) {
       case 'abierto':
         return <Badge variant="info">Abierto</Badge>;
@@ -252,7 +277,7 @@ function SoportePageContent() {
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('es-ES', {
       day: '2-digit',
       month: '2-digit',
@@ -296,7 +321,7 @@ function SoportePageContent() {
 
             {tickets && tickets.length > 0 ? (
               <div className="space-y-3">
-                {tickets.map((ticket) => (
+                {(tickets || []).map((ticket) => (
                   <div
                     key={ticket.id}
                     onClick={() => setSelectedTicketId(ticket.id)}
@@ -461,8 +486,12 @@ function SoportePageContent() {
                                 <div className={`mt-2 ${mensaje.texto ? 'pt-2 border-t border-[var(--color-border-default)]/50' : ''}`}>
                                   <MediaLinksBadges
                                     mediaLinks={mensaje.mediaLinks}
-                                    onMediaClick={(idx) => {
-                                      setSelectedMediaLinks(mensaje.mediaLinks);
+                                    onMediaClick={(idx: number) => {
+                                      const normalizedLinks = (mensaje.mediaLinks || []).map(link =>
+                                        typeof link === 'string' ? { url: link, type: 'image' } as MediaItem : link
+                                      );
+                                      // Force cast strictly for the setter
+                                      setSelectedMediaLinks(normalizedLinks);
                                       setSelectedMediaIndex(idx);
                                       setShowMediaModal(true);
                                     }}
@@ -507,7 +536,7 @@ function SoportePageContent() {
                       </div>
                       <MediaLinksInput
                         value={mediaLinks}
-                        onChange={setMediaLinks}
+                        onChange={(links) => setMediaLinks(links as MediaType[])}
                         showFileUpload={true}
                         videoFile={videoFile}
                         onVideoFileChange={setVideoFile}
@@ -573,8 +602,8 @@ function SoportePageContent() {
                 <Label htmlFor="ticket-tipo">Tipo</Label>
                 <select
                   id="ticket-tipo"
-                  value={newTicketTipo}
-                  onChange={(e) => setNewTicketTipo(e.target.value)}
+                  value={newTicketTipo || ""}
+                  onChange={(e) => setNewTicketTipo(e.target.value as any)}
                   className={componentStyles.controls.inputDefault}
                 >
                   <option value="duda_general">Duda general</option>

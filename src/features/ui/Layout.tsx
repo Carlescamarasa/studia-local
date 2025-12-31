@@ -121,17 +121,17 @@ function LayoutContent() {
   const navigate = useNavigate();
   const { abierto, toggleSidebar, closeSidebar } = useSidebar();
   const { usuarios } = useLocalData();
-  const { signOut, user, loading: authLoading, checkSession, handleAuthError } = useAuth();
-  const { setShowHotkeysModal } = useHotkeysModal();
+  const { signOut, user, loading: authLoading, checkSession } = useAuth();
+  const { setShowHotkeysModal, showHotkeysModal } = useHotkeysModal();
 
-  const [pointerStart, setPointerStart] = useState({ x: 0, y: 0, id: null });
+  const [pointerStart, setPointerStart] = useState<{ x: number, y: number, id: number | null }>({ x: 0, y: 0, id: null });
   // 3-tier viewport: 'mobile' | 'tablet' | 'desktop'
   const [viewport, setViewport] = useState('desktop');
   const isMobile = viewport === 'mobile';
   const isTablet = viewport === 'tablet';
   const isDesktop = viewport === 'desktop';
   const toggleLockRef = useRef(0);
-  const headerToggleButtonRef = useRef(null);
+  const headerToggleButtonRef = useRef<HTMLButtonElement>(null);
   const { design, setDesignPartial, activeMode, setActiveMode } = useDesign();
   const { currentVersion } = useAppVersion();
 
@@ -159,8 +159,8 @@ function LayoutContent() {
     toggleSidebar();
   };
 
-  const handleHeaderClick = (e) => {
-    const el = e.target.closest('button, a, input, select, textarea');
+  const handleHeaderClick = (e: React.MouseEvent) => {
+    const el = (e.target as HTMLElement).closest('button, a, input, select, textarea');
     if (el) {
       return;
     }
@@ -177,7 +177,7 @@ function LayoutContent() {
   // which is sufficient. Forcing refetch on every mount causes unnecessary requests.
 
   // Usar profile si está disponible (tiene datos más frescos de Supabase)
-  const displayUser = profile || effectiveUserDisplay;
+  const displayUser: any = profile || effectiveUserDisplay;
 
   // console.log('DEBUG: Layout displayUser:', displayUser);
   // console.log('DEBUG: Layout nivelTecnico:', displayUser?.nivelTecnico);
@@ -240,7 +240,7 @@ function LayoutContent() {
   useEffect(() => {
     const hotkeysUserRole = effectiveRole || 'ESTU';
 
-    const handleKey = (e) => {
+    const handleKey = (e: KeyboardEvent) => {
       // Usar helper centralizado para detectar campos editables
       if (shouldIgnoreHotkey(e)) return;
 
@@ -258,7 +258,7 @@ function LayoutContent() {
         },
         'toggle-hotkeys-modal': () => {
           e.preventDefault();
-          setShowHotkeysModal(prev => !prev);
+          if (setShowHotkeysModal) setShowHotkeysModal(!showHotkeysModal);
         },
         'logout': () => {
           e.preventDefault();
@@ -329,7 +329,7 @@ function LayoutContent() {
 
         // Verificar si el hotkey coincide (primary o aliases)
         if (matchesHotkey(e, hotkey)) {
-          const action = hotkeyActions[hotkey.id];
+          const action = (hotkeyActions as Record<string, () => void>)[hotkey.id];
           if (action) {
             action();
             return; // Handler procesó el evento
@@ -340,17 +340,17 @@ function LayoutContent() {
 
     window.addEventListener("keydown", handleKey, { capture: true, passive: false });
     return () => window.removeEventListener("keydown", handleKey, { capture: true });
-  }, [design, setDesignPartial, activeMode, setActiveMode, safeToggle, navigate, effectiveRole, signOut, setShowHotkeysModal]);
+  }, [design, setDesignPartial, activeMode, setActiveMode, safeToggle, navigate, effectiveRole, signOut, setShowHotkeysModal, showHotkeysModal]);
 
   /* Gestos: swipe desde borde para abrir; swipe izq para cerrar */
   useEffect(() => {
     if (!isMobile) return;
 
-    const onDown = (e) => {
+    const onDown = (e: PointerEvent) => {
       setPointerStart({ x: e.clientX, y: e.clientY, id: e.pointerId });
     };
 
-    const onMove = (e) => {
+    const onMove = (e: PointerEvent) => {
       if (!pointerStart.id || pointerStart.id !== e.pointerId) return;
       const dx = e.clientX - pointerStart.x;
       const dy = e.clientY - pointerStart.y;
@@ -385,7 +385,7 @@ function LayoutContent() {
   useEffect(() => {
     if (isMobile && abierto) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "";
-    return () => (document.body.style.overflow = "");
+    return () => { document.body.style.overflow = "" };
   }, [abierto, isMobile]);
 
   // Rutas públicas que no deben redirigir a login
@@ -426,9 +426,6 @@ function LayoutContent() {
       } catch (error) {
         // Si hay error de autenticación, manejarlo
         if (error && isAuthError(error)) {
-          if (handleAuthError) {
-            await handleAuthError(error);
-          }
           navigate('/login', { replace: true });
         }
       }
@@ -437,7 +434,7 @@ function LayoutContent() {
     return () => {
       clearInterval(sessionCheckInterval);
     };
-  }, [user, authLoading, location.pathname, navigate, checkSession, handleAuthError, isPublicRoute]);
+  }, [user, authLoading, location.pathname, navigate, checkSession, isPublicRoute]);
 
   const onMenuItemClick = () => {
     if (isMobile) closeSidebar();
@@ -475,12 +472,13 @@ function LayoutContent() {
       } catch (error) {
         // Ignorar errores CORS o de red silenciosamente
         // Estos pueden ocurrir si la sesión expiró o hay problemas de conectividad
-        if (error?.message?.includes('CORS') ||
-          error?.message?.includes('NetworkError') ||
-          error?.message?.includes('No hay sesión activa') ||
-          error?.code === 'PGRST301' ||
-          error?.status === 401 ||
-          error?.status === 403) {
+        const err = error as any;
+        if (err?.message?.includes('CORS') ||
+          err?.message?.includes('NetworkError') ||
+          err?.message?.includes('No hay sesión activa') ||
+          err?.code === 'PGRST301' ||
+          err?.status === 401 ||
+          err?.status === 403) {
           return { nuevos: 0, enRevision: 0 };
         }
         // Solo loguear errores inesperados
@@ -542,9 +540,10 @@ function LayoutContent() {
   });
 
   const grouped = items.reduce((acc, it) => {
-    (acc[it.group] ||= []).push(it);
+    const group = it.group as string;
+    (acc[group] ||= []).push(it);
     return acc;
-  }, {});
+  }, {} as Record<string, typeof items>);
 
   const logout = async () => {
     try {
@@ -553,9 +552,10 @@ function LayoutContent() {
     } catch (error) {
       // Si es un error de sesión faltante o expirada, es válido continuar
       // El objetivo es cerrar sesión y si no hay sesión, ya estamos en el estado deseado
-      if (error?.message?.includes('Auth session missing') ||
-        error?.message?.includes('JWT expired') ||
-        error?.status === 403) {
+      const err = error as any;
+      if (err?.message?.includes('Auth session missing') ||
+        err?.message?.includes('JWT expired') ||
+        err?.status === 403) {
         // No mostrar error si simplemente no hay sesión
       } else {
         console.error("Error al cerrar sesión:", error);
@@ -595,8 +595,8 @@ function LayoutContent() {
       >
         <SystemTopBar
           isImpersonating={isImpersonating}
-          effectiveUser={effectiveUserDisplay}
-          effectiveRole={effectiveRole}
+          effectiveUser={effectiveUserDisplay as any}
+          effectiveRole={effectiveRole || ''}
           stopImpersonation={stopImpersonation}
           isMobile={isMobile}
         />
@@ -624,8 +624,8 @@ function LayoutContent() {
           aria-hidden={isMobile && !abierto}
           data-open={abierto}
           data-viewport={viewport}
-          inert={isMobile && !abierto ? "" : undefined}
-          tabIndex="-1"
+          {...({ inert: isMobile && !abierto ? "" : undefined } as any)}
+          tabIndex={-1}
           className={`
             z-[200] flex flex-col sidebar-modern
             transition-all duration-200 will-change-transform transform-gpu
@@ -687,7 +687,7 @@ function LayoutContent() {
                   </p>
                 )}
                 <div className={isCollapsed ? 'space-y-2' : 'space-y-1'}>
-                  {groupItems.map((item) => {
+                  {groupItems.map((item: typeof items[0]) => {
                     // Fix: compare pathnames only (strip query string) so /progreso?tab=xxx highlights "Progreso"
                     const itemPathname = item.url.split('?')[0];
                     const isActive = itemPathname === '/'
@@ -706,7 +706,7 @@ function LayoutContent() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Link
-                                to={createPageUrl(item.url.split("/").pop())}
+                                to={createPageUrl(item.url.split("/").pop() || '')}
                                 className={`flex items-center justify-center w-10 h-10 rounded-xl transition-colors ${isActive
                                   ? 'bg-[var(--color-primary)] text-white'
                                   : 'hover:bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]'
@@ -735,7 +735,7 @@ function LayoutContent() {
                     return (
                       <Link
                         key={item.title}
-                        to={createPageUrl(item.url.split("/").pop())}
+                        to={createPageUrl(item.url.split("/").pop() || '')}
                         className={
                           isActive
                             ? `${componentStyles.components.menuItem} ${componentStyles.components.menuItemActive}`
@@ -1143,7 +1143,7 @@ function LayoutContent() {
             marginLeft: !isMobile ? (abierto ? 'var(--sidebar-width, 16rem)' : '4rem') : '0',
           }}
           aria-hidden={isMobile && abierto}
-          inert={isMobile && abierto ? "" : undefined}
+          {...({ inert: isMobile && abierto ? "" : undefined } as any)}
           tabIndex={isMobile && abierto ? -1 : undefined}
         >
 

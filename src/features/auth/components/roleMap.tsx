@@ -10,6 +10,6 @@ export const roleHome = {
 /**
  * Obtiene la ruta home para un rol dado
  */
-export function getHomeForRole(role) {
-  return roleHome[role] || roleHome.ESTU;
+export function getHomeForRole(role: string) {
+  return roleHome[role as keyof typeof roleHome] || roleHome.ESTU;
 }

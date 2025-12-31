@@ -21,11 +21,11 @@ import { generateId } from "@/data/localStorageClient";
 interface EventoData {
   id: string;
   titulo?: string;
-  descripcion?: string;
+  descripcion?: string | null;
   fechaInicio?: string;
-  fechaFin?: string;
-  start_at?: string;
-  end_at?: string;
+  fechaFin?: string | null;
+  start_at?: string | null;
+  end_at?: string | null;
   all_day?: boolean;
   tipo?: 'encuentro' | 'masterclass' | 'colectiva' | 'otro';
   visiblePara?: string[];
@@ -123,7 +123,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
   }, [evento, open]);
 
   const crearMutation = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async (data: Partial<EventoData>) => {
       const eventoData = {
         id: generateId('evento'),
         ...data,
@@ -140,7 +140,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
       toast.success('✅ Evento creado exitosamente');
       onOpenChange(false);
     },
-    onError: (error) => {
+    onError: (error: any, variables) => {
       console.error('Error creando evento:', error);
       console.error('Detalles del error:', {
         message: error?.message,
@@ -148,18 +148,14 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
         details: error?.details,
         hint: error?.hint,
         userIdActual,
-        eventoData: {
-          id: eventoData?.id,
-          creadoPorId: eventoData?.creadoPorId,
-          titulo: eventoData?.titulo,
-        },
+        eventoData: variables,
       });
       toast.error(`❌ Error al crear evento: ${error?.message || 'Error desconocido'}`);
     },
   });
 
   const actualizarMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<EventoData> }) => {
       const eventoData = {
         ...data,
         updated_at: new Date().toISOString(),
@@ -171,13 +167,13 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
       toast.success('✅ Evento actualizado exitosamente');
       onOpenChange(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error actualizando evento:', error);
       toast.error('❌ Error al actualizar evento');
     },
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.titulo.trim()) {
       toast.error('El título es requerido');
@@ -234,7 +230,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
       start_at,
       end_at,
       all_day: formData.all_day,
-      tipo: formData.tipo,
+      tipo: formData.tipo as EventoData['tipo'],
       visiblePara: formData.visiblePara,
     };
 
@@ -245,7 +241,7 @@ export default function ModalCrearEvento({ open, onOpenChange, evento, userIdAct
     }
   };
 
-  const toggleRol = (rol) => {
+  const toggleRol = (rol: string) => {
     setFormData(prev => ({
       ...prev,
       visiblePara: prev.visiblePara.includes(rol)

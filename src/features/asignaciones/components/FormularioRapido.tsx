@@ -75,13 +75,14 @@ interface SelectedStudent {
 interface FormularioRapidoProps {
   onClose: () => void;
   initialStudentId?: string | null;
+  debugInline?: boolean;
 }
 
 // ============================================================================
 // Component
 // ============================================================================
 
-export default function FormularioRapido({ onClose, initialStudentId = null }: FormularioRapidoProps) {
+export default function FormularioRapido({ onClose, initialStudentId = null, debugInline = false }: FormularioRapidoProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [formData, setFormData] = useState<FormularioFormData>({
@@ -772,6 +773,10 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
       }
     </>
   );
+
+  if (debugInline) {
+    return modalContent;
+  }
 
   return createPortal(modalContent, document.body);
 }

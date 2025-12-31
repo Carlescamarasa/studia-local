@@ -4,11 +4,17 @@ import { localDataClient } from '@/api/localDataClient';
 import { Button } from '@/features/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/features/shared/components/ds/Card';
 
+interface LogEntry {
+    msg: string;
+    type: 'info' | 'success' | 'warning' | 'error';
+    time: string;
+}
+
 export default function LevelSystemDebug() {
-    const [logs, setLogs] = useState([]);
+    const [logs, setLogs] = useState<LogEntry[]>([]);
     const [running, setRunning] = useState(false);
 
-    const log = (msg, type = 'info') => {
+    const log = (msg: string, type: LogEntry['type'] = 'info') => {
         setLogs(prev => [...prev, { msg, type, time: new Date().toLocaleTimeString() }]);
     };
 
@@ -39,7 +45,7 @@ export default function LevelSystemDebug() {
             // Let's try to create a config if missing
             const configs = await localDataClient.entities.LevelConfig.list();
             if (!configs.find(c => c.level === 2)) {
-                await localDataClient.entities.LevelConfig.create(level2Config);
+                await localDataClient.entities.LevelConfig.create(level2Config as any); // Cast as any if precise CreateInput is missing or strict
                 log('Created Level 2 Config', 'success');
             } else {
                 log('Level 2 Config exists', 'success');
@@ -78,7 +84,7 @@ export default function LevelSystemDebug() {
 
             log('Verification Complete', 'success');
 
-        } catch (error) {
+        } catch (error: any) {
             log(`Error: ${error.message}`, 'error');
             console.error(error);
         } finally {

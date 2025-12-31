@@ -131,7 +131,7 @@ export default function ModalAsignacion({
                         </div>
                         <div className="flex items-center gap-1.5 col-span-2">
                             <span className="text-xs text-[var(--color-text-secondary)]">Estado:</span>
-                            <Badge variant={estadoColors[asignacion.estado || ''] || 'default'} className="text-xs">
+                            <Badge variant={(estadoColors[asignacion.estado || ''] || 'default') as any} className="text-xs">
                                 {obtenerLabelEstadoAsignacion(asignacion.estado || '')}
                             </Badge>
                         </div>

@@ -310,11 +310,11 @@ export const obtenerLabelTipoEvento = (tipo: TipoEventoImportante | string): str
  * Obtiene el label del estado de asignación
  */
 export const obtenerLabelEstadoAsignacion = (estado: EstadoAsignacion | string): string => {
-    const labels: Record<EstadoAsignacion, string> = {
+    const labels: Record<string, string> = {
         borrador: 'Borrador',
         publicada: 'Publicada',
         archivada: 'Archivada',
         en_curso: 'En curso',
     };
-    return labels[estado as EstadoAsignacion] || estado;
+    return labels[estado] || estado;
 };

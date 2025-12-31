@@ -16,7 +16,7 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
     const colores = obtenerColorTipoEvento(evento.tipo || 'otro');
 
     // Helper para formatear hora
-    const formatTime = (startAt?: string, endAt?: string, fechaInicio?: string): string | null => {
+    const formatTime = (startAt?: string | null, endAt?: string | null, fechaInicio?: string | null): string | null => {
         const isAllDay = evento.all_day === true;
         if (isAllDay) return null;
 
@@ -82,11 +82,11 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
                         {linea3}
                     </p>
                 )}
-                {(evento as any).mediaLinks && Array.isArray((evento as any).mediaLinks) && (evento as any).mediaLinks.length > 0 && onMediaClick && (
+                {evento.mediaLinks && Array.isArray(evento.mediaLinks) && evento.mediaLinks.length > 0 && onMediaClick && (
                     <div className="mt-1">
                         <MediaLinksBadges
-                            mediaLinks={(evento as any).mediaLinks}
-                            onMediaClick={(idx: number) => onMediaClick(idx, (evento as any).mediaLinks || [])}
+                            mediaLinks={evento.mediaLinks}
+                            onMediaClick={(idx: number) => onMediaClick(idx, evento.mediaLinks || [])}
                             compact={true}
                             maxDisplay={3}
                         />
@@ -113,11 +113,11 @@ export default function EventoImportante({ evento, onClick, variant = 'default',
                     {linea3}
                 </p>
             )}
-            {(evento as any).mediaLinks && Array.isArray((evento as any).mediaLinks) && (evento as any).mediaLinks.length > 0 && onMediaClick && (
+            {evento.mediaLinks && Array.isArray(evento.mediaLinks) && evento.mediaLinks.length > 0 && onMediaClick && (
                 <div className="mt-1">
                     <MediaLinksBadges
-                        mediaLinks={(evento as any).mediaLinks}
-                        onMediaClick={(idx: number) => onMediaClick(idx, (evento as any).mediaLinks || [])}
+                        mediaLinks={evento.mediaLinks}
+                        onMediaClick={(idx: number) => onMediaClick(idx, evento.mediaLinks || [])}
                         compact={true}
                         maxDisplay={3}
                     />
