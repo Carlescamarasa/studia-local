@@ -257,7 +257,7 @@ export interface Asignacion {
   profesorId: string;
   piezaId: string;
   semanaInicioISO: string; // YYYY-MM-DD
-  estado: 'borrador' | 'publicada' | 'archivada' | 'en_curso';
+  estado: 'borrador' | 'publicada' | 'archivada' | 'en_curso' | 'cerrada';
   foco: 'GEN' | 'SON' | 'FLX' | 'ART' | 'MOT' | 'COG';
   notas?: string | null;
   plan: Plan; // Snapshot completo del plan

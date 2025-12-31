@@ -5,31 +5,49 @@ import { createRemoteDataAPI } from "@/api/remoteDataAPI";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/features/shared/hooks/useUsers";
 import { Button } from "@/features/shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ds";
+import { Card, CardContent } from "@/features/shared/components/ds";
 import { Badge } from "@/features/shared/components/ds";
 import {
-  ArrowLeft, Save, Target, User, Music, BookOpen, Calendar,
-  ChevronDown, ChevronRight, Clock, Layers, Plus, Edit, Trash2,
-  GripVertical, Copy, PlayCircle, AlertCircle, Shuffle, Eye
+  ArrowLeft, Edit, Trash2, GripVertical, Copy, PlayCircle, AlertCircle, Plus, ChevronDown, ChevronRight, Clock, Layers,
+  Save, Target, User, Music, BookOpen, Calendar, Shuffle, Eye
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { DndProvider, SortableContext, verticalListSortingStrategy, arrayMove } from "@/features/shared/components/dnd/DndProvider";
+import { SortableContext, verticalListSortingStrategy, arrayMove } from "@/features/shared/components/dnd/DndProvider";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import WeekEditor from "@/features/editor/components/WeekEditor";
-import SessionEditor from "@/features/editor/components/SessionEditor";
-import ExerciseEditor from "@/features/editor/components/ExerciseEditor";
-import { Alert, AlertDescription } from "@/features/shared/components/ds";
-import { PageHeader } from "@/features/shared/components/ds/PageHeader";
 import { LoadingSpinner } from "@/features/shared/components/ds";
-import { getNombreVisible } from "@/features/shared/utils/helpers";
 import { componentStyles } from "@/design/componentStyles";
 import { getSecuencia, ensureRondaIds, mapBloquesByCode } from "@/features/estudio/components/sessionSequence";
 import RequireRole from "@/features/auth/components/RequireRole";
-
 import SessionContentView from "@/features/shared/components/study/SessionContentView";
+import { Asignacion, Plan, PlanSemana, PlanSesion, Bloque, SesionRonda, SesionBloque } from "@/types/data.types";
+import { DndContext, DragEndEvent, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import WeekEditor from "@/features/editor/components/WeekEditor";
+import SessionEditor from "@/features/editor/components/SessionEditor";
+
+interface SortableSesionAdaptarProps {
+  id: string;
+  sesion: PlanSesion;
+  semanaIndex: number;
+  sesionIndex: number;
+  expandedSesiones: Set<string>;
+  expandedEjercicios: Set<string>;
+  toggleSesion: (semanaIndex: number, sesionIndex: number) => void;
+  toggleRonda: (semanaIndex: number, sesionIndex: number, rondaIndex: number) => void;
+  calcularTiempoSesion: (sesion: PlanSesion) => number;
+  setEditingSesion: (data: { semanaIndex: number; sesionIndex: number; sesion: PlanSesion }) => void;
+  removeSesion: (semanaIndex: number, sesionIndex: number) => void;
+  focoColors: Record<string, string>;
+  focoLabels: Record<string, string>;
+  tipoColors: Record<string, string>;
+  componentStyles: any;
+  ensureRondaIds: typeof ensureRondaIds;
+  getSecuencia: typeof getSecuencia;
+  mapBloquesByCode: typeof mapBloquesByCode;
+  dbBloques?: any[];
+}
 
 // Componente Sortable para Sesión (similar a PlanEditor pero adaptado)
 function SortableSesionAdaptar({
@@ -46,13 +64,9 @@ function SortableSesionAdaptar({
   removeSesion,
   focoColors,
   focoLabels,
-  tipoColors,
   componentStyles,
-  ensureRondaIds,
-  getSecuencia,
-  mapBloquesByCode,
-  dbBloques = [] // Add prop for DB bloques with variations
-}) {
+  dbBloques = []
+}: SortableSesionAdaptarProps) {
   const {
     attributes,
     listeners,
@@ -74,17 +88,17 @@ function SortableSesionAdaptar({
   const tiempoSegundos = tiempoTotal % 60;
 
   // Adaptar estado de expansión para SessionContentView
-  const expandedRondasMap = {};
+  const expandedRondasMap: Record<string, boolean> = {};
   if (sesion.rondas) {
     sesion.rondas.forEach((r, idx) => {
       const key = `${semanaIndex}-${sesionIndex}-ronda-${idx}`;
       if (expandedEjercicios.has(key)) {
-        expandedRondasMap[r.id] = true;
+        if (r.id) expandedRondasMap[r.id] = true;
       }
     });
   }
 
-  const handleToggleRondaLocal = (rondaId) => {
+  const handleToggleRondaLocal = (rondaId: string) => {
     const rIndex = sesion.rondas.findIndex(r => r.id === rondaId);
     if (rIndex !== -1) {
       toggleRonda(semanaIndex, sesionIndex, rIndex);
@@ -125,8 +139,8 @@ function SortableSesionAdaptar({
               <Clock className="w-3 h-3 mr-1" />
               {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
             </Badge>
-            <Badge className={`rounded-full ${focoColors[sesion.foco]}`} variant="outline">
-              {focoLabels[sesion.foco]}
+            <Badge className={`rounded-full ${focoColors[sesion.foco || 'GEN']}`} variant="outline">
+              {focoLabels[sesion.foco || 'GEN']}
             </Badge>
           </div>
           {!isExpanded && (
@@ -144,7 +158,7 @@ function SortableSesionAdaptar({
       {isExpanded && (
         <div className="mt-2" onClick={(e) => e.stopPropagation()}>
           <SessionContentView
-            sesion={sesion}
+            sesion={sesion as any}
             dbBloques={dbBloques}
             expandedRondas={expandedRondasMap}
             onToggleRonda={handleToggleRondaLocal}
@@ -183,6 +197,33 @@ function SortableSesionAdaptar({
   );
 }
 
+interface SortableSemanaAdaptarProps {
+  id: string;
+  semana: PlanSemana;
+  semanaIndex: number;
+  expandedSemanas: Set<number>;
+  expandedSesiones: Set<string>;
+  expandedEjercicios: Set<string>;
+  toggleSemana: (index: number) => void;
+  toggleSesion: (semanaIndex: number, sesionIndex: number) => void;
+  toggleRonda: (semanaIndex: number, sesionIndex: number, rondaIndex: number) => void;
+  calcularTiempoSesion: (sesion: PlanSesion) => number;
+  setEditingSemana: (data: { index: number; semana: PlanSemana }) => void;
+  setEditingSesion: (data: { semanaIndex: number; sesionIndex: number; sesion: PlanSesion }) => void;
+  removeSemana: (index: number) => void;
+  removeSesion: (semanaIndex: number, sesionIndex: number) => void;
+  addSesion: (semanaIndex: number) => void;
+  duplicateSemana: (index: number) => void;
+  focoColors: Record<string, string>;
+  focoLabels: Record<string, string>;
+  tipoColors: Record<string, string>;
+  componentStyles: any;
+  ensureRondaIds: typeof ensureRondaIds;
+  getSecuencia: typeof getSecuencia;
+  mapBloquesByCode: typeof mapBloquesByCode;
+  dbBloques?: any[];
+}
+
 // Componente Sortable para Semana
 function SortableSemanaAdaptar({
   id,
@@ -208,8 +249,8 @@ function SortableSemanaAdaptar({
   ensureRondaIds,
   getSecuencia,
   mapBloquesByCode,
-  dbBloques = [] // Add prop for DB bloques with variations
-}) {
+  dbBloques = []
+}: SortableSemanaAdaptarProps) {
   const {
     attributes,
     listeners,
@@ -252,8 +293,8 @@ function SortableSemanaAdaptar({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="font-semibold text-base text-ui">{semana.nombre}</h3>
-            <Badge className={`rounded-full ${focoColors[semana.foco]}`}>
-              {focoLabels[semana.foco]}
+            <Badge className={`rounded-full ${focoColors[semana.foco || 'GEN']}`}>
+              {focoLabels[semana.foco || 'GEN']}
             </Badge>
             <span className="text-sm text-ui/80">
               ({semana.sesiones?.length || 0} sesiones)
@@ -371,13 +412,19 @@ function AdaptarAsignacionPageContent() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [expandedSemanas, setExpandedSemanas] = useState(new Set([0]));
-  const [expandedSesiones, setExpandedSesiones] = useState(new Set());
-  const [expandedEjercicios, setExpandedEjercicios] = useState(new Set());
-  const [editingSemana, setEditingSemana] = useState(null);
-  const [editingSesion, setEditingSesion] = useState(null);
-  const [editingEjercicio, setEditingEjercicio] = useState(null);
-  const [planData, setPlanData] = useState(null);
+  const [expandedSemanas, setExpandedSemanas] = useState<Set<number>>(new Set([0]));
+  const [expandedSesiones, setExpandedSesiones] = useState<Set<string>>(new Set());
+  const [expandedEjercicios, setExpandedEjercicios] = useState<Set<string>>(new Set());
+  const [editingSemana, setEditingSemana] = useState<{ index: number; semana: PlanSemana } | null>(null);
+  const [editingSesion, setEditingSesion] = useState<{ semanaIndex: number; sesionIndex: number; sesion: PlanSesion } | null>(null);
+  const [planData, setPlanData] = useState<Plan | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   const asignacionId = searchParams.get('id');
 
@@ -388,8 +435,7 @@ function AdaptarAsignacionPageContent() {
       const api = createRemoteDataAPI();
       try {
         if (api) {
-          const { data, error } = await api.bloques.list();
-          if (error) throw error;
+          const data = await api.bloques.list();
           return data || [];
         }
         const localData = await localDataClient.entities.Bloque.list();
@@ -429,20 +475,18 @@ function AdaptarAsignacionPageContent() {
     retry: false,
   });
 
-  // Usar hook centralizado para usuarios
   const { data: usuarios = [] } = useUsers();
-
-
 
   useEffect(() => {
     if (asignacion?.plan) {
-      setPlanData(JSON.parse(JSON.stringify(asignacion.plan)));
+      setPlanData(JSON.parse(JSON.stringify(asignacion.plan)) as Plan);
     }
   }, [asignacion]);
 
   const guardarMutation = useMutation({
-    mutationFn: async (updatedPlan) => {
-      return localDataClient.entities.Asignacion.update(asignacionId, { planAdaptado: updatedPlan });
+    mutationFn: async (updatedPlan: Plan) => {
+      if (!asignacionId) throw new Error('No ID');
+      return localDataClient.entities.Asignacion.update(asignacionId, { plan: updatedPlan });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignacion', asignacionId] });
@@ -452,9 +496,10 @@ function AdaptarAsignacionPageContent() {
 
   const publicarMutation = useMutation({
     mutationFn: async () => {
+      if (!asignacionId || !planData) throw new Error('No ID or Plan');
       return localDataClient.entities.Asignacion.update(asignacionId, {
         estado: 'publicada',
-        planAdaptado: planData
+        plan: planData
       });
     },
     onSuccess: () => {
@@ -465,7 +510,7 @@ function AdaptarAsignacionPageContent() {
   });
 
   const handleGuardar = () => {
-    guardarMutation.mutate(planData);
+    if (planData) guardarMutation.mutate(planData);
   };
 
   const handlePublicar = () => {
@@ -475,11 +520,14 @@ function AdaptarAsignacionPageContent() {
   };
 
   const addSemana = () => {
-    const newSemana = {
+    if (!planData) return;
+    const newSemana: PlanSemana = {
+      id: crypto.randomUUID(),
       nombre: `Semana ${planData.semanas.length + 1}`,
       objetivo: '',
       foco: 'GEN',
       sesiones: [],
+      rondas: []
     };
     setPlanData({
       ...planData,
@@ -487,14 +535,16 @@ function AdaptarAsignacionPageContent() {
     });
   };
 
-  const updateSemana = (index, updatedSemana) => {
+  const updateSemana = (index: number, updatedSemana: PlanSemana) => {
+    if (!planData) return;
     const newSemanas = [...planData.semanas];
     newSemanas[index] = updatedSemana;
     setPlanData({ ...planData, semanas: newSemanas });
     setEditingSemana(null);
   };
 
-  const removeSemana = (index) => {
+  const removeSemana = (index: number) => {
+    if (!planData) return;
     if (window.confirm('¿Eliminar esta semana y todas sus sesiones?')) {
       setPlanData({
         ...planData,
@@ -503,37 +553,46 @@ function AdaptarAsignacionPageContent() {
     }
   };
 
-  const duplicateSemana = (index) => {
+  const duplicateSemana = (index: number) => {
+    if (!planData) return;
     const semana = planData.semanas[index];
     const newSemana = JSON.parse(JSON.stringify(semana));
+    newSemana.id = crypto.randomUUID();
     newSemana.nombre = `${semana.nombre} (copia)`;
     const newSemanas = [...planData.semanas];
     newSemanas.splice(index + 1, 0, newSemana);
     setPlanData({ ...planData, semanas: newSemanas });
   };
 
-  const addSesion = (semanaIndex) => {
+  const addSesion = (semanaIndex: number) => {
+    if (!planData) return;
     const newSemanas = [...planData.semanas];
     if (!newSemanas[semanaIndex].sesiones) {
       newSemanas[semanaIndex].sesiones = [];
     }
     newSemanas[semanaIndex].sesiones.push({
+      id: crypto.randomUUID(),
       nombre: `Sesión ${newSemanas[semanaIndex].sesiones.length + 1}`,
       foco: 'GEN',
       bloques: [],
-      rondas: []
+      rondas: [],
+      code: `S${semanaIndex}S${newSemanas[semanaIndex].sesiones.length}`,
+      tipo: 'AD',
+      duracionSeg: 0
     });
     setPlanData({ ...planData, semanas: newSemanas });
   };
 
-  const updateSesion = (semanaIndex, sesionIndex, updatedSesion) => {
+  const updateSesion = (semanaIndex: number, sesionIndex: number, updatedSesion: PlanSesion) => {
+    if (!planData) return;
     const newSemanas = [...planData.semanas];
     newSemanas[semanaIndex].sesiones[sesionIndex] = updatedSesion;
     setPlanData({ ...planData, semanas: newSemanas });
     setEditingSesion(null);
   };
 
-  const removeSesion = (semanaIndex, sesionIndex) => {
+  const removeSesion = (semanaIndex: number, sesionIndex: number) => {
+    if (!planData) return;
     if (window.confirm('¿Eliminar esta sesión?')) {
       const newSemanas = [...planData.semanas];
       newSemanas[semanaIndex].sesiones = newSemanas[semanaIndex].sesiones.filter((_, i) => i !== sesionIndex);
@@ -542,52 +601,19 @@ function AdaptarAsignacionPageContent() {
     }
   };
 
-  const updateEjercicioInline = (semanaIndex, sesionIndex, ejercicioIndex, updatedEjercicio) => {
-    const newSemanas = [...planData.semanas];
-    newSemanas[semanaIndex].sesiones[sesionIndex].bloques[ejercicioIndex] = updatedEjercicio;
-    setPlanData({ ...planData, semanas: newSemanas });
-    setEditingEjercicio(null);
-  };
-
-  const removeEjercicio = (semanaIndex, sesionIndex, ejercicioIndex) => {
-    if (window.confirm('¿Eliminar este ejercicio?')) {
-      const newSemanas = [...planData.semanas];
-      const ejercicio = newSemanas[semanaIndex].sesiones[sesionIndex].bloques[ejercicioIndex];
-      newSemanas[semanaIndex].sesiones[sesionIndex].bloques =
-        newSemanas[semanaIndex].sesiones[sesionIndex].bloques.filter((_, i) => i !== ejercicioIndex);
-
-      if (newSemanas[semanaIndex].sesiones[sesionIndex].rondas) {
-        newSemanas[semanaIndex].sesiones[sesionIndex].rondas =
-          newSemanas[semanaIndex].sesiones[sesionIndex].rondas.map(r => ({
-            ...r,
-            bloques: r.bloques.filter(code => code !== ejercicio.code)
-          })).filter(r => r.bloques.length > 0);
-      }
-
-      setPlanData({ ...planData, semanas: newSemanas });
-    }
-  };
-
-  const updateEjercicioEnRonda = (semanaIndex, sesionIndex, rondaIndex, ejercicioCode, updatedEjercicio) => {
-    const newSemanas = [...planData.semanas];
-    const bloqueIndex = newSemanas[semanaIndex].sesiones[sesionIndex].bloques.findIndex(b => b.code === ejercicioCode);
-    if (bloqueIndex !== -1) {
-      newSemanas[semanaIndex].sesiones[sesionIndex].bloques[bloqueIndex] = updatedEjercicio;
-      setPlanData({ ...planData, semanas: newSemanas });
-      setEditingEjercicio(null);
-    }
-  };
-
-  const removeRonda = (semanaIndex, sesionIndex, rondaIndex) => {
+  const removeRonda = (semanaIndex: number, sesionIndex: number, rondaIndex: number) => {
+    if (!planData) return;
     if (window.confirm('¿Eliminar esta ronda?')) {
       const newSemanas = [...planData.semanas];
-      newSemanas[semanaIndex].sesiones[sesionIndex].rondas =
-        newSemanas[semanaIndex].sesiones[sesionIndex].rondas.filter((_, i) => i !== rondaIndex);
-      setPlanData({ ...planData, semanas: newSemanas });
+      const sesion = newSemanas[semanaIndex].sesiones[sesionIndex];
+      if (sesion && sesion.rondas) {
+        sesion.rondas = sesion.rondas.filter((_, i) => i !== rondaIndex);
+        setPlanData({ ...planData, semanas: newSemanas });
+      }
     }
   };
 
-  const toggleSemana = (index) => {
+  const toggleSemana = (index: number) => {
     const newExpanded = new Set(expandedSemanas);
     if (newExpanded.has(index)) {
       newExpanded.delete(index);
@@ -597,7 +623,7 @@ function AdaptarAsignacionPageContent() {
     setExpandedSemanas(newExpanded);
   };
 
-  const toggleSesion = (semanaIndex, sesionIndex) => {
+  const toggleSesion = (semanaIndex: number, sesionIndex: number) => {
     const key = `${semanaIndex}-${sesionIndex}`;
     const newExpanded = new Set(expandedSesiones);
     if (newExpanded.has(key)) {
@@ -608,18 +634,7 @@ function AdaptarAsignacionPageContent() {
     setExpandedSesiones(newExpanded);
   };
 
-  const toggleEjercicios = (semanaIndex, sesionIndex) => {
-    const key = `${semanaIndex}-${sesionIndex}-ej`;
-    const newExpanded = new Set(expandedEjercicios);
-    if (newExpanded.has(key)) {
-      newExpanded.delete(key);
-    } else {
-      newExpanded.add(key);
-    }
-    setExpandedEjercicios(newExpanded);
-  };
-
-  const toggleRonda = (semanaIndex, sesionIndex, rondaIndex) => {
+  const toggleRonda = (semanaIndex: number, sesionIndex: number, rondaIndex: number) => {
     const key = `${semanaIndex}-${sesionIndex}-ronda-${rondaIndex}`;
     const newExpanded = new Set(expandedEjercicios);
     if (newExpanded.has(key)) {
@@ -657,7 +672,8 @@ function AdaptarAsignacionPageContent() {
     }
   }, [expandedEjercicios, planData]);
 
-  const handleDragEnd = (event) => {
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (!planData) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -695,25 +711,34 @@ function AdaptarAsignacionPageContent() {
     }
   };
 
-  const calcularTiempoSesion = (sesion) => {
+  const calcularTiempoSesion = (sesion: PlanSesion): number => {
     if (!sesion.bloques) return 0;
+
+    // Sumar tiempo de bloques sueltos (no AD = admin/separator)
     const tiempoEjercicios = sesion.bloques
-      .filter(b => b.tipo !== 'AD')
-      .reduce((total, b) => total + (b.duracionSeg || 0), 0);
-    const tiempoRondas = (sesion.rondas || []).reduce((total, ronda) => {
-      const tiempoRonda = ronda.bloques.reduce((sum, code) => {
-        const bloque = sesion.bloques.find(b => b.code === code);
+      .filter((b: SesionBloque) => b.tipo !== 'AD')
+      .reduce((total: number, b: SesionBloque) => total + (b.duracionSeg || 0), 0);
+
+    // Sumar tiempo de rondas
+    const tiempoRondas = (sesion.rondas || []).reduce((total: number, ronda: SesionRonda) => {
+      const tiempoRonda = ronda.bloques.reduce((sum: number, codeOrBlock: string | SesionBloque) => {
+        const code = typeof codeOrBlock === 'string' ? codeOrBlock : codeOrBlock.code;
+        // Buscar el bloque en la sesión
+        const bloque = sesion.bloques.find((b: SesionBloque) => b.code === code);
         if (bloque && bloque.tipo !== 'AD') {
           return sum + (bloque.duracionSeg || 0);
         }
         return sum;
       }, 0);
-      return total + (tiempoRonda * ronda.repeticiones);
+
+      const reps = (ronda as any).repeticiones || 1;
+      return total + (tiempoRonda * reps);
     }, 0);
+
     return tiempoEjercicios + tiempoRondas;
   };
 
-  const focoLabels = {
+  const focoLabels: Record<string, string> = {
     GEN: 'General',
     SON: 'Sonido',
     FLX: 'Flexibilidad',
@@ -722,21 +747,21 @@ function AdaptarAsignacionPageContent() {
     COG: 'Cognitivo',
   };
 
-  const focoColors = {
+  const focoColors: Record<string, string> = {
     GEN: componentStyles.status.badgeDefault,
     LIG: componentStyles.status.badgeInfo,
-    RIT: componentStyles.status.badgeDefault, // purple -> default
+    RIT: componentStyles.status.badgeDefault,
     ART: componentStyles.status.badgeSuccess,
-    'S&A': componentStyles.status.badgeDefault, // brand -> default
+    'S&A': componentStyles.status.badgeDefault,
   };
 
-  const tipoColors = {
-    CA: componentStyles.status.badgeDefault, // brand -> default
+  const tipoColors: Record<string, string> = {
+    CA: componentStyles.status.badgeDefault,
     CB: componentStyles.status.badgeInfo,
-    TC: componentStyles.status.badgeDefault, // purple -> default
+    TC: componentStyles.status.badgeDefault,
     TM: componentStyles.status.badgeSuccess,
-    FM: componentStyles.status.badgeDefault, // pink -> default
-    VC: componentStyles.status.badgeInfo, // cyan -> info
+    FM: componentStyles.status.badgeDefault,
+    VC: componentStyles.status.badgeInfo,
     AD: componentStyles.status.badgeDefault,
   };
 
@@ -799,189 +824,128 @@ function AdaptarAsignacionPageContent() {
       <LoadingSpinner
         size="xl"
         variant="fullPage"
-        text="Cargando plan..."
+        text="Cargando datos del plan..."
       />
     );
   }
 
-  const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
-  const isCerrada = asignacion.estado === 'cerrada';
-
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        icon={Target}
-        title="Adaptar Plan de Asignación"
-        subtitle={`Estudiante: ${getNombreVisible(alumno)} • Pieza: ${asignacion.piezaSnapshot?.nombre}`}
-        actions={
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="ghost" onClick={() => navigate(-1)} className={componentStyles.buttons.ghost}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver
-            </Button>
-            <Button
-              onClick={handleGuardar}
-              disabled={guardarMutation.isPending}
-              variant="outline"
-              className={componentStyles.buttons.outline}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Guardar cambios
-            </Button>
-            {asignacion.estado === 'borrador' && (
+    <div className={`min-h-screen ${componentStyles.layout.pageBackground} p-6 pb-20`}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="max-w-5xl mx-auto space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => navigate(-1)}
+                className="mr-2"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <h1 className={componentStyles.typography.pageTitle}>Adaptar Plan</h1>
+                <p className="text-ui/60 text-sm">
+                  {asignacion.piezaSnapshot?.nombre || 'Pieza sin nombre'} • {usuarios.find(u => u.id === asignacion.alumnoId)?.nombreCompleto || 'Alumno'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleGuardar}
+                className={componentStyles.buttons.outline}
+                disabled={guardarMutation.isPending}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {guardarMutation.isPending ? 'Guardando...' : 'Guardar borrador'}
+              </Button>
               <Button
                 onClick={handlePublicar}
+                className={componentStyles.buttons.primary}
                 disabled={publicarMutation.isPending}
-                className={`${componentStyles.buttons.primary} shadow-sm focus-brand`}
               >
-                Publicar asignación
-              </Button>
-            )}
-          </div>
-        }
-      />
-
-      <div className="studia-section space-y-4">
-        {isCerrada && (
-          <Alert className={`${componentStyles.containers.panelBase} border-[var(--color-warning)] bg-[var(--color-warning)]/10 rounded-[var(--radius-card)]`}>
-            <AlertCircle className="h-4 w-4 text-[var(--color-warning)]" />
-            <AlertDescription className={`${componentStyles.typography.bodyText} text-[var(--color-warning)]`}>
-              <strong>Advertencia:</strong> Esta asignación está cerrada. Los cambios se guardarán pero considera duplicar como borrador para preservar el histórico.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <Card className={componentStyles.containers.cardBase}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Árbol del Plan ({planData.semanas.length} semanas)</CardTitle>
-              <Button onClick={addSemana} size="sm" className={`${componentStyles.buttons.primary} h-9 shadow-sm`}>
-                <Plus className="w-4 h-4 mr-2" />
-                Añadir Semana
+                {publicarMutation.isPending ? 'Publicando...' : 'Publicar'}
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-2 sm:space-y-2">
-            {planData.semanas.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-ui/80 mb-4">No hay semanas en este plan</p>
-                <Button onClick={addSemana} variant="outline" className={componentStyles.buttons.outline}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Crear Primera Semana
-                </Button>
-              </div>
-            ) : (
-              <DndProvider onDragEnd={handleDragEnd}>
-                <SortableContext
-                  items={planData.semanas.map((_, i) => `semana-${i}`)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-2">
-                    {planData.semanas.map((semana, semanaIndex) => (
-                      <SortableSemanaAdaptar
-                        key={`semana-${semanaIndex}`}
-                        id={`semana-${semanaIndex}`}
-                        semana={semana}
-                        semanaIndex={semanaIndex}
-                        expandedSemanas={expandedSemanas}
-                        expandedSesiones={expandedSesiones}
-                        expandedEjercicios={expandedEjercicios}
-                        toggleSemana={toggleSemana}
-                        toggleSesion={toggleSesion}
-                        toggleRonda={toggleRonda}
-                        calcularTiempoSesion={calcularTiempoSesion}
-                        setEditingSemana={setEditingSemana}
-                        setEditingSesion={setEditingSesion}
-                        removeSemana={removeSemana}
-                        removeSesion={removeSesion}
-                        addSesion={addSesion}
-                        duplicateSemana={duplicateSemana}
-                        focoColors={focoColors}
-                        focoLabels={focoLabels}
-                        tipoColors={tipoColors}
-                        componentStyles={componentStyles}
-                        ensureRondaIds={ensureRondaIds}
-                        getSecuencia={getSecuencia}
-                        mapBloquesByCode={mapBloquesByCode}
-                        dbBloques={dbBloques}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndProvider>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
 
+          <SortableContext
+            items={planData.semanas.map((_, i) => `semana-${i}`)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-4">
+              {planData.semanas.map((semana, index) => (
+                <SortableSemanaAdaptar
+                  key={`semana-${index}`}
+                  id={`semana-${index}`}
+                  semana={semana}
+                  semanaIndex={index}
+                  expandedSemanas={expandedSemanas}
+                  expandedSesiones={expandedSesiones}
+                  expandedEjercicios={expandedEjercicios}
+                  toggleSemana={toggleSemana}
+                  toggleSesion={toggleSesion}
+                  toggleRonda={toggleRonda}
+                  calcularTiempoSesion={calcularTiempoSesion}
+                  setEditingSemana={setEditingSemana}
+                  setEditingSesion={setEditingSesion}
+                  removeSemana={removeSemana}
+                  removeSesion={removeSesion}
+                  addSesion={addSesion}
+                  duplicateSemana={duplicateSemana}
+                  focoColors={focoColors}
+                  focoLabels={focoLabels}
+                  tipoColors={tipoColors}
+                  componentStyles={componentStyles}
+                  ensureRondaIds={ensureRondaIds}
+                  getSecuencia={getSecuencia}
+                  mapBloquesByCode={mapBloquesByCode}
+                  dbBloques={dbBloques}
+                />
+              ))}
+            </div>
+          </SortableContext>
+
+          <Button
+            onClick={addSemana}
+            variant="outline"
+            className={`w-full py-6 border-dashed border-2 ${componentStyles.buttons.outline}`}
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Añadir Semana
+          </Button>
+        </div>
+      </DndContext>
+
+      {/* Modales de edición */}
       {editingSemana && (
         <WeekEditor
-          semana={editingSemana.semana}
-          onSave={(updated) => updateSemana(editingSemana.index, updated)}
           onClose={() => setEditingSemana(null)}
+          onSave={(updated: any) => updateSemana(editingSemana.index, updated)}
+          semana={editingSemana.semana as any}
         />
       )}
 
       {editingSesion && (
         <SessionEditor
-          sesion={editingSesion.sesion}
-          pieza={null} // En adaptar plan, la pieza es global, pero aquí podríamos pasarla si fuera necesario
-          piezaSnapshot={asignacion?.piezaSnapshot}
-          alumnoId={asignacion?.alumnoId}
-          onSave={(updatedSesion) => {
-            updateSesion(editingSesion.semanaIndex, editingSesion.sesionIndex, updatedSesion);
-          }}
           onClose={() => setEditingSesion(null)}
+          onSave={(updated: any) => updateSesion(
+            editingSesion.semanaIndex,
+            editingSesion.sesionIndex,
+            updated
+          )}
+          sesion={editingSesion.sesion as any}
+          pieza={asignacion?.piezaSnapshot as any}
+          piezaSnapshot={asignacion?.piezaSnapshot as any}
+          alumnoId={asignacion?.alumnoId || ''}
         />
       )}
-
-      {editingEjercicio && (() => {
-        // Enrich ejercicio with variations from dbBloques
-        const baseEjercicio = editingEjercicio.ejercicio;
-        const dbBloque = dbBloques.find(db => db.code === baseEjercicio.code || db.id === baseEjercicio.id);
-        const enrichedEjercicio = {
-          ...baseEjercicio,
-          variations: baseEjercicio.variations || dbBloque?.variations || dbBloque?.content || []
-        };
-        // DEBUG LOG - can be removed after fixing
-        console.log('[adaptar-asignacion] Enriching ejercicio for ExerciseEditor:', {
-          baseCode: baseEjercicio.code,
-          baseVariations: baseEjercicio.variations,
-          dbBloqueFound: !!dbBloque,
-          dbBloqueVariations: dbBloque?.variations,
-          dbBloqueContent: dbBloque?.content,
-          finalVariations: enrichedEjercicio.variations
-        });
-        return (
-          <ExerciseEditor
-            ejercicio={enrichedEjercicio}
-            piezaSnapshot={asignacion.piezaSnapshot}
-            isInlineMode={true}
-            onClose={(updated) => {
-              if (updated) {
-                if (editingEjercicio.source === 'ronda') {
-                  updateEjercicioEnRonda(
-                    editingEjercicio.semanaIndex,
-                    editingEjercicio.sesionIndex,
-                    editingEjercicio.rondaIndex,
-                    editingEjercicio.ejercicioCode,
-                    updated
-                  );
-                } else {
-                  updateEjercicioInline(
-                    editingEjercicio.semanaIndex,
-                    editingEjercicio.sesionIndex,
-                    editingEjercicio.ejercicioIndex,
-                    updated
-                  );
-                }
-              } else {
-                setEditingEjercicio(null);
-              }
-            }}
-          />
-        );
-      })()}
     </div>
   );
 }

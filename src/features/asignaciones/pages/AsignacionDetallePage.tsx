@@ -33,15 +33,16 @@ import { componentStyles } from "@/design/componentStyles";
 export default function AsignacionDetallePage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [expandedSemanas, setExpandedSemanas] = useState(new Set([0]));
-  const [expandedSesiones, setExpandedSesiones] = useState(new Set());
+  const [expandedSemanas, setExpandedSemanas] = useState<Set<number>>(new Set([0]));
+  const [expandedSesiones, setExpandedSesiones] = useState<Set<string>>(new Set());
   const [showEditDrawer, setShowEditDrawer] = useState(false);
-  const [editData, setEditData] = useState(null);
+  const [editData, setEditData] = useState<any>(null);
 
   const urlParams = new URLSearchParams(window.location.search);
-  const asignacionId = urlParams.get('id');
+  const asignacionId = urlParams.get('id') || '';
 
   const effectiveUser = useEffectiveUser();
+
 
   // Query para obtener bloques con hook centralizado
   const { data: dbBloques = [], isLoading: isLoadingBloques, isError: isErrorBloques } = useBloques();
@@ -98,8 +99,8 @@ export default function AsignacionDetallePage() {
   });
 
   const editarMutation = useMutation({
-    mutationFn: async (data) => {
-      if (data.piezaId && data.piezaId !== asignacion.piezaId) {
+    mutationFn: async (data: any) => {
+      if (data.piezaId && asignacion && data.piezaId !== asignacion.piezaId) {
         const pieza = piezas.find(p => p.id === data.piezaId);
         if (pieza) {
           data.piezaSnapshot = {
@@ -119,7 +120,7 @@ export default function AsignacionDetallePage() {
       toast.success('✅ Cambios guardados');
       setShowEditDrawer(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('[asignacion-detalle.jsx] Error al actualizar asignación:', error);
       let errorMsg = '❌ Error al guardar cambios. Inténtalo de nuevo.';
 
@@ -138,10 +139,15 @@ export default function AsignacionDetallePage() {
     },
   });
 
-  const calcularLunesSemanaISO = (fecha) => {
+  const calcularLunesSemanaISO = (fecha: string | Date) => {
     if (!fecha) return formatLocalDate(startOfMonday(new Date()));
     try {
-      const date = parseLocalDate(fecha);
+      let date: Date;
+      if (typeof fecha === 'string') {
+        date = parseLocalDate(fecha);
+      } else {
+        date = fecha;
+      }
       return formatLocalDate(startOfMonday(date));
     } catch (error) {
       return formatLocalDate(startOfMonday(new Date()));
@@ -152,22 +158,22 @@ export default function AsignacionDetallePage() {
   useEffect(() => {
     if (editData?.fechaSeleccionada) {
       const lunes = calcularLunesSemanaISO(editData.fechaSeleccionada);
-      setEditData(prev => ({ ...prev, semanaInicioISO: lunes }));
+      setEditData((prev: any) => ({ ...prev, semanaInicioISO: lunes }));
     }
   }, [editData?.fechaSeleccionada]);
 
   // Verificar si el usuario puede editar el profesor asignado
   const puedeEditarProfesor = useMemo(() => {
     if (!asignacion || !effectiveUser) return false;
-    const isAdmin = effectiveUser?.rolPersonalizado === 'ADMIN';
+    const isAdmin = (effectiveUser as any).rolPersonalizado === 'ADMIN';
     if (isAdmin) return true;
 
     // Si es profesor, solo puede editar si es su asignación
-    const isProf = effectiveUser?.rolPersonalizado === 'PROF';
+    const isProf = (effectiveUser as any).rolPersonalizado === 'PROF';
     if (isProf) {
       // Verificar si el profesorId de la asignación coincide con el ID del usuario actual
       // (considerando posibles desincronizaciones entre auth y BD)
-      return asignacion.profesorId === userIdActual || asignacion.profesorId === effectiveUser?.id;
+      return asignacion.profesorId === userIdActual || asignacion.profesorId === (effectiveUser as any)?.id;
     }
 
     return false;
@@ -208,7 +214,7 @@ export default function AsignacionDetallePage() {
   useEffect(() => {
     if (!showEditDrawer) return;
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === '.') {
         e.preventDefault();
         setShowEditDrawer(false);
@@ -229,6 +235,7 @@ export default function AsignacionDetallePage() {
       toast.error('❌ Error: No hay datos para guardar');
       return;
     }
+    if (!asignacion) return;
     console.log('[handleGuardarEdicion] piezaId:', editData.piezaId, 'fechaSeleccionada:', editData.fechaSeleccionada);
     // piezaId can be null (optional field now)
     if (!editData.fechaSeleccionada || editData.fechaSeleccionada.trim() === '') {
@@ -268,7 +275,7 @@ export default function AsignacionDetallePage() {
       ? editData.notas.trim()
       : null;
 
-    const dataToSave = {
+    const dataToSave: any = {
       piezaId: editData.piezaId,
       semanaInicioISO: semanaInicioISO,
       foco: foco,
@@ -300,7 +307,7 @@ export default function AsignacionDetallePage() {
     editarMutation.mutate(dataToSave);
   };
 
-  const toggleSemana = (index) => {
+  const toggleSemana = (index: number) => {
     const newExpanded = new Set(expandedSemanas);
     if (newExpanded.has(index)) {
       newExpanded.delete(index);
@@ -310,7 +317,7 @@ export default function AsignacionDetallePage() {
     setExpandedSemanas(newExpanded);
   };
 
-  const toggleSesion = (semanaIndex, sesionIndex) => {
+  const toggleSesion = (semanaIndex: number, sesionIndex: number) => {
     const key = `${semanaIndex}-${sesionIndex}`;
     const newExpanded = new Set(expandedSesiones);
     if (newExpanded.has(key)) {
@@ -389,7 +396,7 @@ export default function AsignacionDetallePage() {
   const alumno = usuarios.find(u => u.id === asignacion.alumnoId);
   const isCerrada = asignacion.estado === 'cerrada';
   const isBorrador = asignacion.estado === 'borrador';
-  const isAdminOrProf = effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF';
+  const isAdminOrProf = (effectiveUser as any)?.rolPersonalizado === 'ADMIN' || (effectiveUser as any)?.rolPersonalizado === 'PROF';
 
   return (
     <div className="min-h-screen bg-background">
@@ -462,8 +469,8 @@ export default function AsignacionDetallePage() {
                   </Button>
                 )}
                 {/* 6. Estado (Badge) */}
-                <Badge className={`rounded-full ${estadoColors[asignacion.estado]}`}>
-                  {estadoLabels[asignacion.estado]}
+                <Badge className={`rounded-full ${estadoColors[asignacion.estado as keyof typeof estadoColors]}`}>
+                  {estadoLabels[asignacion.estado as keyof typeof estadoLabels]}
                 </Badge>
                 {/* Publicar (solo si es borrador) */}
                 {isBorrador && (
@@ -556,8 +563,8 @@ export default function AsignacionDetallePage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-1 uppercase tracking-wide">Foco</p>
                     <div className="mt-0.5">
-                      <Badge className={focoColors[asignacion.foco]}>
-                        {focoLabels[asignacion.foco]}
+                      <Badge className={focoColors[asignacion.foco as keyof typeof focoColors]}>
+                        {focoLabels[asignacion.foco as keyof typeof focoLabels]}
                       </Badge>
                     </div>
                   </div>
@@ -618,8 +625,8 @@ export default function AsignacionDetallePage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-semibold text-base text-[var(--color-text-primary)]">{semana.nombre}</h3>
-                      <Badge className={`rounded-full ${focoColors[semana.foco]}`}>
-                        {focoLabels[semana.foco]}
+                      <Badge className={`rounded-full ${focoColors[(semana.foco || 'GEN') as keyof typeof focoColors]}`}>
+                        {focoLabels[(semana.foco || 'GEN') as keyof typeof focoLabels]}
                       </Badge>
                       <span className="text-sm text-[var(--color-text-secondary)]">
                         ({semana.sesiones?.length || 0} sesiones)
@@ -671,14 +678,14 @@ export default function AsignacionDetallePage() {
                                   <Clock className="w-3 h-3 mr-1" />
                                   {tiempoMinutos}:{String(tiempoSegundos).padStart(2, '0')} min
                                 </Badge>
-                                <Badge className={focoColors[sesion.foco]} variant="outline">
-                                  {focoLabels[sesion.foco]}
+                                <Badge className={focoColors[(sesion.foco || 'GEN') as keyof typeof focoColors]} variant="outline">
+                                  {focoLabels[(sesion.foco || 'GEN') as keyof typeof focoLabels]}
                                 </Badge>
                               </div>
 
                               {isExpanded && (
                                 <div className="ml-2 mt-1.5" onClick={(e) => e.stopPropagation()}>
-                                  <SessionContentView sesion={sesion} dbBloques={dbBloques} />
+                                  <SessionContentView sesion={sesion as any} dbBloques={dbBloques} />
                                 </div>
                               )}
                             </div>
@@ -731,7 +738,6 @@ export default function AsignacionDetallePage() {
                   <Select
                     value={editData.piezaId || 'none'}
                     onValueChange={(v) => setEditData({ ...editData, piezaId: v === 'none' ? null : v })}
-                    modal={false}
                   >
                     <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona una pieza" />
@@ -796,7 +802,6 @@ export default function AsignacionDetallePage() {
                   <Select
                     value={editData.foco}
                     onValueChange={(v) => setEditData({ ...editData, foco: v })}
-                    modal={false}
                   >
                     <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                       <SelectValue placeholder="Selecciona un foco" />
@@ -833,7 +838,6 @@ export default function AsignacionDetallePage() {
                     <Select
                       value={editData.profesorId || ''}
                       onValueChange={(v) => setEditData({ ...editData, profesorId: v || null })}
-                      modal={false}
                     >
                       <SelectTrigger id="profesor" className={`w-full ${componentStyles.controls.selectDefault}`}>
                         <SelectValue placeholder="Selecciona un profesor" />
@@ -856,7 +860,7 @@ export default function AsignacionDetallePage() {
                         )}
                       </SelectContent>
                     </Select>
-                    {effectiveUser?.rolPersonalizado === 'PROF' && (
+                    {(effectiveUser as any)?.rolPersonalizado === 'PROF' && (
                       <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                         Solo puedes cambiar el profesor de tus propias asignaciones.
                       </p>

@@ -48,7 +48,7 @@ function AsignacionesPageContent() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('all');
-  const [profesoresFilter, setProfesoresFilter] = useState([]);
+  const [profesoresFilter, setProfesoresFilter] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
 
   // Estado para filtro por semana (ISO formato YYYY-MM-DD)
@@ -60,7 +60,7 @@ function AsignacionesPageContent() {
   // Helper para convertir ISO a Date (compatibilidad con código existente)
   const semanaSeleccionada = parseLocalDate(semanaSeleccionadaISO);
 
-  const cambiarSemana = (direccion) => {
+  const cambiarSemana = (direccion: number) => {
     const base = parseLocalDate(semanaSeleccionadaISO);
     base.setDate(base.getDate() + (direccion * 7));
     const lunes = startOfMonday(base);
@@ -76,9 +76,9 @@ function AsignacionesPageContent() {
 
   const [showAsignarProfesorDialog, setShowAsignarProfesorDialog] = useState(false);
   const [showAsignarEstudianteDialog, setShowAsignarEstudianteDialog] = useState(false);
-  const [asignacionParaAsignar, setAsignacionParaAsignar] = useState(null);
-  const [idsParaAsignar, setIdsParaAsignar] = useState(null);
-  const [tipoAsignacion, setTipoAsignacion] = useState(null); // 'profesor' o 'estudiante'
+  const [asignacionParaAsignar, setAsignacionParaAsignar] = useState<string | null>(null);
+  const [idsParaAsignar, setIdsParaAsignar] = useState<string[] | null>(null);
+  const [tipoAsignacion, setTipoAsignacion] = useState<'profesor' | 'estudiante' | null>(null); // 'profesor' o 'estudiante'
   const [profesorSeleccionado, setProfesorSeleccionado] = useState('');
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState('');
 
@@ -100,7 +100,7 @@ function AsignacionesPageContent() {
 
 
   const cerrarMutation = useMutation({
-    mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' }),
+    mutationFn: (id: string) => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Asignación cerrada');
@@ -108,7 +108,7 @@ function AsignacionesPageContent() {
   });
 
   const reabrirMutation = useMutation({
-    mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'publicada' }),
+    mutationFn: (id: string) => localDataClient.entities.Asignacion.update(id, { estado: 'publicada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Asignación reabierta');
@@ -116,7 +116,7 @@ function AsignacionesPageContent() {
   });
 
   const publicarMutation = useMutation({
-    mutationFn: (id) => localDataClient.entities.Asignacion.update(id, { estado: 'publicada' }),
+    mutationFn: (id: string) => localDataClient.entities.Asignacion.update(id, { estado: 'publicada' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Asignación publicada');
@@ -124,7 +124,7 @@ function AsignacionesPageContent() {
   });
 
   const duplicarMutation = useMutation({
-    mutationFn: async (asignacion) => {
+    mutationFn: async (asignacion: any) => {
       const newData = {
         alumnoId: asignacion.alumnoId,
         piezaId: asignacion.piezaId,
@@ -134,9 +134,9 @@ function AsignacionesPageContent() {
         notas: asignacion.notas,
         plan: JSON.parse(JSON.stringify(asignacion.plan)),
         piezaSnapshot: JSON.parse(JSON.stringify(asignacion.piezaSnapshot)),
-        profesorId: userIdActual || effectiveUser.id,
+        profesorId: userIdActual || (effectiveUser as any).id,
       };
-      return localDataClient.entities.Asignacion.create(newData);
+      return localDataClient.entities.Asignacion.create(newData as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
@@ -145,7 +145,7 @@ function AsignacionesPageContent() {
   });
 
   const eliminarMutation = useMutation({
-    mutationFn: (id) => localDataClient.entities.Asignacion.delete(id),
+    mutationFn: (id: string) => localDataClient.entities.Asignacion.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['asignaciones'] });
       toast.success('✅ Asignación eliminada');
@@ -153,7 +153,7 @@ function AsignacionesPageContent() {
   });
 
   const eliminarBulkMutation = useMutation({
-    mutationFn: async (ids) => {
+    mutationFn: async (ids: string[]) => {
       await Promise.all(ids.map(id => localDataClient.entities.Asignacion.delete(id)));
     },
     onSuccess: (_, ids) => {
@@ -163,7 +163,7 @@ function AsignacionesPageContent() {
   });
 
   const cerrarBulkMutation = useMutation({
-    mutationFn: async (ids) => {
+    mutationFn: async (ids: string[]) => {
       await Promise.all(ids.map(id => localDataClient.entities.Asignacion.update(id, { estado: 'cerrada' })));
     },
     onSuccess: (_, ids) => {
@@ -173,7 +173,7 @@ function AsignacionesPageContent() {
   });
 
   const duplicarBulkMutation = useMutation({
-    mutationFn: async (ids) => {
+    mutationFn: async (ids: string[]) => {
       const asignacionesParaDuplicar = asignacionesFinales.filter(a => ids.includes(a.id));
       await Promise.all(asignacionesParaDuplicar.map(a => {
         const newData = {
@@ -185,7 +185,7 @@ function AsignacionesPageContent() {
           notas: a.notas,
           plan: JSON.parse(JSON.stringify(a.plan)),
           piezaSnapshot: JSON.parse(JSON.stringify(a.piezaSnapshot)),
-          profesorId: userIdActual || effectiveUser.id,
+          profesorId: userIdActual || (effectiveUser as any).id,
         };
         return localDataClient.entities.Asignacion.create(newData);
       }));
@@ -197,7 +197,7 @@ function AsignacionesPageContent() {
   });
 
   const asignarProfesorMutation = useMutation({
-    mutationFn: async ({ id, profesorId }) => {
+    mutationFn: async ({ id, profesorId }: { id: string; profesorId: string }) => {
       return localDataClient.entities.Asignacion.update(id, { profesorId });
     },
     onSuccess: () => {
@@ -211,7 +211,7 @@ function AsignacionesPageContent() {
   });
 
   const asignarProfesorBulkMutation = useMutation({
-    mutationFn: async ({ ids, profesorId }) => {
+    mutationFn: async ({ ids, profesorId }: { ids: string[]; profesorId: string }) => {
       await Promise.all(ids.map(id => localDataClient.entities.Asignacion.update(id, { profesorId })));
     },
     onSuccess: (_, { ids }) => {
@@ -225,7 +225,7 @@ function AsignacionesPageContent() {
   });
 
   const asignarEstudianteMutation = useMutation({
-    mutationFn: async ({ id, alumnoId }) => {
+    mutationFn: async ({ id, alumnoId }: { id: string; alumnoId: string }) => {
       return localDataClient.entities.Asignacion.update(id, { alumnoId });
     },
     onSuccess: () => {
@@ -239,7 +239,7 @@ function AsignacionesPageContent() {
   });
 
   const asignarEstudianteBulkMutation = useMutation({
-    mutationFn: async ({ ids, alumnoId }) => {
+    mutationFn: async ({ ids, alumnoId }: { ids: string[]; alumnoId: string }) => {
       await Promise.all(ids.map(id => localDataClient.entities.Asignacion.update(id, { alumnoId })));
     },
     onSuccess: (_, { ids }) => {
@@ -377,7 +377,7 @@ function AsignacionesPageContent() {
         const semanaActual = parseLocalDate(semanaSeleccionadaISO);
 
         // Calcular offset de semanas
-        const diffTime = semanaActual - inicioPlan;
+        const diffTime = semanaActual.getTime() - inicioPlan.getTime();
         const diffDays = diffTime / (1000 * 60 * 60 * 24);
         const offsetWeeks = Math.floor(diffDays / 7);
 
@@ -400,7 +400,7 @@ function AsignacionesPageContent() {
       const term = searchTerm.toLowerCase();
       resultado = resultado.filter(a => {
         // Usar data embebida
-        const nombreAlumno = (a.alumnoNombre || '').toLowerCase();
+        const nombreAlumno = ((a as any).alumnoNombre || '').toLowerCase();
         const pieza = (a.piezaSnapshot?.nombre || '').toLowerCase();
         return nombreAlumno.includes(term) || pieza.includes(term);
       });
@@ -409,14 +409,14 @@ function AsignacionesPageContent() {
     return resultado;
   }, [asignacionesFiltradas, estadoFilter, profesoresFilter, searchTerm, usuarios, semanaSeleccionadaISO]);
 
-  const estadoLabels = {
+  const estadoLabels: Record<string, string> = {
     borrador: 'Borrador',
     publicada: 'Publicada',
     en_curso: 'En Curso',
     cerrada: 'Cerrada',
   };
 
-  const estadoColors = {
+  const estadoColors: Record<string, string> = {
     borrador: componentStyles.status.badgeDefault,
     publicada: componentStyles.status.badgeSuccess,
     en_curso: componentStyles.status.badgeInfo,
@@ -427,7 +427,7 @@ function AsignacionesPageContent() {
     {
       key: 'alumno',
       label: 'Estudiante',
-      render: (a) => {
+      render: (a: any) => {
         // Usar embedded alumnoNombre del RPC
         const nombreAlumno = a.alumnoNombre || (a.alumnoId ? displayNameById(a.alumnoId) : 'Sin nombre');
         // Si necesitamos email y no está en RPC, podríamos buscar en usuarios (si existen)
@@ -444,7 +444,7 @@ function AsignacionesPageContent() {
     {
       key: 'profesor',
       label: 'Profesor',
-      render: (a) => {
+      render: (a: any) => {
         // Usar embedded profesorNombre del RPC
         const nombreProfesor = a.profesorNombre || (a.profesorId ? displayNameById(a.profesorId) : 'Sin asignar');
         const profesor = usuarios.find(u => u.id === a.profesorId);
@@ -462,7 +462,7 @@ function AsignacionesPageContent() {
     {
       key: 'pieza',
       label: 'Pieza',
-      render: (a) => (
+      render: (a: any) => (
         <div>
           <p className="font-medium text-sm">{a.piezaSnapshot?.nombre}</p>
           <p className="text-xs text-ui/80">{a.piezaSnapshot?.nivel}</p>
@@ -472,7 +472,7 @@ function AsignacionesPageContent() {
     {
       key: 'plan',
       label: 'Plan',
-      render: (a) => {
+      render: (a: any) => {
         // Calcular semana actual del plan
         let semanaActual = null;
         let numSemanas = 0;
@@ -484,7 +484,7 @@ function AsignacionesPageContent() {
             numSemanas = a.plan.semanas.length;
             const semanaActualPlan = parseLocalDate(semanaSeleccionadaISO);
 
-            const diffTime = semanaActualPlan - inicioPlan;
+            const diffTime = semanaActualPlan.getTime() - inicioPlan.getTime();
             const diffDays = diffTime / (1000 * 60 * 60 * 24);
             const offsetWeeks = Math.floor(diffDays / 7);
 
@@ -526,7 +526,7 @@ function AsignacionesPageContent() {
     {
       key: 'inicio',
       label: 'Inicio',
-      render: (a) => {
+      render: (a: any) => {
         if (!a.semanaInicioISO) {
           return <p className="text-sm text-ui/60">-</p>;
         }
@@ -540,7 +540,7 @@ function AsignacionesPageContent() {
     {
       key: 'estado',
       label: 'Estado',
-      render: (a) => (
+      render: (a: any) => (
         <Badge className={`rounded-full ${estadoColors[a.estado]}`}>
           {estadoLabels[a.estado]}
         </Badge>
@@ -548,7 +548,7 @@ function AsignacionesPageContent() {
     },
   ];
 
-  const isAdminOrProf = effectiveUser?.rolPersonalizado === 'ADMIN' || effectiveUser?.rolPersonalizado === 'PROF';
+  const isAdminOrProf = (effectiveUser as any)?.rolPersonalizado === 'ADMIN' || (effectiveUser as any)?.rolPersonalizado === 'PROF';
 
   return (
     <div className="min-h-screen bg-background">
@@ -661,8 +661,9 @@ function AsignacionesPageContent() {
                   id: 'assign-profesor',
                   label: 'Cambiar profesor',
                   icon: User,
-                  onClick: (ids) => {
-                    setIdsParaAsignar(ids);
+                  onClick: (ids?: any[]) => {
+                    if (!ids) return;
+                    setIdsParaAsignar(ids as string[]);
                     setAsignacionParaAsignar(null);
                     setTipoAsignacion('profesor');
                     setProfesorSeleccionado('');
@@ -673,8 +674,9 @@ function AsignacionesPageContent() {
                   id: 'assign-estudiante',
                   label: 'Cambiar estudiante',
                   icon: Users,
-                  onClick: (ids) => {
-                    setIdsParaAsignar(ids);
+                  onClick: (ids?: any[]) => {
+                    if (!ids) return;
+                    setIdsParaAsignar(ids as string[]);
                     setAsignacionParaAsignar(null);
                     setTipoAsignacion('estudiante');
                     setEstudianteSeleccionado('');
@@ -685,9 +687,10 @@ function AsignacionesPageContent() {
                   id: 'duplicate',
                   label: 'Duplicar',
                   icon: Copy,
-                  onClick: (ids) => {
+                  onClick: (ids?: any[]) => {
+                    if (!ids) return;
                     if (window.confirm(`¿Duplicar ${ids.length} asignación${ids.length > 1 ? 'es' : ''} como borradores?`)) {
-                      duplicarBulkMutation.mutate(ids);
+                      duplicarBulkMutation.mutate(ids as string[]);
                     }
                   },
                 },
@@ -695,9 +698,10 @@ function AsignacionesPageContent() {
                   id: 'close',
                   label: 'Cerrar',
                   icon: XCircle,
-                  onClick: (ids) => {
+                  onClick: (ids?: any[]) => {
+                    if (!ids) return;
                     if (window.confirm(`¿Cerrar ${ids.length} asignación${ids.length > 1 ? 'es' : ''}?`)) {
-                      cerrarBulkMutation.mutate(ids);
+                      cerrarBulkMutation.mutate(ids as string[]);
                     }
                   },
                 },
@@ -705,9 +709,10 @@ function AsignacionesPageContent() {
                   id: 'delete',
                   label: 'Eliminar',
                   icon: Trash2,
-                  onClick: (ids) => {
+                  onClick: (ids?: any[]) => {
+                    if (!ids) return;
                     if (window.confirm(`¿Eliminar permanentemente ${ids.length} asignación${ids.length > 1 ? 'es' : ''}?`)) {
-                      eliminarBulkMutation.mutate(ids);
+                      eliminarBulkMutation.mutate(ids as string[]);
                     }
                   },
                 },
@@ -715,8 +720,10 @@ function AsignacionesPageContent() {
                   id: 'export',
                   label: 'Exportar CSV',
                   icon: FileDown,
-                  onClick: (ids) => {
-                    const asignacionesSeleccionadas = asignacionesFinales.filter(a => ids.includes(a.id));
+                  onClick: (ids?: any[]) => {
+                    if (!ids) return;
+                    const idsStr = ids as string[];
+                    const asignacionesSeleccionadas = asignacionesFinales.filter(a => idsStr.includes(a.id));
                     const headers = ['Estudiante', 'Profesor', 'Pieza', 'Plan', 'Inicio', 'Estado', 'Semanas'];
                     const rows = asignacionesSeleccionadas.map(a => {
                       const alumno = usuarios.find(u => u.id === a.alumnoId);
@@ -743,7 +750,7 @@ function AsignacionesPageContent() {
                   },
                 },
               ]}
-              getRowActions={(a) => {
+              getRowActions={(a: any) => {
                 const actions = [
                   {
                     id: 'view',
@@ -828,7 +835,6 @@ function AsignacionesPageContent() {
                 actions.push({
                   id: 'delete',
                   label: 'Eliminar',
-                  destructive: true,
                   onClick: () => {
                     if (window.confirm('¿Eliminar permanentemente esta asignación?')) {
                       eliminarMutation.mutate(a.id);

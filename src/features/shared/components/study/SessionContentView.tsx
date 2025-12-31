@@ -239,9 +239,9 @@ export default function SessionContentView({
 
                             {isOpen && (
                                 <div className="ml-2 mt-1.5 space-y-1">
-                                    {r.bloques.map((code: string, j: number) => {
-                                        const ej = bloquesMap.get(code);
-                                        if (!ej) {
+                                    {r.bloques.map((codeOrBlock: string | any, j: number) => {
+                                        const code = typeof codeOrBlock === 'string' ? codeOrBlock : codeOrBlock.code;
+                                        const ej = bloquesMap.get(code); if (!ej) {
                                             return (
                                                 <div key={`r-${key}-${j}`} className={`text-xs text-[var(--color-danger)] p-1 ml-2`}>
                                                     ⚠️ Referencia huérfana: {code}

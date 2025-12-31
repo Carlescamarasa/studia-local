@@ -1,6 +1,6 @@
-import { Bloque, Plan, Pieza, EvaluacionTecnica } from '@/features/shared/types/domain';
+import { Bloque, Plan, Pieza, EvaluacionTecnica, PlanSemana, PlanSesion, SesionBloque, SesionRonda } from '@/features/shared/types/domain';
 
-export type { Bloque, Plan, Pieza, EvaluacionTecnica };
+export type { Bloque, Plan, Pieza, EvaluacionTecnica, PlanSemana, PlanSesion, SesionBloque, SesionRonda };
 
 export interface PiezaSnapshot {
     id?: string;

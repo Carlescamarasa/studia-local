@@ -22,9 +22,7 @@ import { useEffectiveUser } from "@/providers/EffectiveUserProvider";
 import { createPortal } from "react-dom";
 import { componentStyles } from "@/design/componentStyles";
 import { supabase } from "@/lib/supabaseClient";
-// @ts-expect-error PieceEditor not typed yet
 import PieceEditor from "@/features/editor/components/PieceEditor";
-// @ts-expect-error PlanEditor not typed yet
 import PlanEditor from "@/features/editor/components/PlanEditor";
 
 // ============================================================================
@@ -310,7 +308,7 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
   }, [planes.length, contadorPlanesAntes, queryClient]);
 
   const handleCrear = () => {
-    const newErrors = {};
+    const newErrors: FormErrors = {};
     let hasError = false;
 
     if (formData.estudiantesIds.length === 0) {
@@ -446,7 +444,6 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
                         setFormData({ ...formData, piezaId: v });
                         if (errors.pieza) setErrors({ ...errors, pieza: null });
                       }}
-                      modal={false}
                     >
                       <SelectTrigger id="pieza" className={`w-full ${componentStyles.controls.selectDefault} ${errors.pieza ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Selecciona una pieza..." />
@@ -560,7 +557,6 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
                         setFormData({ ...formData, planId: v });
                         if (errors.plan) setErrors({ ...errors, plan: null });
                       }}
-                      modal={false}
                     >
                       <SelectTrigger id="plan" className={`w-full ${componentStyles.controls.selectDefault} ${errors.plan ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Selecciona un plan..." />
@@ -590,7 +586,7 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
                         <div className="flex gap-4 text-xs text-[var(--color-text-secondary)]">
                           <span><strong className="text-[var(--color-text-primary)]">Semanas:</strong> {planSeleccionado.semanas?.length || 0}</span>
                           {planSeleccionado.focoGeneral && (
-                            <span><strong className="text-[var(--color-text-primary)]">Foco:</strong> {focoLabels[planSeleccionado.focoGeneral] || planSeleccionado.focoGeneral}</span>
+                            <span><strong className="text-[var(--color-text-primary)]">Foco:</strong> {focoLabels[planSeleccionado.focoGeneral as keyof typeof focoLabels] || planSeleccionado.focoGeneral}</span>
                           )}
                         </div>
                       </div>
@@ -609,8 +605,7 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
                   <CardContent>
                     <Select
                       value={formData.foco}
-                      onValueChange={(v) => setFormData({ ...formData, foco: v })}
-                      modal={false}
+                      onValueChange={(v) => setFormData({ ...formData, foco: v as FocoKey })}
                     >
                       <SelectTrigger id="foco" className={`w-full ${componentStyles.controls.selectDefault}`}>
                         <SelectValue placeholder="Selecciona foco..." />
@@ -762,7 +757,7 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
         piezaEditorAbierto && (
           <PieceEditor
             pieza={null}
-            onClose={handlePiezaEditorClose}
+            onClose={handlePiezaEditorClose as any}
           />
         )
       }
@@ -771,7 +766,7 @@ export default function FormularioRapido({ onClose, initialStudentId = null }: F
         planEditorAbierto && (
           <PlanEditor
             plan={null}
-            onClose={handlePlanEditorClose}
+            onClose={handlePlanEditorClose as any}
           />
         )
       }
