@@ -1363,15 +1363,15 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPa
                         <div className={componentStyles.layout.grid2}>
                           <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
                             <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Archivos escaneados</div>
-                            <div className="text-2xl font-bold text-[var(--color-text-primary)]">{report.summary.filesScanned}</div>
+                            <div className="text-2xl font-bold text-[var(--color-text-primary)]">{report?.summary?.filesScanned}</div>
                           </Card>
                           <Card className="bg-[var(--color-surface-muted)] rounded-lg p-3 border border-[var(--color-border-default)]">
                             <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Problemas encontrados</div>
-                            <div className="text-2xl font-bold text-[var(--color-text-primary)]">{report.summary.totalIssues}</div>
+                            <div className="text-2xl font-bold text-[var(--color-text-primary)]">{report?.summary?.totalIssues}</div>
                           </Card>
                         </div>
 
-                        {report.summary.totalIssues === 0 && (
+                        {report?.summary?.totalIssues === 0 && (
                           <Alert variant="info" className="bg-[hsl(var(--success))]/10 border-[hsl(var(--success))]/20">
                             <CheckCircle className="h-4 w-4 text-[hsl(var(--success))]" />
                             <AlertDescription className="text-[hsl(var(--success))]">
@@ -1380,9 +1380,9 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPa
                           </Alert>
                         )}
 
-                        {report.summary.totalIssues > 0 && report.summary.issues && (
+                        {(report?.summary?.totalIssues ?? 0) > 0 && report?.summary?.issues && (
                           <div className={componentStyles.layout.grid2}>
-                            {Object.entries(report.summary.issues).map(([k, v]) => (
+                            {Object.entries(report?.summary?.issues ?? {}).map(([k, v]) => (
                               <Card key={k} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
                                 <div className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">{k}</div>
                                 <div className="text-xl font-semibold text-[var(--color-text-primary)]">{v}</div>
@@ -1391,11 +1391,11 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPa
                           </div>
                         )}
 
-                        {report.issues && (
+                        {report?.issues && (
                           <details className=" border border-[var(--color-border-default)] p-4 bg-[var(--color-surface-muted)]">
                             <summary className="cursor-pointer font-medium text-[var(--color-text-primary)]">Detalles por categoría</summary>
                             <div className="mt-4 space-y-4 max-h-[420px] overflow-auto">
-                              {Object.entries(report.issues).map(([bucket, items]) => (
+                              {Object.entries(report?.issues ?? {}).map(([bucket, items]) => (
                                 items.length > 0 && (
                                   <Card key={bucket} className="bg-[var(--color-surface-elevated)] rounded-lg p-3 border border-[var(--color-border-default)]">
                                     <div className="mb-3 font-semibold text-[var(--color-text-primary)] flex items-center justify-between">
@@ -1524,7 +1524,7 @@ function DesignPageContent({ embedded = false, hideLevelsTab = false }: DesignPa
                   {qaOutput && (
                     <div className="bg-[var(--color-surface-muted)]  p-4 border border-[var(--color-border-default)]">
                       <pre className="text-xs text-[var(--color-text-primary)] whitespace-pre-wrap font-mono overflow-x-auto max-h-96">
-                        {qaOutput}
+                        {qaOutput?.summary}
                       </pre>
                     </div>
                   )}

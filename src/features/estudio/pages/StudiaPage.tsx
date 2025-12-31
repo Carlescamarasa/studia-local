@@ -492,7 +492,7 @@ function StudiaPageContent() {
         if (!bloque) return;
 
         const dataBloque = {
-            asignacionId: asignacionActiva.id,
+            asignacionId: asignacionActiva!.id,
             alumnoId: userIdActual,
             semanaIdx: semanaIdxParam,
             sesionIdx: sesionIdxParam,
@@ -689,7 +689,7 @@ function StudiaPageContent() {
                 registroSesionId: nuevoId
             }));
 
-            await localDataClient.entities.RegistroBloque.bulkCreate(bloquesToCreate);
+            await localDataClient.entities.RegistroBloque.bulkCreate?.(bloquesToCreate);
 
             try {
                 if (userIdActual) {
@@ -742,7 +742,7 @@ function StudiaPageContent() {
                 // Exception: Allow '?' to toggle (close) the Hotkeys modal even if it's open (Strict block would prevent it otherwise)
                 if (e.key === '?') {
                     e.preventDefault();
-                    setShowHotkeysModal(prev => !prev);
+                    setShowHotkeysModal(!showHotkeysModal);
                     return;
                 }
                 return;
@@ -757,7 +757,7 @@ function StudiaPageContent() {
 
             if (e.key === '?') {
                 e.preventDefault();
-                setShowHotkeysModal(prev => !prev);
+                setShowHotkeysModal(!showHotkeysModal);
                 return;
             }
 
@@ -875,14 +875,14 @@ function StudiaPageContent() {
                 onOpenChange={(open) => {
                     if (!open) cerrarSesion();
                 }}
-                onCalidadNotas={async (calidad, notas, mediaLinks) => {
-                    setDatosFinal(prev => ({ ...prev, calidad, notas, mediaLinks }));
+                onCalidadNotas={async (calidad: number, notas: string, mediaLinks: string[]) => {
+                    setDatosFinal((prev: { calidad?: number; notas?: string; mediaLinks?: string[] } | null) => ({ ...prev, calidad, notas, mediaLinks }));
                     await finalizarSesion(calidad, notas, mediaLinks);
                 }}
-                userId={userIdActual}
+                userId={userIdActual ?? undefined}
                 userProfile={alumnoActual}
-                registroSesionId={registroSesionId}
-                profesorAsignadoId={alumnoActual?.profesorAsignadoId}
+                registroSesionId={registroSesionId ?? undefined}
+                profesorAsignadoId={alumnoActual?.profesorAsignadoId ?? undefined}
             />
         );
     }
@@ -1168,13 +1168,13 @@ function StudiaPageContent() {
                     <div className="hidden sm:flex items-center mt-1">
                         <p className={`${componentStyles.typography.pageSubtitle} text-xs sm:text-sm md:text-base flex items-center gap-2 flex-wrap`}>
                             <Music className="w-3 h-3 text-[var(--color-primary)] shrink-0" />
-                            <span className="font-medium">{asignacionActiva.piezaSnapshot?.nombre}</span>
+                            <span className="font-medium">{asignacionActiva?.piezaSnapshot?.nombre}</span>
                             <span className="text-[var(--color-text-secondary)]">•</span>
                             <Target className="w-3 h-3 text-[var(--color-info)] shrink-0" />
-                            <span>{asignacionActiva.plan?.nombre}</span>
+                            <span>{asignacionActiva?.plan?.nombre}</span>
                             <span className="text-[var(--color-text-secondary)]">•</span>
-                            <Badge className={focoColors[sesionActiva.foco]} variant="outline">
-                                {focoLabels[sesionActiva.foco]}
+                            <Badge className={focoColors[sesionActiva?.foco as keyof typeof focoColors] || ''} variant="outline">
+                                {focoLabels[sesionActiva?.foco as keyof typeof focoLabels] || sesionActiva?.foco}
                             </Badge>
                         </p>
                     </div>
@@ -1231,7 +1231,7 @@ function StudiaPageContent() {
                         {/* Metronome if has targetPPMs */}
                         {!isAD && ejercicioActual.targetPPMs?.length > 0 && (() => {
                             const nivelAlumno = alumnoActual?.nivelTecnico || 1;
-                            const target = ejercicioActual.targetPPMs.find(t => t.nivel === nivelAlumno);
+                            const target = ejercicioActual.targetPPMs.find((t: { nivel: number; bpm: number; unidad?: string }) => t.nivel === nivelAlumno);
                             if (target) {
                                 return (
                                     <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4">
@@ -1251,7 +1251,7 @@ function StudiaPageContent() {
                             <div className="border-b border-[var(--color-border-default)] pb-3 md:pb-4 last:border-b-0">
                                 <p className="text-sm font-semibold mb-2">🎬 Material</p>
                                 <div className="space-y-2">
-                                    {ejercicioActual.mediaLinks.map((media, idx) => (
+                                    {ejercicioActual.mediaLinks.map((media: string | { url: string }, idx: number) => (
                                         <MediaEmbed key={idx} url={typeof media === 'string' ? media : media.url} />
                                     ))}
                                 </div>
