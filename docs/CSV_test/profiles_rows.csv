@@ -1,8 +1,0 @@
-id,full_name,role,profesor_asignado_id,is_active,created_at,updated_at,nivel,telefono,media_links,nivel_tecnico
-11537a2f-3c5a-43d8-9d2b-357181902989,Chema Mata,ESTU,7232ef45-c1cb-43c6-9df4-ff663ba7f14f,true,2025-11-24 20:46:33.876369+00,2025-11-24 20:48:09.951085+00,principiante,,[],1
-2f3fc08b-5096-4dba-a350-ddce0df297f3,Antonio Torres,PROF,,true,2025-11-17 17:45:48.919341+00,2025-12-02 04:29:02.059185+00,principiante,,[],1
-3f9f551a-7ba6-4857-bd20-cc1f8c3f3b8c,Roberto Puertas,ESTU,7232ef45-c1cb-43c6-9df4-ff663ba7f14f,true,2025-11-24 17:19:40.117606+00,2025-12-02 04:29:02.059185+00,principiante,,[],1
-7232ef45-c1cb-43c6-9df4-ff663ba7f14f,Carles Profe,PROF,,true,2025-11-17 17:41:01.913738+00,2025-12-02 04:29:02.059185+00,principiante,+34123,[],1
-77dcf831-6283-462a-83bd-f5c46b3cde28,La Trompeta Sonará,ESTU,2f3fc08b-5096-4dba-a350-ddce0df297f3,true,2025-11-17 17:41:46.575284+00,2025-12-04 00:49:35.658304+00,principiante,,[],1
-a1a9582f-2903-4bac-b456-08a8dd7a4d74,Carles Camarasa Botella,ADMIN,,true,2025-11-17 17:42:52+00,2025-12-04 00:04:43.423151+00,principiante,,[],1
-aeb71a46-2443-49ea-84aa-fbb7f2ab5589,Carles +01,ESTU,7232ef45-c1cb-43c6-9df4-ff663ba7f14f,true,2025-11-24 17:49:11.554144+00,2025-11-24 17:49:12.651428+00,intermedio,,[],1

@@ -174,7 +174,6 @@ serve(async (req) => {
       return `${baseUrl}/invitation`;
     };
     const redirectUrl = getResetPasswordRedirectUrl();
-    let result;
     let error;
 
     // Ejecutar la acción solicitada
@@ -209,7 +208,7 @@ serve(async (req) => {
       case 'resend_invitation': {
         // Reenviar invitación usando inviteUserByEmail (envía email automáticamente)
         // Usar URL de invitación en lugar de reset-password
-        const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
+        const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
           targetUser.email!,
           {
             redirectTo: getInvitationRedirectUrl(),

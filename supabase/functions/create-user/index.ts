@@ -174,6 +174,7 @@ serve(async (req) => {
     }
 
     // Actualizar el perfil con nivel y profesor asignado
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const profileUpdates: any = {
       full_name,
       nivel: nivel || null,

@@ -1,5 +1,6 @@
 
 import { localDataClient } from '../src/api/localDataClient.js';
+import { StudiaUser } from '../src/features/shared/types/domain.js';
 
 async function seedPracticeData() {
     try {
@@ -7,14 +8,14 @@ async function seedPracticeData() {
 
         // Get the first student (or specific one if known)
         const students = await localDataClient.entities.User.list();
-        const student = students.find((s: any) => s.email === 'trompetasonara@gmail.com') || students[0];
+        const student = students.find((s: StudiaUser) => s.email === 'trompetasonara@gmail.com') || students[0];
 
         if (!student) {
             console.error('No student found');
             return;
         }
 
-        console.log(`Seeding for student: ${student.nombre} (${student.id})`);
+        console.log(`Seeding for student: ${student.full_name} (${student.id})`);
 
         // Create a completed block for yesterday
         const yesterday = new Date();
@@ -32,7 +33,8 @@ async function seedPracticeData() {
             bloqueId: 'synthetic-block-1' // Mock ID
         };
 
-        await localDataClient.entities.RegistroBloque.create(blockData);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await localDataClient.entities.RegistroBloque.create(blockData as any);
         console.log('Created synthetic block for yesterday');
 
         // Create another one for today
@@ -49,7 +51,8 @@ async function seedPracticeData() {
             bloqueId: 'synthetic-block-2'
         };
 
-        await localDataClient.entities.RegistroBloque.create(blockData2);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await localDataClient.entities.RegistroBloque.create(blockData2 as any);
         console.log('Created synthetic block for today');
 
         console.log('Done!');

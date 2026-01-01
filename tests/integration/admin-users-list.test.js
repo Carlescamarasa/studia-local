@@ -29,7 +29,7 @@ function loadEnvFile(filePath) {
   if (!existsSync(filePath)) {
     return {};
   }
-  
+
   try {
     const envContent = readFileSync(filePath, 'utf-8');
     const envVars = {};
@@ -39,19 +39,19 @@ function loadEnvFile(filePath) {
       if (!trimmed || trimmed.startsWith('#')) {
         return;
       }
-      
+
       // Parsear KEY=VALUE
       const match = trimmed.match(/^([^=]+)=(.*)$/);
       if (match) {
         const key = match[1].trim();
         let value = match[2].trim();
-        
+
         // Remover comillas si existen
-        if ((value.startsWith('"') && value.endsWith('"')) || 
-            (value.startsWith("'") && value.endsWith("'"))) {
+        if ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))) {
           value = value.slice(1, -1);
         }
-        
+
         envVars[key] = value;
       }
     });
@@ -140,10 +140,9 @@ async function runTest() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // Autenticar como administrador si las credenciales están disponibles
-  let authenticated = false;
   if (ADMIN_EMAIL && ADMIN_PASSWORD) {
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      const { error: authError } = await supabase.auth.signInWithPassword({
         email: ADMIN_EMAIL,
         password: ADMIN_PASSWORD,
       });
@@ -152,7 +151,6 @@ async function runTest() {
         console.error('❌ Error al autenticar:', authError.message);
         console.log('   Continuando sin autenticación...\n');
       } else {
-        authenticated = true;
         console.log(`✅ Autenticado como: ${ADMIN_EMAIL}\n`);
       }
     } catch (error) {
@@ -181,10 +179,10 @@ async function runTest() {
 
   // Obtener usuarios usando paginación (replicando la lógica de remoteDataAPI)
   console.log('📋 Obteniendo usuarios con paginación (replicando remoteDataAPI.usuarios.list())...\n');
-  
+
   let usersFromAPI = [];
   let apiError = null;
-  
+
   try {
     usersFromAPI = await getAllUsersWithPagination(supabase);
     console.log(`✅ API devolvió ${usersFromAPI.length} usuarios\n`);
