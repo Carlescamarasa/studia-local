@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
-import ReactMarkdown, { Components } from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import * as Accordion from '@radix-ui/react-accordion';
+import { HelpCircle, BookOpen, User, Users, Settings, Keyboard, Video, Info, ChevronRight } from 'lucide-react';
 import VideoEmbed from './VideoEmbed';
+import { rehypeCollapsible } from '../utils/rehype-collapsible';
 
 // Cargar todos los archivos markdown usando import.meta.glob
 const markdownModules = import.meta.glob<string>('/src/help/*.md', {
@@ -35,6 +38,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
@@ -128,7 +132,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
     <div className="markdown-content prose prose-sm max-w-none dark:prose-invert">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
+        rehypePlugins={[rehypeRaw, rehypeCollapsible]}
         components={{
           // Estilizar enlaces
           a: ({ href, children, ...props }) => {
@@ -156,7 +160,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               </a>
             );
           },
-          // Estilizar títulos
+          // Estilizar títulos (H1 sigue igual, H2 y H3 son manejados por el Accordion)
           h1: ({ children, ...props }) => (
             <h1
               className="text-3xl font-bold text-[var(--color-text-primary)] mt-8 mb-4 pb-2 border-b border-[var(--color-border-default)]"
@@ -165,30 +169,24 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               {children}
             </h1>
           ),
-          h2: ({ children, ...props }) => (
-            <h2
-              className="text-2xl font-semibold text-[var(--color-text-primary)] mt-6 mb-3"
+          // Nota: H2 y H3 son transformados en accordion-header por el plugin.
+          // Si quedara alguno suelto (h4, h5, etc)
+          h4: ({ children, ...props }) => (
+            <h4
+              className="text-lg font-semibold text-[var(--color-text-primary)] mt-4 mb-2"
               {...props}
             >
               {children}
-            </h2>
-          ),
-          h3: ({ children, ...props }) => (
-            <h3
-              className="text-xl font-semibold text-[var(--color-text-primary)] mt-4 mb-2"
-              {...props}
-            >
-              {children}
-            </h3>
+            </h4>
           ),
           // Estilizar listas
           ul: ({ children, ...props }) => (
-            <ul className="list-disc list-inside space-y-2 my-4 text-[var(--color-text-primary)]" {...props}>
+            <ul className="list-disc list-outside ml-5 space-y-1 my-2 text-[var(--color-text-primary)]" {...props}>
               {children}
             </ul>
           ),
           ol: ({ children, ...props }) => (
-            <ol className="list-decimal list-inside space-y-2 my-4 text-[var(--color-text-primary)]" {...props}>
+            <ol className="list-decimal list-outside ml-5 space-y-1 my-2 text-[var(--color-text-primary)]" {...props}>
               {children}
             </ol>
           ),
@@ -220,11 +218,11 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
               </code>
             );
           },
-          // Estilizar tablas
+          // Estilizar tablas mejoradas
           table: ({ children, ...props }) => (
             <div className="overflow-x-auto my-4">
               <table
-                className="min-w-full border-collapse border border-[var(--color-border-default)] rounded-lg"
+                className="min-w-full text-left text-sm"
                 {...props}
               >
                 {children}
@@ -232,7 +230,7 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             </div>
           ),
           thead: ({ children, ...props }) => (
-            <thead className="bg-[var(--color-surface-muted)]" {...props}>
+            <thead className="bg-[var(--color-surface-muted)]/50 border-b border-[var(--color-border-default)]" {...props}>
               {children}
             </thead>
           ),
@@ -242,13 +240,13 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
             </tbody>
           ),
           tr: ({ children, ...props }) => (
-            <tr className="border-b border-[var(--color-border-default)] hover:bg-[var(--color-surface-muted)]/50" {...props}>
+            <tr className="hover:bg-[var(--color-surface-muted)]/30 transition-colors" {...props}>
               {children}
             </tr>
           ),
           th: ({ children, ...props }) => (
             <th
-              className="px-4 py-2 text-left font-semibold text-[var(--color-text-primary)] border border-[var(--color-border-default)]"
+              className="px-4 py-3 font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider text-xs"
               {...props}
             >
               {children}
@@ -256,32 +254,97 @@ export default function MarkdownPage({ slug = 'README' }: { slug?: string }) {
           ),
           td: ({ children, ...props }) => (
             <td
-              className="px-4 py-2 text-[var(--color-text-primary)] border border-[var(--color-border-default)]"
+              className="px-4 py-3 text-[var(--color-text-primary)] whitespace-normal"
               {...props}
             >
               {children}
             </td>
           ),
-          // Estilizar blockquotes
-          blockquote: ({ children, ...props }) => (
-            <blockquote
-              className="border-l-4 border-[var(--color-primary)] pl-4 py-2 my-4 italic text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]/50 rounded-r"
+          // Estilizar blockquotes y Alertas GitHub
+          blockquote: ({ children, ...props }) => {
+            return (
+              <blockquote
+                className="border-l-4 border-[var(--color-primary)] pl-4 py-2 my-4 italic text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]/30 rounded-r"
+                {...props}
+              >
+                {children}
+              </blockquote>
+            );
+          },
+          // Procesa elementos custom generados por rehype-collapsible
+          // @ts-expect-error: Custom elements not in standard JSX
+          'accordion-root': ({ children, ...props }) => (
+            <Accordion.Root
+              type="single"
+              collapsible
+              className="w-full space-y-2"
               {...props}
             >
               {children}
-            </blockquote>
+            </Accordion.Root>
           ),
-          // Estilizar strong/bold
-          strong: ({ children, ...props }) => (
-            <strong className="font-bold text-[var(--color-text-primary)]" {...props}>
-              {children}
-            </strong>
-          ),
-          // Estilizar em/italic
-          em: ({ children, ...props }) => (
-            <em className="italic text-[var(--color-text-primary)]" {...props}>
-              {children}
-            </em>
+
+          'accordion-item': ({ children, className, ...props }: any) => {
+            const isH3 = className?.includes('details-h3');
+            // Ensure value is present for Accordion.Item
+            const value = props.value || `item-${Math.random().toString(36).substr(2, 9)}`;
+
+            return (
+              <Accordion.Item
+                value={value}
+                className={`
+                    group overflow-hidden
+                    ${isH3
+                    ? 'my-1 ml-4 border-l-2 border-[var(--color-border-default)]'
+                    : 'border-b border-[var(--color-border-default)]'
+                  }
+                    ${className || ''}
+                  `}
+                {...props}
+              >
+                {children}
+              </Accordion.Item>
+            );
+          },
+          // @ts-expect-error: Custom elements
+          'accordion-header': ({ children, className, ...props }) => {
+            const isH3 = className?.includes('summary-h3');
+            return (
+              <div className="flex">
+                <Accordion.Header className="flex-1">
+                  <Accordion.Trigger
+                    className={`
+                      flex flex-1 items-center justify-between px-4 py-3
+                      cursor-pointer select-none transition-all
+                      marker:content-none font-semibold text-[var(--color-text-primary)]
+                      outline-none
+                      ${isH3
+                        ? 'bg-transparent hover:bg-[var(--color-surface-muted)]/30 text-base'
+                        : 'bg-[var(--color-surface-muted)]/30 hover:bg-[var(--color-surface-muted)] text-lg rounded-t-lg group-data-[state=closed]:rounded-lg'
+                      }
+                      ${className || ''}
+                    `}
+                    {...props}
+                  >
+                    <span className="flex items-center gap-2">
+                      <ChevronRight className="h-4 w-4 shrink-0 text-[var(--color-text-secondary)] transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                      {children}
+                    </span>
+                  </Accordion.Trigger>
+                </Accordion.Header>
+              </div>
+            );
+          },
+          // @ts-expect-error: Custom elements
+          'accordion-content': ({ children, ...props }) => (
+            <Accordion.Content
+              className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+              {...props}
+            >
+              <div className="px-4 pb-4 pt-0">
+                {children}
+              </div>
+            </Accordion.Content>
           ),
           // Procesar divs con clase video-embed como componentes VideoEmbed
           div: ({ node, className, ...props }) => {

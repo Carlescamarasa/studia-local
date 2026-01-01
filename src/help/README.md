@@ -4,14 +4,20 @@
 
 ## 📚 Guías por Rol
 
-### 👨‍🎓 [Guía para Alumnos](alumno.md)
+#### Guía para Alumnos
 Todo lo que necesitas saber para estudiar con Studia: desde iniciar sesión hasta interpretar tus estadísticas.
 
-### 👨‍🏫 [Guía para Profesores](profesor.md)
+[Ver guía](alumno.md).
+
+#### Guía para Profesores
 Aprende a crear asignaciones, gestionar alumnos y dar feedback. Todo se puede modificar en cualquier momento.
 
-### 👨‍💼 [Guía para Administradores](admin.md)
+[Ver guía](profesor.md).
+
+#### Guía para Administradores
 Gestión de usuarios, planificación general, importar/exportar datos y configuración del sistema.
+
+[Ver guía](admin.md).
 
 ## ❓ Preguntas Frecuentes
 
