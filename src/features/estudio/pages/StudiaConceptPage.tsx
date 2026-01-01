@@ -51,6 +51,8 @@ interface StudiaExercise {
     title: string;
     type: ExerciseTypeKey;
     category: string;
+    tipo: 'tecnica' | 'repertorio' | 'estudio';
+    duracion?: number;
     mode: 'learning' | 'review' | 'archived';
     status: 'active' | 'mastered' | 'archived';
     dur: number;
@@ -172,9 +174,11 @@ export default function StudiaConceptPage() {
             id: tempId,
             title: formData.nombre,
             type: exerciseType,
+            tipo: (exerciseType as string) === 'RP' ? 'repertorio' : 'tecnica', // Map generic types
             category: TYPE_MAP[exerciseType]?.label || 'General',
             mode: 'learning',
             status: 'active',
+            duracion: formData.duracion || 5, // Map to new prop
             dur: formData.duracion,
             asset: 'resource.pdf',
             raw: {},
@@ -270,7 +274,10 @@ export default function StudiaConceptPage() {
                         else if (idx === 1) vars = MOCKED_VARIATIONS['TC-CLA-0002'];
                         // Standard match (if IDs matched) - skip for safety
 
+                        // Standard match (if IDs matched) - skip for safety
                         const bloqueType = (b.tipo || 'TC') as ExerciseTypeKey;
+                        const mappedTipo = (bloqueType as string) === 'RP' ? 'repertorio' : 'tecnica';
+
                         const categoryInfo = TYPE_MAP[bloqueType] || { label: 'General', color: 'text-slate-600 bg-slate-50' };
                         // Simulate lifecycle status (since real data might not have per-student status yet)
                         let mode: 'learning' | 'review' | 'archived' = 'learning';
@@ -282,14 +289,16 @@ export default function StudiaConceptPage() {
                         const dur = Math.round((b.duracion_seg || b.duracionSeg || 300) / 60);
 
                         return {
-                            id: b.id as string,
-                            title: b.nombre as string,
-                            type: bloqueType,
+                            id: b.id,
+                            title: b.titulo,
+                            type: bloqueType, // Legacy type ('TC', 'RP')
+                            tipo: mappedTipo, // New prop
                             category: categoryInfo.label,
                             mode,
                             status,
-                            dur: dur || 5,
-                            asset: 'resource.pdf',
+                            dur: b.duracion || 10,
+                            duracion: b.duracion || 10, // New prop
+                            asset: '', // TODO: fetch asset
                             variations: vars,
                             raw: b
                         };

@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
- 
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { localUsers } from './localUsers';
 import { setLocalDataRef } from '@/api/localDataClient';
@@ -215,7 +215,6 @@ export function LocalDataProvider({ children }: { children: React.ReactNode }) {
 
         // Si hubo cambios, guardar de vuelta en localStorage
         if (needsUpdate && stored) {
-          // @ts-expect-error
           saveToStorage({ usuarios: normalizedUsuarios });
         }
 

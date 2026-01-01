@@ -2,7 +2,6 @@ import React from "react";
 import { PageHeader } from "@/features/shared/components/ds";
 import { Button } from "@/features/shared/components/ui/button";
 import { Notebook, Plus } from "lucide-react";
-// @ts-expect-error
 import PeriodHeader from "@/features/shared/components/common/PeriodHeader";
 import { parseLocalDate, isoWeekNumber } from "../utils";
 
