@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/features/shared/components/ds/PageHeader';
 import { Tabs } from '@/features/shared/components/ds/Tabs';
@@ -10,25 +10,8 @@ import { HelpCircle, BookOpen, User, Users, Settings, Keyboard, Video, Info } fr
 export default function AyudaPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-
   // Obtener tab desde URL o usar 'README' por defecto
-  const tabFromUrl = searchParams.get('tab') || 'README';
-  const [activeTab, setActiveTab] = useState(tabFromUrl);
-
-  // Sincronizar con URL cuando cambia el tab
-  useEffect(() => {
-    if (activeTab !== tabFromUrl) {
-      setSearchParams({ tab: activeTab }, { replace: true });
-    }
-  }, [activeTab, tabFromUrl, setSearchParams]);
-
-  // Sincronizar con URL cuando cambia la URL externamente
-  useEffect(() => {
-    const newTab = searchParams.get('tab') || 'README';
-    if (newTab !== activeTab) {
-      setActiveTab(newTab);
-    }
-  }, [searchParams, activeTab]);
+  const activeTab = searchParams.get('tab') || 'README';
 
   const tabs = [
     {
@@ -82,7 +65,6 @@ export default function AyudaPage() {
   ];
 
   const handleTabChange = (newTab: string) => {
-    setActiveTab(newTab);
     setSearchParams({ tab: newTab }, { replace: true });
   };
 
