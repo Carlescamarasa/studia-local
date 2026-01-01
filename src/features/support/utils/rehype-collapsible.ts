@@ -1,5 +1,5 @@
 import { Plugin } from 'unified';
-import { Root, Element, ElementContent } from 'hast';
+import { Root, Element, ElementContent, Properties } from 'hast';
 
 /**
  * Plugin de Rehype para transformar headers en estructura para Radix Accordion.
@@ -24,7 +24,7 @@ export const rehypeCollapsible: Plugin<[], Root> = () => {
         const generateId = (prefix: string, index: number) => `${prefix} -${index} `;
 
         // Helper para crear elementos custom
-        const createCustomElement = (tagName: string, children: ElementContent[], properties: any = {}): Element => ({
+        const createCustomElement = (tagName: string, children: ElementContent[], properties: Properties = {}): Element => ({
             type: 'element',
             tagName,
             properties,
