@@ -221,8 +221,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // IMPORTANTE: Ignorar SIGNED_IN si aún no hemos recibido INITIAL_SESSION
       // Esto evita que intentemos fetch del perfil antes de que el cliente REST esté listo
-      if (event === 'SIGNED_IN' && !initialHandled) {
-        if (import.meta.env.DEV) console.log('[AuthProvider] Ignoring early SIGNED_IN, waiting for INITIAL_SESSION...');
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && !initialHandled) {
+        if (import.meta.env.DEV) console.log(`[AuthProvider] Ignoring early ${event}, waiting for INITIAL_SESSION...`);
         return;
       }
 
