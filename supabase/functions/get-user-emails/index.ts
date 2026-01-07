@@ -63,9 +63,9 @@ serve(async (req) => {
     if (profileError) {
       console.error('Error al leer perfil:', profileError);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Error al verificar permisos',
-          details: profileError.message 
+          details: profileError.message
         }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -80,17 +80,17 @@ serve(async (req) => {
 
     // Normalizar el rol (trim y uppercase) para comparación
     const userRole = profile.role ? String(profile.role).trim().toUpperCase() : '';
-    
+
     console.log('Usuario autenticado:', {
       userId: user.id,
       role: profile.role,
       normalizedRole: userRole,
     });
-    
+
     // Parsear el body de la petición
     const body = await req.json();
     const { userIds } = body;
-    
+
     console.log('Petición recibida:', {
       userRole,
       requestedUserIds: userIds,
@@ -117,9 +117,9 @@ serve(async (req) => {
       if (alumnosError) {
         console.error('Error al verificar alumnos asignados:', alumnosError);
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             error: 'Error al verificar alumnos asignados',
-            details: alumnosError.message 
+            details: alumnosError.message
           }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -129,12 +129,12 @@ serve(async (req) => {
 
       // Filtrar userIds: solo permitir aquellos que son alumnos asignados
       const filteredUserIds = userIds.filter(id => alumnoIds.has(id));
-      
+
       if (filteredUserIds.length === 0) {
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             error: 'No tienes permisos para obtener emails de estos usuarios. Solo puedes obtener emails de tus alumnos asignados.',
-            role: userRole 
+            role: userRole
           }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -146,13 +146,13 @@ serve(async (req) => {
           filtered: filteredUserIds,
         });
       }
-      
+
       // Reemplazar userIds con los filtrados
       userIds.length = 0;
       userIds.push(...filteredUserIds);
     } else if (userRole === 'ESTU') {
       console.log('Procesando petición ESTU:', { userId: user.id, requestedUserIds: userIds });
-      
+
       if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
         return new Response(
           JSON.stringify({ error: 'userIds debe ser un array no vacío' }),
@@ -167,7 +167,7 @@ serve(async (req) => {
         .select('profesor_asignado_id')
         .eq('id', user.id)
         .single();
-      
+
       console.log('Resultado de búsqueda de perfil:', {
         hasProfile: !!estudianteProfile,
         hasError: !!estudianteError,
@@ -182,9 +182,9 @@ serve(async (req) => {
           code: estudianteError.code,
         });
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             error: 'Error al verificar profesor asignado',
-            details: estudianteError.message 
+            details: estudianteError.message
           }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -193,7 +193,7 @@ serve(async (req) => {
       if (!estudianteProfile) {
         console.error('Perfil del estudiante no encontrado:', { userId: user.id });
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             error: 'Perfil no encontrado',
           }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -205,7 +205,7 @@ serve(async (req) => {
       if (!profesorAsignadoId) {
         console.warn('Estudiante sin profesor asignado:', { userId: user.id });
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             error: 'No tienes un profesor asignado',
           }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -214,7 +214,7 @@ serve(async (req) => {
 
       // Filtrar userIds: solo permitir el profesor asignado
       const filteredUserIds = userIds.filter(id => id === profesorAsignadoId);
-      
+
       if (filteredUserIds.length === 0) {
         console.warn('ESTU intentó obtener email de usuario que no es su profesor:', {
           userId: user.id,
@@ -222,7 +222,7 @@ serve(async (req) => {
           profesorAsignadoId,
         });
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             error: 'Solo puedes obtener el email de tu profesor asignado',
             role: userRole,
             profesorAsignadoId,
@@ -237,16 +237,16 @@ serve(async (req) => {
           filtered: filteredUserIds,
         });
       }
-      
+
       // Reemplazar userIds con los filtrados
       userIds.length = 0;
       userIds.push(...filteredUserIds);
     } else if (userRole !== 'ADMIN') {
       console.error('Usuario no es ADMIN, PROF ni ESTU. Rol actual:', userRole, 'User ID:', user.id);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Rol no autorizado para obtener emails de usuarios',
-          role: userRole 
+          role: userRole
         }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -270,75 +270,40 @@ serve(async (req) => {
     // Crear un Set con los IDs solicitados para búsqueda rápida O(1)
     const requestedIdsSet = new Set(userIds);
     const emailMap: Record<string, string> = {};
-    
+
     // Si ya tenemos todos los emails, no necesitamos seguir buscando
     let foundCount = 0;
     const totalRequested = userIds.length;
 
-    // Usar listUsers() con paginación para obtener todos los usuarios de una vez
-    // Esto evita el problema N+1 de hacer queries individuales
-    let page = 1;
-    const perPage = 1000; // Máximo permitido por Supabase
-    let hasMore = true;
+    // Optimización: Usar getUserById en paralelo para búsquedas directas O(1)
+    // Esto es mucho más rápido que listar todos los usuarios, especialmente para 1 o pocos usuarios
+    const fetchPromises = userIds.map(async (userId) => {
+      // Validar formato UUID básico para evitar llamadas innecesarias
+      if (!userId || typeof userId !== 'string' || userId.length < 10) return;
 
-    while (hasMore && foundCount < totalRequested) {
-      const { data, error } = await adminClient.auth.admin.listUsers({
-        page,
-        perPage,
-      });
+      try {
+        const { data, error } = await adminClient.auth.admin.getUserById(userId);
 
-      if (error) {
-        console.error(`Error al listar usuarios (página ${page}):`, error);
-        // Si hay error, intentar continuar con la siguiente página o terminar
-        // Dependiendo del tipo de error, podríamos querer fallar completamente
-        if (error.message?.includes('rate limit') || error.status === 429) {
-          // Rate limit - esperar un poco y continuar
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          continue;
-        }
-        // Para otros errores, continuar con la siguiente página
-        page++;
-        if (page > 10) {
-          // Límite de seguridad: no más de 10 páginas
-          console.warn('Límite de páginas alcanzado. Algunos emails pueden no haberse obtenido.');
-          break;
-        }
-        continue;
-      }
-
-      if (!data?.users || data.users.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      // Filtrar usuarios por los IDs solicitados y construir el mapa
-      for (const user of data.users) {
-        if (user.id && requestedIdsSet.has(user.id) && user.email) {
-          emailMap[user.id] = user.email;
-          foundCount++;
-          
-          // Si ya encontramos todos los IDs solicitados, podemos detener la búsqueda
-          if (foundCount >= totalRequested) {
-            hasMore = false;
-            break;
+        if (error) {
+          // Ignorar error de usuario no encontrado, simplemente no se añade al mapa
+          if (!error.message?.includes('not found')) {
+            console.warn(`Error al obtener usuario ${userId}:`, error);
           }
+          return;
         }
-      }
 
-      // Verificar si hay más páginas
-      // listUsers() devuelve información de paginación en data
-      // Si obtenemos menos usuarios que perPage, hemos llegado al final
-      if (data.users.length < perPage) {
-        hasMore = false;
-      } else {
-        page++;
-        // Límite de seguridad: no más de 10 páginas (10,000 usuarios)
-        if (page > 10) {
-          console.warn('Límite de páginas alcanzado. Algunos emails pueden no haberse obtenido.');
-          hasMore = false;
+        if (data?.user?.email) {
+          emailMap[userId] = data.user.email;
         }
+      } catch (err) {
+        console.warn(`Excepción al obtener usuario ${userId}:`, err);
       }
-    }
+    });
+
+    await Promise.all(fetchPromises);
+
+    // Calcular encontrados
+    foundCount = Object.keys(emailMap).length;
 
     // Log para debugging
     if (foundCount < totalRequested) {

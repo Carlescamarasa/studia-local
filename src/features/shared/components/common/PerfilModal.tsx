@@ -144,8 +144,7 @@ export default function PerfilModal({
     ? allUsers.find(u => String(u.id).trim() === String(profesorAsignadoIdToLoad).trim())
     : null;
 
-  // Obtener email del usuario objetivo usando la Edge Function get-user-emails
-  // Esto es necesario porque los emails no vienen en la lista de usuarios para PROF/ADMIN
+  // Obtener email del usuario usando RPC (mucho más rápido que Edge Function)
   const targetUserId = targetUser?.id;
   const { data: targetUserEmail } = useQuery({
     queryKey: ['targetUserEmail', targetUserId],
@@ -157,47 +156,25 @@ export default function PerfilModal({
         return targetUser.email;
       }
 
-      // Si no tiene email válido, intentar obtenerlo desde la Edge Function
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) return null;
+      // Usar RPC para obtener el email directamente de la base de datos
+      const { data, error } = await supabase.rpc('get_users_with_email', {
+        user_ids: [targetUserId]
+      });
 
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (error) {
+        log.warn('[PerfilModal] Error RPC get_users_with_email:', error);
+        return null;
+      }
 
-        if (!supabaseUrl) return null;
-
-        const headers: Record<string, string> = {
-          'Authorization': `Bearer ${session.access_token} `,
-          'Content-Type': 'application/json',
-        };
-
-        if (supabaseAnonKey) {
-          headers['apikey'] = supabaseAnonKey;
-        }
-
-        const response = await fetch(`${supabaseUrl} /functions/v1 / get - user - emails`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ userIds: [targetUserId] }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.emails && data.emails[targetUserId]) {
-            return data.emails[targetUserId];
-          }
-        } else {
-          log.warn('[PerfilModal] Error en respuesta de get-user-emails:', response.status, response.statusText);
-        }
-      } catch (error) {
-        log.warn('[PerfilModal] Error obteniendo email del usuario:', error);
+      if (data && data.length > 0) {
+        return data[0].email;
       }
 
       return null;
     },
     enabled: !!targetUserId && open, // Ejecutar siempre que haya targetUserId y el modal esté abierto
     retry: false,
+    staleTime: 1000 * 60 * 5, // Cachear 5 min
   });
 
   const getNombreCompleto = (user: any) => {
