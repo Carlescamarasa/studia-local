@@ -1679,13 +1679,24 @@ export function createRemoteDataAPI(): AppDataAPI {
       feedbacksSemanal: FeedbackSemanal[];
       registrosSesion: RegistroSesion[];
     }> {
-      const userId = studentId || (await getCachedAuthUser())?.id;
-      if (!userId) throw new Error('User context missing');
+      // If studentId is provided, filter by it; otherwise return ALL data (for ADMIN/PROF)
+      // This matches the behavior of localDataClient.getProgressSummary
+      const hasStudentFilter = studentId && studentId.trim() !== '';
 
-      const xpQuery = supabase.from('student_xp_total').select('*').eq('student_id', userId);
-      const evalsQuery = supabase.from('evaluaciones_tecnicas').select('*').eq('alumno_id', userId).order('fecha', { ascending: false }).limit(10);
-      const feedbackQuery = supabase.from('feedbacks_semanal').select('*').eq('alumno_id', userId).order('week_start', { ascending: false }).limit(5);
-      const sessionsQuery = supabase.from('registros_sesion').select('*').eq('alumno_id', userId).order('inicio_iso', { ascending: false }).limit(5);
+      // Build queries conditionally
+      let xpQuery = supabase.from('student_xp_total').select('*');
+      let evalsQuery = supabase.from('evaluaciones_tecnicas').select('*').order('fecha', { ascending: false });
+      let feedbackQuery = supabase.from('feedbacks_semanal').select('*').order('week_start', { ascending: false });
+      let sessionsQuery = supabase.from('registros_sesion').select('*').order('inicio_iso', { ascending: false });
+
+      if (hasStudentFilter) {
+        xpQuery = xpQuery.eq('student_id', studentId);
+        evalsQuery = evalsQuery.eq('alumno_id', studentId).limit(10);
+        feedbackQuery = feedbackQuery.eq('alumno_id', studentId).limit(5);
+        sessionsQuery = sessionsQuery.eq('alumno_id', studentId).limit(50);
+      }
+      // When no studentId filter, return all data (no per-student limit, but reasonable global limits)
+      // This allows the frontend to filter by date range and selected students
 
       const [xpRes, evalsRes, feedbackRes, sessionsRes] = await Promise.all([
         xpQuery,
@@ -1694,11 +1705,48 @@ export function createRemoteDataAPI(): AppDataAPI {
         sessionsQuery
       ]);
 
+      // Normalize sessions
+      const sessions: RegistroSesion[] = (sessionsRes.data as unknown[] || []).map((s) => normalizeISOFields(snakeToCamel<RegistroSesion>(s)));
+
+      // Fetch associated blocks for all sessions in batches (to avoid URL length limits)
+      let sessionsWithBlocks = sessions;
+      if (sessions.length > 0) {
+        const sessionIds = sessions.map(s => s.id);
+        const chunkSize = 50;
+        let allBlocks: RegistroBloque[] = [];
+
+        for (let i = 0; i < sessionIds.length; i += chunkSize) {
+          const chunk = sessionIds.slice(i, i + chunkSize);
+          const { data: blocksData, error: blocksError } = await supabase
+            .from('registros_bloque')
+            .select('*')
+            .in('registro_sesion_id', chunk);
+
+          if (blocksError) {
+            console.warn('[getProgressSummary] Error fetching blocks chunk:', blocksError);
+            continue;
+          }
+
+          if (blocksData) {
+            const normalizedBlocks = (blocksData as unknown[]).map((b) =>
+              normalizeISOFields(snakeToCamel<RegistroBloque>(b))
+            ) as RegistroBloque[];
+            allBlocks = [...allBlocks, ...normalizedBlocks];
+          }
+        }
+
+        // Join blocks to sessions
+        sessionsWithBlocks = sessions.map(session => ({
+          ...session,
+          registrosBloque: allBlocks.filter(b => b.registroSesionId === session.id)
+        }));
+      }
+
       return {
         xpTotals: (xpRes.data as unknown[] || []).map((x) => snakeToCamel<StudentXPTotal>(x)),
         evaluacionesTecnicas: (evalsRes.data as unknown[] || []).map((e) => snakeToCamel<EvaluacionTecnica>(e)),
         feedbacksSemanal: (feedbackRes.data as unknown[] || []).map((f) => snakeToCamel<FeedbackSemanal>(f)),
-        registrosSesion: (sessionsRes.data as unknown[] || []).map((s) => normalizeISOFields(snakeToCamel<RegistroSesion>(s))),
+        registrosSesion: sessionsWithBlocks,
       };
     },
 
@@ -1752,9 +1800,7 @@ export async function setProfileActive(profileId: string, isActive: boolean): Pr
 }
 
 
-/**
- * Obtiene todos los feedbacks semanales (para migración de multimedia)
- */
+
 /**
  * Obtiene todos los feedbacks semanales (para migración de multimedia)
  */
