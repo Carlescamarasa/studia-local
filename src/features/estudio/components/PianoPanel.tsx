@@ -196,46 +196,77 @@ const TRUMPET_FINGERINGS: Record<string, number[]> = {
 // SVG MUSIC STAFF COMPONENT - Larger, cleaner notation
 const MusicStaff = ({ note }: { note: any }) => {
     // Larger dimensions for better visibility
-    const staffHeight = 100;
+    const staffHeight = 80;
     const spacing = 10;
-    const line1Y = 70;
+    // Lower line1Y slightly to accommodate higher note positions better
+    const line1Y = 55;
 
     // Use CSS variables for theme-aware colors
     const lineColor = 'var(--color-text-secondary)';
     const noteColor = 'var(--color-text-primary)';
     const mutedColor = 'var(--color-text-muted)';
+    const clefColor = 'var(--color-text-secondary)';
 
     if (!note) {
         return (
-            <svg width="100%" height={staffHeight} viewBox="0 0 140 100" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}>
+            <svg width="100%" height={staffHeight} viewBox="0 0 140 80" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}>
                 {/* Empty staff lines */}
                 {[0, 1, 2, 3, 4].map(i => {
                     const y = line1Y - (i * spacing);
                     return <line key={y} x1="5" y1={y} x2="135" y2={y} stroke={mutedColor} strokeWidth="0.8" />;
                 })}
                 {/* Treble Clef */}
-                <text x="8" y="76" fontSize="85" fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif" fill={mutedColor}>𝄞</text>
+                <text x="8" y="61" fontSize="70" fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif" fill={clefColor}>𝄞</text>
             </svg>
         );
     }
 
-    // Staff Drawing Logic
-    const noteSteps: Record<string, number> = { "C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6 };
-    const match = note.name.match(/([A-G])([#b]?)(\d)/);
-    if (!match) return null;
+    // Helper to calculate Y position and ledger lines
+    const getNoteY = (noteName: string) => {
+        const noteSteps: Record<string, number> = { "C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6 };
+        // Supports scientific name like "C#4", "Db4"
+        const match = noteName.match(/([A-G])([#b]?)(\d)/);
+        if (!match) return { cy: 0, absStep: 0, accidental: null, valid: false };
 
-    const baseLetter = match[1];
-    const octave = parseInt(match[3]);
-    const stepOfLetter = noteSteps[baseLetter];
-    const absStep = (octave - 4) * 7 + (stepOfLetter - 2); // E4 = step 0
-    const cy = line1Y - (absStep * (spacing / 2));
+        const baseLetter = match[1];
+        const acc = match[2];
+        const octave = parseInt(match[3]);
+        const stepOfLetter = noteSteps[baseLetter];
+        const absStep = (octave - 4) * 7 + (stepOfLetter - 2); // E4 = step 0
+        const cy = line1Y - (absStep * (spacing / 2));
 
-    // Proper musical accidentals
-    const accidental = note.name.includes('#') ? '♯' : (note.label.includes('b') || note.label.includes('ib') ? '♭' : null);
+        let accidentalSymbol = null;
+        if (acc === '#') accidentalSymbol = '♯';
+        if (acc === 'b') accidentalSymbol = '♭';
+
+        return { cy, absStep, accidental: accidentalSymbol, valid: true };
+    };
+
+    // determine if we should show dual notes
+    const isAccidental = note.accidental !== null || note.enharmonic;
+
+    // Default center position
+    let notesToRender = [];
+
+    if (isAccidental && note.scientificNameSharp && note.scientificNameFlat) {
+        // Dual Mode: Sharp Left, Flat Right
+        const sharpInfo = getNoteY(note.scientificNameSharp);
+        const flatInfo = getNoteY(note.scientificNameFlat);
+
+        // Push both if valid
+        if (sharpInfo.valid) notesToRender.push({ ...sharpInfo, x: 60 });
+        if (flatInfo.valid) notesToRender.push({ ...flatInfo, x: 100 });
+    } else {
+        // Single Note Mode
+        // Prefer scientificName if available, else derive from note.name
+        const targetName = note.scientificName || note.name;
+        const info = getNoteY(targetName);
+        if (info.valid) notesToRender.push({ ...info, x: 80 }); // Centered
+    }
 
     return (
-        <svg width="100%" height={staffHeight} viewBox="0 0 140 100" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}>
-            {/* Staff Lines */}
+        <svg width="100%" height={staffHeight} viewBox="0 0 140 80" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}>
+            {/* Staff lines */}
             {[0, 1, 2, 3, 4].map(i => {
                 const y = line1Y - (i * spacing);
                 return <line key={y} x1="5" y1={y} x2="135" y2={y} stroke={lineColor} strokeWidth="0.8" />;
@@ -244,45 +275,66 @@ const MusicStaff = ({ note }: { note: any }) => {
             {/* Treble Clef */}
             <text
                 x="8"
-                y="76"
-                fontSize="85"
+                y="61"
+                fontSize="70"
                 fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif"
-                fill={noteColor}
+                fill={clefColor}
             >
                 𝄞
             </text>
 
-            {/* Ledger Lines */}
-            {absStep <= -2 && (
-                <line x1="75" y1={line1Y + 10} x2="105" y2={line1Y + 10} stroke={lineColor} strokeWidth="0.8" />
-            )}
-            {absStep <= -4 && (
-                <line x1="75" y1={line1Y + 20} x2="105" y2={line1Y + 20} stroke={lineColor} strokeWidth="0.8" />
-            )}
-            {absStep >= 10 && (
-                <line x1="75" y1={line1Y - 50} x2="105" y2={line1Y - 50} stroke={lineColor} strokeWidth="0.8" />
-            )}
-            {absStep >= 12 && (
-                <line x1="75" y1={line1Y - 60} x2="105" y2={line1Y - 60} stroke={lineColor} strokeWidth="0.8" />
-            )}
+            {/* Render Notes */}
+            {notesToRender.map((n, idx) => (
+                <g key={idx} transform={`translate(${n.x}, ${n.cy})`}>
+                    {/* Ledger Lines */}
+                    {n.absStep <= -2 && (
+                        <line x1="-15" y1={-n.cy + (line1Y + 10)} x2="15" y2={-n.cy + (line1Y + 10)} stroke={lineColor} strokeWidth="0.8" />
+                    )}
+                    {/* Ledger line logic needs to be relative to the note Y or absolute Y.
+                        The previous logic drew lines at absolute Y. Since we translate 'g', we must adjust or draw lines outside G.
+                        Let's draw ledger lines INSIDE the G but reverse translation or just draw relative to 0
+                     */}
 
-            {/* Note Head - stemless, larger */}
-            <g transform={`translate(90, ${cy})`}>
-                <ellipse cx="0" cy="0" rx="7" ry="5" fill={noteColor} transform="rotate(-12)" />
+                    {/* 
+                        Actually easiest: Draw ledgers relative to note center (0,0 is note center).
+                        line1Y corresponds to E4 (bottom line). 
+                        Spacing = 10. 
+                        absStep 0 = Bottom Line (E4).
+                        absStep -2 = C4 (Middle C) = line1Y + 10 offset from line1Y.
+                        In local coords: cy is calculated. 
+                        Relative Y for ledger line at C4 (absStep -2):
+                            Note is at cy. Ledger line is at line1Y + 10.
+                            Local Y = (line1Y + 10) - cy.
+                     */}
+                    {n.absStep <= -2 && ( // C4 (Middle C)
+                        <line x1="-16" y1={(line1Y + 10) - n.cy} x2="16" y2={(line1Y + 10) - n.cy} stroke={lineColor} strokeWidth="0.8" />
+                    )}
+                    {n.absStep <= -4 && ( // A3
+                        <line x1="-16" y1={(line1Y + 20) - n.cy} x2="16" y2={(line1Y + 20) - n.cy} stroke={lineColor} strokeWidth="0.8" />
+                    )}
+                    {n.absStep >= 10 && ( // A5
+                        <line x1="-16" y1={(line1Y - 50) - n.cy} x2="16" y2={(line1Y - 50) - n.cy} stroke={lineColor} strokeWidth="0.8" />
+                    )}
+                    {n.absStep >= 12 && ( // C6
+                        <line x1="-16" y1={(line1Y - 60) - n.cy} x2="16" y2={(line1Y - 60) - n.cy} stroke={lineColor} strokeWidth="0.8" />
+                    )}
 
-                {/* Accidental */}
-                {accidental && (
-                    <text
-                        x="-18"
-                        y="5"
-                        fontSize="18"
-                        fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif"
-                        fill={noteColor}
-                    >
-                        {accidental}
-                    </text>
-                )}
-            </g>
+                    <ellipse cx="0" cy="0" rx="7" ry="5" fill={noteColor} transform="rotate(-12)" />
+
+                    {/* Accidental */}
+                    {n.accidental && (
+                        <text
+                            x="-20"
+                            y="6"
+                            fontSize="20"
+                            fontFamily="'Noto Music', 'Bravura', 'Times New Roman', serif"
+                            fill={noteColor}
+                        >
+                            {n.accidental}
+                        </text>
+                    )}
+                </g>
+            ))}
         </svg>
     );
 };
@@ -635,12 +687,12 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }: Piano
             </div>
 
             {/* Main Content Area - Keyboard centered, Info panel on right */}
-            <div className="bg-[var(--color-surface-muted)]" style={{ minHeight: '180px' }}>
+            <div className="bg-[var(--color-surface-muted)]" style={{ minHeight: '140px' }}>
                 <div className="max-w-5xl mx-auto flex justify-center w-full">
 
                     {/* Keys Container - centered */}
                     <div ref={scrollRef} className="w-full flex-shrink-0 overflow-x-auto touch-pan-x relative" style={{ maxWidth: 'calc(100% - 160px)' }}>
-                        <div className="flex relative select-none h-[180px]" style={{ minWidth: 'fit-content', paddingLeft: '8px', paddingRight: '8px' }}>
+                        <div className="flex relative select-none h-[140px]" style={{ minWidth: 'fit-content', paddingLeft: '8px', paddingRight: '8px' }}>
                             {/* White Keys */}
                             {VISIBLE_NOTES.map((note, idx) => {
                                 const isWhite = note.type === 'white';
@@ -651,7 +703,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }: Piano
                                     <div key={note.name} className="relative h-full flex flex-col justify-start">
                                         <button
                                             className={cn(
-                                                "w-11 h-[175px] relative focus:outline-none touch-pan-x rounded-b-[3px] transition-all duration-75 flex flex-col justify-end items-center pb-2",
+                                                "w-11 h-[135px] relative focus:outline-none touch-pan-x rounded-b-[3px] transition-all duration-75 flex flex-col justify-end items-center pb-2",
                                                 pressedKeys.has(note.name)
                                                     ? ""
                                                     : "shadow-sm hover:shadow-md"
@@ -702,7 +754,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }: Piano
                                         )}
                                         style={{
                                             width: `${blackKeyWidth}px`,
-                                            height: '95px',
+                                            height: '85px',
                                             left: `${finalLeft}px`,
                                             top: 0,
                                             backgroundColor: pressedKeys.has(note.name) ? 'var(--color-accent)' : '#1a1a1a',
@@ -718,49 +770,119 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }: Piano
                         </div>
                     </div>
 
-                    {/* RIGHT: Info Panel - compact layout, overflow visible for treble clef */}
-                    <div className="w-[160px] max-w-[160px] flex flex-col shrink-0 py-2 overflow-visible">
+                    {/* RIGHT: Info Panel - balanced layout */}
+                    <div className="w-[160px] max-w-[160px] flex flex-col shrink-0 py-2 gap-2 overflow-visible items-center justify-between">
 
-                        {/* TOP: PISTONS - Compact grid */}
-                        <div className="grid grid-cols-3 gap-1.5 px-2">
-                            {[1, 2, 3].map(pistonNum => {
-                                // Use concertMidi (what's actually sounding) for fingering/display
-                                const displayMidi = lastNote?.concertMidi
-                                    ? concertToTrumpetWritten(lastNote.concertMidi, trumpetMode)
-                                    : null;
-                                const displayInfo = displayMidi ? midiToNoteInfo(displayMidi) : null;
+                        {/* TOP: PISTONS - Realistic Valve Animation */}
+                        <div className="flex justify-center w-full">
+                            {/* 
+                                Trumpet Valves Component 
+                                Calculates active pistons based on lastNote 
+                             */}
+                            {(() => {
+                                // Determine active pistons
+                                let activePistons: number[] = [];
+                                if (lastNote?.concertMidi) {
+                                    const displayMidi = concertToTrumpetWritten(lastNote.concertMidi, trumpetMode);
+                                    const displayInfo = midiToNoteInfo(displayMidi);
+                                    activePistons = displayInfo
+                                        ? (TRUMPET_FINGERINGS[displayInfo.scientificName] || TRUMPET_FINGERINGS[displayInfo.name] || [])
+                                        : [];
+                                }
 
-                                const fingering = displayInfo
-                                    ? (TRUMPET_FINGERINGS[displayInfo.scientificName] || TRUMPET_FINGERINGS[displayInfo.name] || [])
-                                    : [];
+                                // SVG Valve constants
+                                const valves = [1, 2, 3];
+                                const valveWidth = 24;
+                                const valveHeight = 45; // Compact height
+                                const spacing = 4;
+                                const totalWidth = (valveWidth * 3) + (spacing * 2);
 
-                                const isPressed = fingering.includes(pistonNum);
                                 return (
-                                    <div
-                                        key={pistonNum}
-                                        className={cn(
-                                            "aspect-square rounded-full flex items-center justify-center min-w-[24px] max-w-[32px] w-full mx-auto transition-colors border-2",
-                                            isPressed
-                                                ? "bg-[var(--color-accent)] border-[var(--color-accent)] shadow-sm"
-                                                : "bg-[var(--color-surface)] dark:bg-[var(--color-surface-elevated)] border-[var(--color-border-default)]"
-                                        )}
+                                    <svg
+                                        height={valveHeight + 20}
+                                        width={totalWidth}
+                                        viewBox={`0 0 ${totalWidth} ${valveHeight + 20}`}
+                                        className="overflow-visible"
                                     >
-                                        <span
-                                            className={cn(
-                                                "text-xs font-bold leading-none",
-                                                isPressed ? "text-white" : "text-[var(--color-text-muted)]"
-                                            )}
-                                        >
-                                            {pistonNum}
-                                        </span>
-                                    </div>
+                                        <defs>
+                                            <linearGradient id="valveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" stopColor="var(--color-surface-elevated)" />
+                                                <stop offset="50%" stopColor="var(--color-surface)" />
+                                                <stop offset="100%" stopColor="var(--color-surface-elevated)" />
+                                            </linearGradient>
+                                        </defs>
+                                        {valves.map((num, i) => {
+                                            const isPressed = activePistons.includes(num);
+                                            const x = i * (valveWidth + spacing);
+
+                                            // Animation params
+                                            const stemHeight = 15;
+                                            const pressOffset = 12; // How far it goes down
+                                            const currentY = isPressed ? pressOffset : 0;
+
+                                            return (
+                                                <g key={num} transform={`translate(${x}, 0)`}>
+                                                    {/* Moving Part: Stem + Button (Rendered FIRST = BEHIND) */}
+                                                    <g
+                                                        className="transition-transform duration-150 ease-out"
+                                                        style={{ transform: `translateY(${currentY}px)` }}
+                                                    >
+                                                        {/* Stem */}
+                                                        <rect
+                                                            x={(valveWidth / 2) - 2} y="4"
+                                                            width="4" height={stemHeight + 8}
+                                                            fill="var(--color-text-secondary)"
+                                                        />
+                                                        {/* Button (Finger Piece) */}
+                                                        <rect
+                                                            x={(valveWidth - 14) / 2} y="0"
+                                                            width="14" height="4"
+                                                            rx="1"
+                                                            fill="var(--color-text-primary)"
+                                                        />
+                                                    </g>
+
+                                                    {/* Top Cap (Fixed - Renders on top of stem) */}
+                                                    <rect
+                                                        x="2" y={stemHeight + 5}
+                                                        width={valveWidth - 4} height="5"
+                                                        rx="1"
+                                                        fill="var(--color-border-default)"
+                                                    />
+
+                                                    {/* Valve Casing (Fixed Body - Renders on top of stem) */}
+                                                    <rect
+                                                        x="0" y={stemHeight + 10}
+                                                        width={valveWidth} height={valveHeight - 10}
+                                                        rx="2"
+                                                        stroke="var(--color-border-default)"
+                                                        strokeWidth="1.5"
+                                                        fill="url(#valveGradient)"
+                                                    />
+
+                                                    {/* Number Label (Renders on top of everything) */}
+                                                    <text
+                                                        x={valveWidth / 2}
+                                                        y={stemHeight + 10 + (valveHeight - 10) / 2 + 4}
+                                                        textAnchor="middle"
+                                                        fontSize="14"
+                                                        fontWeight="bold"
+                                                        fill="var(--color-text-muted)"
+                                                        style={{ pointerEvents: 'none' }}
+                                                    >
+                                                        {num}
+                                                    </text>
+                                                </g>
+                                            );
+                                        })}
+                                    </svg>
                                 );
-                            })}
+                            })()}
                         </div>
 
-                        {/* CENTER: Staff - flex-1 to take max space */}
-                        <div className="flex-1 flex items-center justify-center px-2 min-h-[80px] overflow-visible" style={{ zIndex: 10 }}>
-                            <div className="w-full h-full overflow-visible">
+                        {/* CENTER: Staff - flex-1 to take available space but compact */}
+                        <div className="flex-1 flex items-center justify-center w-full overflow-visible" style={{ zIndex: 10 }}>
+                            <div className="w-full h-full max-h-[70px] overflow-visible flex items-center">
                                 {lastNote?.concertMidi ? (
                                     (() => {
                                         // Use concertMidi for staff display
@@ -772,8 +894,8 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }: Piano
                             </div>
                         </div>
 
-                        {/* BOTTOM: Note Name - closer to staff */}
-                        <div className="px-2 flex justify-center -mt-10 relative" style={{ zIndex: 20 }}>
+                        {/* BOTTOM: Note Name */}
+                        <div className="w-full flex justify-center pb-1 relative" style={{ zIndex: 20 }}>
                             {lastNote?.concertMidi ? (
                                 (() => {
                                     // Use concertMidi for note name display
@@ -787,7 +909,7 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }: Piano
                                             </span>
                                             {displayInfo.enharmonic && (
                                                 <>
-                                                    <span className="text-lg font-medium leading-none text-[var(--color-text-muted)]">/</span>
+                                                    <span className="text-lg font-medium leading-none text-[var(--color-text-muted)]">-</span>
                                                     <span className="text-lg font-bold leading-none text-[var(--color-text-secondary)]">
                                                         {formatNoteLabel(displayInfo.enharmonic)}
                                                     </span>
@@ -800,7 +922,6 @@ export default function PianoPanel({ isOpen, onClose, bottomOffset = 80 }: Piano
                                 <span className="text-xs italic text-[var(--color-text-muted)]">Toca nota</span>
                             )}
                         </div>
-
                     </div>
                 </div>
             </div>

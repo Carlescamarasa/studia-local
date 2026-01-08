@@ -1,4 +1,4 @@
- 
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Music Transposition Utilities
@@ -15,8 +15,12 @@
 const NOTE_NAMES = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'Sib', 'Si'];
 const NOTE_NAMES_FLAT = ['Do', 'Reb', 'Re', 'Mib', 'Mi', 'Fa', 'Solb', 'Sol', 'Lab', 'La', 'Sib', 'Si'];
 
+// Pure lists for forcing specific spellings
+const PURE_SHARPS = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
+const PURE_FLATS = ['Do', 'Reb', 'Re', 'Mib', 'Mi', 'Fa', 'Solb', 'Sol', 'Lab', 'La', 'Sib', 'Si'];
+
 // Map note name prefixes to semitone offset from C
-const NAME_TO_SEMITONE = {
+const NAME_TO_SEMITONE: Record<string, number> = {
     'Do': 0, 'C': 0,
     'Re': 2, 'D': 2,
     'Mi': 4, 'E': 4,
@@ -26,12 +30,6 @@ const NAME_TO_SEMITONE = {
     'Si': 11, 'B': 11,
 };
 
-/**
- * Transpose a MIDI note by n semitones
- * @param {number} midiNote - MIDI note number
- * @param {number} semitones - Number of semitones to transpose (positive = up)
- * @returns {number} Transposed MIDI note
- */
 /**
  * Transpose a MIDI note by n semitones
  * @param {number} midiNote - MIDI note number
@@ -109,6 +107,27 @@ export function midiToNoteInfo(midi: number) {
 
     const scientificName = `${['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][noteIndex]}${octave}`;
 
+    // Explicit sharp/flat scientific names for staff display
+    const sharpLabel = PURE_SHARPS[noteIndex];
+    const flatLabel = PURE_FLATS[noteIndex];
+
+    // Helper to get scientific name from Spanish label
+    // e.g. Sol# -> G#
+    const toScientific = (spanLabel: string) => {
+        let base = spanLabel.replace(/[#b]/g, '');
+        const acc = spanLabel.includes('#') ? '#' : (spanLabel.includes('b') ? '' : ''); // Flat in scientific is implicitly handled if we map correctly? 
+        // Actually, simple map:
+        const map: Record<string, string> = {
+            'Do': 'C', 'Re': 'D', 'Mi': 'E', 'Fa': 'F', 'Sol': 'G', 'La': 'A', 'Si': 'B'
+        };
+        const sciBase = map[base];
+        const sciAcc = spanLabel.includes('#') ? '#' : (spanLabel.includes('b') ? 'b' : ''); // Standardize 'b' for flat in scientific strings usually
+        return `${sciBase}${sciAcc}${octave}`;
+    };
+
+    const scientificNameSharp = toScientific(sharpLabel); // e.g. F#4
+    const scientificNameFlat = toScientific(flatLabel);   // e.g. Gb4
+
     return {
         label,
         labelFlat,
@@ -116,7 +135,9 @@ export function midiToNoteInfo(midi: number) {
         enharmonic,
         octave,
         midi,
-        scientificName, // e.g. "C4"
+        scientificName, // Generic/Preferred
+        scientificNameSharp,
+        scientificNameFlat,
         name: scientificName // Alias for compatibility
     };
 }
